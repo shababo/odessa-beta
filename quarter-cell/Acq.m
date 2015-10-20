@@ -326,7 +326,15 @@ function update_pulses_button_Callback(hObject, eventdata, handles)
 
 
 % handles.data.shutter=makepulseoutputs(handles.data.stimulation.pulse_starttime-shutterlag,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration+shutterlag, shutteramp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
-handles.data.stim_output=makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration, handles.data.stimulation.pulseamp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
+if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
+    amplitude = get_voltage(handles.data.lut,handles.data.stimulation.pulseamp);
+    if isempty(amplitude)
+        amplitude = 0;
+    end
+else
+    amplitude = handles.data.stimulation.pulseamp;
+end
+handles.data.stim_output=makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration, amplitude, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
 handles.data.stim_output=handles.data.stim_output; % for laser diode drivers need -1V holding voltage
 % handles.data.pulsesorramps=0;
 handles = updateAOaxes(handles);
@@ -1479,3 +1487,27 @@ function loop_count_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in load_lut.
+function load_lut_Callback(hObject, eventdata, handles)
+% hObject    handle to load_lut (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[handles.data.lut_filename, handles.data.lut_filepath] = uigetfile();
+load([handles.data.lut_filepath '\' handles.data.lut_filename],'lut')
+handles.data.lut = lut;
+
+set(hObject,'ForegroundColor',[0 .5 .5])
+
+guidata(hObject,handles)
+
+
+% --- Executes on button press in use_lut.
+function use_lut_Callback(hObject, eventdata, handles)
+% hObject    handle to use_lut (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of use_lut
