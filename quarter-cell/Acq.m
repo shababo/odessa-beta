@@ -107,7 +107,7 @@ function run_Callback(hObject, eventdata, handles)
 
 
 
-default_color = get(hObject,'BackgroundColor');
+default_color = [0.8627    0.8627    0.8627]; % grey
 set(hObject,'BackgroundColor',[0 1 .5]);
 
 switch handles.run_type
@@ -115,6 +115,7 @@ switch handles.run_type
         disp('looping...')
         if get(handles.loop_forever,'Value')
             while get(hObject,'Value')
+%                 handles = make_stim_out(handles);
                 handles.io_data = step_loop(handles);
                 handles = process_and_wait(handles,str2double(get(handles.ITI,'String')));
             end
@@ -145,6 +146,10 @@ end
         
 set(hObject,'String','Start');
 set(hObject,'BackgroundColor',default_color);
+
+% update fields
+handles = trial_length_Callback(handles.trial_length, [], handles);
+
 guidata(hObject,handles)
 
 function handles = process_and_wait(handles,wait_time)
@@ -171,14 +176,16 @@ end
 
 
 
-function trial_length_Callback(hObject, eventdata, handles)
+function handles = trial_length_Callback(hObject, eventdata, handles)
 
 trial_length = str2double(get(hObject,'String'));
 handles.defaults.trial_length = trial_length;
 
-[handles.data.stim_output,handles.data.timebase] = ...
-    makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration,...
-    handles.data.stimulation.pulseamp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, trial_length);
+handles = make_stim_out(handles);
+
+% [handles.data.stim_output,handles.data.timebase] = ...
+%     makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration,...
+%     handles.data.stimulation.pulseamp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, trial_length);
 
  
 handles.data.ch1_output=makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, trial_length);
@@ -190,6 +197,8 @@ guidata(hObject,handles)
 
 handles = updateAOaxes(handles);
 guidata(hObject,handles)
+
+
 
 
 % --- Executes during object creation, after setting all properties.
@@ -325,7 +334,31 @@ function update_pulses_button_Callback(hObject, eventdata, handles)
 
 
 
+
 % handles.data.shutter=makepulseoutputs(handles.data.stimulation.pulse_starttime-shutterlag,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration+shutterlag, shutteramp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
+handles = make_stim_out(handles);
+% if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
+%     amplitude = get_voltage(handles.data.lut,handles.data.stimulation.pulseamp);
+%     if isempty(amplitude)
+%         amplitude = 0;
+%     end
+% else
+%     amplitude = handles.data.stimulation.pulseamp;
+% end
+% handles.data.stim_output=makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration, amplitude, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
+% handles.data.stim_output=handles.data.stim_output; % for laser diode drivers need -1V holding voltage
+% handles.data.pulsesorramps=0;
+handles = updateAOaxes(handles);
+guidata(hObject,handles)
+
+function handles = make_stim_out(handles)
+
+handles.data.stimulation.pulseamp=str2double(get(handles.pulseamp,'String'));
+handles.data.stimulation.pulseduration=str2double(get(handles.pulseduration,'String'));
+handles.data.stimulation.pulsenumber=str2double(get(handles.pulsenumber,'String'));
+handles.data.stimulation.pulsefrequency=str2double(get(handles.pulsefrequency,'String'));
+handles.data.stimulation.pulse_starttime=str2double(get(handles.pulse_starttime,'String'));
+
 if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
     amplitude = get_voltage(handles.data.lut,handles.data.stimulation.pulseamp);
     if isempty(amplitude)
@@ -334,11 +367,8 @@ if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
 else
     amplitude = handles.data.stimulation.pulseamp;
 end
-handles.data.stim_output=makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration, amplitude, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
-handles.data.stim_output=handles.data.stim_output; % for laser diode drivers need -1V holding voltage
-% handles.data.pulsesorramps=0;
-handles = updateAOaxes(handles);
-guidata(hObject,handles)
+[handles.data.stim_output, handles.data.timebase]=makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration, amplitude, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
+
 
 
 % --- Executes on button press in VC_cell1_radio.
@@ -707,7 +737,7 @@ else
     thissweep=thissweep(:,1);
     plot(handles.sweep_display_axes,tim, thissweep); % if just single cell just plot cell1
 end
-set(handles.stimulus_num,'String',num2str(handles.data.stimulus_sequence(handles.data.SetSweepNumber)));
+% set(handles.stimulus_num,'String',num2str(handles.data.stimulus_sequence(handles.data.SetSweepNumber)));
 
 if val4 == 1 % if holding axes limits
     xlim(handles.sweep_display_axes, [xlimits(1) xlimits(2)]);
