@@ -142,6 +142,37 @@ switch handles.run_type
             end
         end
         set(hObject,'Value',0)
+    case 'conditions'
+        disp('running conditions')
+        if get(handles.use_seed,'Value')
+            rng(ceil(str2double(handles.rng_seed,'String')));
+        end
+        conditions = repmat(1:size(handles.data.stim_conds.cond_inds,1),1,str2double(get(handles.num_trials,'String')))
+        conditions = conditions(randperm(length(conditions)))
+        
+        for i = 1:length(conditions)
+            i
+            conditions(i)
+            start_color = get(handles.run,'BackgroundColor');
+            set(handles.run,'BackgroundColor',[1 0 0]);
+            set(handles.run,'String','Acq...')
+            [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
+            
+            cond_ind = handles.data.stim_conds.cond_inds(conditions(i),:)
+
+            handles.io_data = io(handles.s,[AO0, AO1, squeeze(handles.data.stim_conds.stims(cond_ind(1),cond_ind(2),cond_ind(3),cond_ind(4),cond_ind(5),:)), AO3]);
+
+            set(handles.run,'backgroundColor',start_color)
+            guidata(handles.acq_gui,handles)
+            
+            handles = process_and_wait(handles,str2double(get(handles.ITI,'String')));
+            
+            if ~get(hObject,'Value')
+                break
+            end
+        end
+        set(hObject,'Value',0)
+        
 end
         
 set(hObject,'String','Start');
@@ -780,6 +811,9 @@ function ExperimentName_Callback(hObject, eventdata, handles)
 
 handles.data.experiment_name=(get(hObject,'String'));
 handles.data.save_name = [handles.data.save_path handles.data.experiment_name];
+if exist(handles.data.save_name,'file')
+    handles.data.save_name = [handles.data.save_name(1:end-4) 'next.mat'];
+end
 guidata(hObject,handles)
 
 function ExperimentName_CreateFcn(hObject, eventdata, handles)
@@ -1238,19 +1272,19 @@ function checkbox22_Callback(hObject, eventdata, handles)
 
 
 
-function lightsource_Callback(hObject, eventdata, handles)
-% hObject    handle to lightsource (see GCBO)
+function injection_age_Callback(hObject, eventdata, handles)
+% hObject    handle to injection_age (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 handles.data.Expt_Params.lightsource=(get(hObject,'String'));
-% Hints: get(hObject,'String') returns contents of lightsource as text
-%        str2double(get(hObject,'String')) returns contents of lightsource as a double
+% Hints: get(hObject,'String') returns contents of injection_age as text
+%        str2double(get(hObject,'String')) returns contents of injection_age as a double
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function lightsource_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to lightsource (see GCBO)
+function injection_age_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to injection_age (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1285,19 +1319,19 @@ end
 
 
 
-function brainregion_Callback(hObject, eventdata, handles)
-% hObject    handle to brainregion (see GCBO)
+function external_Callback(hObject, eventdata, handles)
+% hObject    handle to external (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 handles.data.Expt_Params.brainregion=(get(hObject,'String'));
-% Hints: get(hObject,'String') returns contents of brainregion as text
-%        str2double(get(hObject,'String')) returns contents of brainregion as a double
+% Hints: get(hObject,'String') returns contents of external as text
+%        str2double(get(hObject,'String')) returns contents of external as a double
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function brainregion_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to brainregion (see GCBO)
+function external_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to external (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1309,20 +1343,20 @@ end
 
 
 
-function animal_number_Callback(hObject, eventdata, handles)
-% hObject    handle to animal_number (see GCBO)
+function slice_number_Callback(hObject, eventdata, handles)
+% hObject    handle to slice_number (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of animal_number as text
-%        str2double(get(hObject,'String')) returns contents of animal_number as a double
+% Hints: get(hObject,'String') returns contents of slice_number as text
+%        str2double(get(hObject,'String')) returns contents of slice_number as a double
 
 handles.data.animal_number=(get(hObject,'String'));
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function animal_number_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to animal_number (see GCBO)
+function slice_number_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slice_number (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1541,3 +1575,300 @@ function use_lut_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of use_lut
+
+
+
+function amplitude_conditions_Callback(hObject, eventdata, handles)
+% hObject    handle to amplitude_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of amplitude_conditions as text
+%        str2double(get(hObject,'String')) returns contents of amplitude_conditions as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function amplitude_conditions_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to amplitude_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function duration_conditions_Callback(hObject, eventdata, handles)
+% hObject    handle to duration_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of duration_conditions as text
+%        str2double(get(hObject,'String')) returns contents of duration_conditions as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function duration_conditions_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to duration_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function numpulse_conditions_Callback(hObject, eventdata, handles)
+% hObject    handle to numpulse_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of numpulse_conditions as text
+%        str2double(get(hObject,'String')) returns contents of numpulse_conditions as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function numpulse_conditions_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to numpulse_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function freq_conditions_Callback(hObject, eventdata, handles)
+% hObject    handle to freq_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of freq_conditions as text
+%        str2double(get(hObject,'String')) returns contents of freq_conditions as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function freq_conditions_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to freq_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function starttime_conditions_Callback(hObject, eventdata, handles)
+% hObject    handle to starttime_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of starttime_conditions as text
+%        str2double(get(hObject,'String')) returns contents of starttime_conditions as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function starttime_conditions_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to starttime_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in make_conditions.
+function make_conditions_Callback(hObject, eventdata, handles)
+% hObject    handle to make_conditions (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+amps = strread(get(handles.amplitude_conditions,'String'));
+durations = strread(get(handles.duration_conditions,'String'));
+numpulses = strread(get(handles.numpulse_conditions,'String'));
+freqs = strread(get(handles.freq_conditions,'String'));
+starttimes = strread(get(handles.starttime_conditions,'String'));
+
+handles.data.stim_conds.stims = zeros(length(amps),length(durations),length(numpulses),length(freqs),length(starttimes),handles.defaults.Fs * handles.defaults.trial_length);
+handles.data.stim_conds.cond_inds = zeros(length(amps)*length(durations)*length(numpulses)*length(freqs)*length(starttimes),5);
+
+cond_count = 1;
+for i = 1:length(amps)
+    for j = 1:length(durations)
+        for k = 1:length(numpulses)
+            for l = 1:length(freqs)
+                for m = 1:length(starttimes)
+                    if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
+
+                        amplitude = get_voltage(handles.data.lut,amps(i));
+                        if isempty(amplitude)
+                            amplitude = 0;
+                        end
+                    else
+                        amplitude = amps(i);
+                    end
+                    handles.data.stim_conds.stims(i,j,k,l,m,:) =...
+                        makepulseoutputs(starttimes(m),numpulses(k),...
+                        durations(j), amplitude, freqs(l), handles.defaults.Fs, handles.defaults.trial_length);
+                    handles.data.stim_conds.cond_inds(cond_count,:) = [i j k l m];
+                    cond_count = cond_count + 1;
+                end
+            end
+        end
+    end
+end
+                    
+handles.data.stim_conds.amps = amps;
+handles.data.stim_conds.durations = durations;
+handles.data.stim_conds.numpulses = numpulses;
+handles.data.stim_conds.freqs = freqs;
+handles.data.stim_conds.starttimes = starttimes;
+
+guidata(hObject,handles)
+
+
+
+function num_trials_Callback(hObject, eventdata, handles)
+% hObject    handle to num_trials (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of num_trials as text
+%        str2double(get(hObject,'String')) returns contents of num_trials as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function num_trials_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to num_trials (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function rng_seed_Callback(hObject, eventdata, handles)
+% hObject    handle to rng_seed (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of rng_seed as text
+%        str2double(get(hObject,'String')) returns contents of rng_seed as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function rng_seed_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to rng_seed (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in use_seed.
+function use_seed_Callback(hObject, eventdata, handles)
+% hObject    handle to use_seed (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of use_seed
+
+
+
+function cell_number_Callback(hObject, eventdata, handles)
+% hObject    handle to cell_number (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of cell_number as text
+%        str2double(get(hObject,'String')) returns contents of cell_number as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function cell_number_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to cell_number (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function cell_type_Callback(hObject, eventdata, handles)
+% hObject    handle to cell_type (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of cell_type as text
+%        str2double(get(hObject,'String')) returns contents of cell_type as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function cell_type_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to cell_type (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in update_metadata.
+function update_metadata_Callback(hObject, eventdata, handles)
+% hObject    handle to update_metadata (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% get metadata
+handles.data.metadata.genotype = get(handles.genotype,'String');
+handles.data.metadata.age = get(handles.age,'String');
+handles.data.metadata.virus = get(handles.virus,'String');
+handles.data.metadata.internal = get(handles.internal,'String');
+handles.data.metadata.external = get(handles.external,'String');
+handles.data.metadata.injection_age = get(handles.injection_age,'String');
+handles.data.metadata.slice_number = get(handles.slice_number,'String');
+handles.data.metadata.cell_number = get(handles.cell_number,'String');
+handles.data.metadata.cell_type = get(handles.cell_type,'String');
+
+
+clock_array = clock;
+savename = [num2str(clock_array(2)) '_' num2str(clock_array(3)) '_slice' handles.data.metadata.slice_number '_cell' handles.data.metadata.cell_number '.mat'];
+if iscell(savename)
+    savename = [savename{:} '.mat'];
+end
+
+set(handles.ExperimentName,'String',savename);
+
+guidata(hObject,handles)
+
+ExperimentName_Callback(handles.ExperimentName,[],handles)
