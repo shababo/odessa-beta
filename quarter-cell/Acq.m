@@ -1872,3 +1872,44 @@ set(handles.ExperimentName,'String',savename);
 guidata(hObject,handles)
 
 ExperimentName_Callback(handles.ExperimentName,[],handles)
+
+
+% --- Executes on button press in checkbox32.
+function checkbox32_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox32 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox32
+
+
+% --- Executes on button press in checkbox33.
+function checkbox33_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox33 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox33
+
+
+
+function edit78_Callback(hObject, eventdata, handles)
+% hObject    handle to edit78 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit78 as text
+%        str2double(get(hObject,'String')) returns contents of edit78 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit78_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit78 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
