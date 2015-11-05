@@ -1,27 +1,27 @@
-function varargout = Acq(varargin)
+function varargout = Acq_bu(varargin)
 
-% ACQ MATLAB code for Acq.fig
-%      ACQ, by itself, creates a new ACQ or raises the existing
+% ACQ_BU MATLAB code for Acq_bu.fig
+%      ACQ_BU, by itself, creates a new ACQ_BU or raises the existing
 %      singleton*.
 %
-%      H = ACQ returns the handle to a new ACQ or the handle to
+%      H = ACQ_BU returns the handle to a new ACQ_BU or the handle to
 %      the existing singleton*.
 %
-%      ACQ('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in ACQ.M with the given input arguments.
+%      ACQ_BU('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in ACQ_BU.M with the given input arguments.
 %
-%      ACQ('Property','Value',...) creates a new ACQ or raises the
+%      ACQ_BU('Property','Value',...) creates a new ACQ_BU or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before Acq_OpeningFcn gets called.  An
+%      applied to the GUI before Acq_bu_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to Acq_OpeningFcn via varargin.
+%      stop.  All inputs are passed to Acq_bu_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help Acq
+% Edit the above text to modify the response to help Acq_bu
 
 % Last Modified by G UIDE v2.5 13-Feb-2013 14:39:52
 
@@ -29,8 +29,8 @@ function varargout = Acq(varargin)
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @Acq_OpeningFcn, ...
-                   'gui_OutputFcn',  @Acq_OutputFcn, ...
+                   'gui_OpeningFcn', @Acq_bu_OpeningFcn, ...
+                   'gui_OutputFcn',  @Acq_bu_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -45,15 +45,15 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before Acq is made visible.
-function Acq_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before Acq_bu is made visible.
+function Acq_bu_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to Acq (see VARARGIN)
+% varargin   command line arguments to Acq_bu (see VARARGIN)
 
-% Choose default command line output for Acq
+% Choose default command line output for Acq_bu
 handles.output = hObject; 
 
 % create experiment structs
@@ -75,12 +75,12 @@ labelaxes(handles)
 guidata(hObject, handles);
 
 
-% UIWAIT makes Acq wait for user response (see UIRESUME)
+% UIWAIT makes Acq_bu wait for user response (see UIRESUME)
 % uiwait(handles.acq_gui);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = Acq_OutputFcn(hObject, eventdata, handles) 
+function varargout = Acq_bu_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
