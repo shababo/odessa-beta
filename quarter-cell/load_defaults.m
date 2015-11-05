@@ -38,8 +38,10 @@ CCexternalcommandsensitivity = 400;%400;  % for multiclamp
 % set default type of output for each analog output channel
 AO0 = 'ch1_out'; 
 AO1 = 'ch2_out';
-AO2 = 'stimulation';
-AO3 = 'none';
+AO2 = 'LED';
+AO3 = '2P';
+
+stim_type = 'LED';
 
 testpulse_start = .050;
 testpulse_duration = .050;
@@ -70,7 +72,7 @@ defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', i
     'VCexternalcommandsensitivity', VCexternalcommandsensitivity, 'CCexternalcommandsensitivity', ...
     CCexternalcommandsensitivity, 'ifsave', ifsave, ...
     'AO0', AO0, 'AO1', AO1, 'AO2', AO2,'AO3',AO3,'run_type',run_type,...
-    'testpulse_start',testpulse_start,'testpulse_duration',testpulse_duration,'testpulse_amp',testpulse_amp);
+    'testpulse_start',testpulse_start,'testpulse_duration',testpulse_duration,'testpulse_amp',testpulse_amp,'stim_type',stim_type);
 data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', exp_name, 'stimulation', stimulation,...
     'save_name', save_name, 'save_path', save_path, 'experiment_name', experiment_name, 'SetSweepNumber', SetSweepNumber, 'ch1sweep', ch1sweep, 'ch2sweep', ch2sweep, ...
      'stims', stims, 'sweep_counter', sweep_counter, 'testpulse', testpulse, ...
@@ -80,9 +82,10 @@ data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', ex
 
 s = daq.createSession('ni');
 s.Rate = Fs;
-s.addAnalogInputChannel('dev1',0:2,'Voltage');
+s.addAnalogInputChannel('dev1',0:3,'Voltage');
 s.Channels(1).InputType = 'SingleEnded';
 s.Channels(2).InputType = 'SingleEnded';
 s.Channels(3).InputType = 'SingleEnded';
+s.Channels(4).InputType = 'SingleEnded';
 
 s.addAnalogOutputChannel('dev1',0:3,'Voltage');
