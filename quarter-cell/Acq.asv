@@ -117,12 +117,12 @@ switch handles.run_type
             while get(hObject,'Value')
 %                 handles = make_stim_out(handles);
                 handles.io_data = step_loop(handles);
-                handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
+                handles = process_and_wait(handles,str2double(get(handles.ITI,'String')));
             end
         else
             for loop_ind = 1:str2num(get(handles.loop_count,'String'))
                 handles.io_data = step_loop(handles);
-                handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
+                handles = process_and_wait(handles,str2double(get(handles.ITI,'String')));
                 if ~get(hObject,'Value')
                     break
                 end
@@ -135,7 +135,7 @@ switch handles.run_type
         if handles.protocol_loaded
             for i = 1:length(handles.protocol)
                 handles.io_data = io(handles.s,handles.protocol(i).output);
-                handles = process_plot_wait(handles,handles.protocol(i).intertrial_interval);
+                handles = process_and_wait(handles,handles.protocol(i).intertrial_interval);
                 if ~get(hObject,'Value')
                     break
                 end
@@ -147,8 +147,8 @@ switch handles.run_type
         if get(handles.use_seed,'Value')
             rng(ceil(str2double(handles.rng_seed,'String')));
         end
-        conditions = repmat(1:size(handles.data.stim_conds.cond_inds,1),1,str2double(get(handles.num_trials,'String')));
-        conditions = conditions(randperm(length(conditions)));
+        conditions = repmat(1:size(handles.data.stim_conds.cond_inds,1),1,str2double(get(handles.num_trials,'String')))
+        conditions = conditions(randperm(length(conditions)))
         
         for i = 1:length(conditions)
             
@@ -165,7 +165,7 @@ switch handles.run_type
             set(handles.run,'backgroundColor',start_color)
             guidata(handles.acq_gui,handles)
             
-            handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
+            handles = process_and_wait(handles,str2double(get(handles.ITI,'String')));
             
             if ~get(hObject,'Value')
                 break
@@ -183,14 +183,11 @@ handles = trial_length_Callback(handles.trial_length, [], handles);
 
 guidata(hObject,handles)
 
-function handles = process_plot_wait(handles,wait_time)
+function handles = process_and_wait(handles,wait_time)
 
 start_time = clock;
 set(handles.run,'String','Process')
 handles = process(handles);
-guidata(handles.acq_gui,handles) % needed?
-handles = plot_gui(handles);
-guidata(handles.acq_gui,handles) % needed?
 drawnow
 % PUT PLOT HERE! (take out of process.m)
 set(handles.run,'String','ITI')
@@ -226,7 +223,7 @@ handles.data.ch1_output=makepulseoutputs(handles.data.ch1.pulse_starttime,handle
 handles.data.ch2_output=makepulseoutputs(handles.data.ch2.pulse_starttime,handles.data.ch2.pulsenumber, handles.data.ch2.pulseduration, handles.data.ch2.pulseamp, handles.data.ch2.pulsefrequency, handles.defaults.Fs, trial_length);
 handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity;
 handles.data.ch2_output=handles.data.ch2_output/handles.defaults.CCexternalcommandsensitivity;
-[handles.data.testpulse, handles.data.timebase] = makepulseoutputs(handles.defaults.testpulse_start, 1, handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1, handles.defaults.Fs, trial_length);
+handles.data.testpulse = makepulseoutputs(handles.defaults.testpulse_start, 1, handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1, handles.defaults.Fs, trial_length);
 guidata(hObject,handles)
 
 handles = updateAOaxes(handles);
@@ -252,7 +249,7 @@ makeoutputs
 
 
 % --- Executes during object creation, after setting all properties.
-function Rs_axes_CreateFcn(hObject, eventdata, handles)
+function current_trial_axes_Rs_CreateFcn(hObject, eventdata, handles)
 
 
 
@@ -472,7 +469,7 @@ if (val4 == 1)
     ylimits = get(handles.sweep_display_axes, 'ylim');
 end
 
-val = get(handles.Highpass_cell1_check, 'Value'); % check for highpass filtering
+val = get(handles.Highpass_check, 'Value'); % check for highpass filtering
 
 if (value3==1)
     thissweep=handles.data.sweeps{handles.data.SetSweepNumber}; 
@@ -517,7 +514,7 @@ if (SetSweepNumber >= sweepcount(2)) % if trying to view traces that don't exist
     
 else
     
-val = get(handles.Highpass_cell1_check, 'Value');
+val = get(handles.Highpass_check, 'Value');
 
  
 handles.data.SetSweepNumber=handles.data.SetSweepNumber+1;
@@ -927,10 +924,10 @@ hold(handles.sweep_display_axes);
 function record_cell2_check_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of record_cell2_check
 
-% --- Executes on button press in Highpass_cell1_check.
-function Highpass_cell1_check_Callback(hObject, eventdata, handles)
+% --- Executes on button press in Highpass_check.
+function Highpass_check_Callback(hObject, eventdata, handles)
 
-% Hint: get(hObject,'Value') returns toggle state of Highpass_cell1_check
+% Hint: get(hObject,'Value') returns toggle state of Highpass_check
 
 
 function highpass_freq1_Callback(hObject, eventdata, handles)
@@ -1049,9 +1046,9 @@ loadname=handles.data.SaveName;
 load(loadname, 'handles.data.sweeps', 'handles.defaults', 'handles.data', 'LED', 'Ramp', 'cell1', 'cell2'); %, 'motor'); 
 % plot
 plot(handles.current_trial_axes,handles.data.timebase,handles.data.cell1sweep);
-plot(handles.Ih_axes,handles.data.ch1.holding_i,'o');
-plot(handles.Rs_axes,handles.data.ch1.series_r,'o');
-plot(handles.Whole_cell1_axes_Ir,handles.data.ch1.input_r,'o');
+plot(handles.current_trial_axes_Ih,handles.data.ch1.holding_i,'o');
+plot(handles.current_trial_axes_Rs,handles.data.ch1.series_r,'o');
+plot(handles.current_trial_axes_Ir,handles.data.ch1.input_r,'o');
 plot(handles.stim_axes,handles.data.timebase, handles.data.stim_output);
 plot(handles.CCoutput_axes,handles.data.timebase, handles.data.CCoutput1, handles.data.timebase, handles.data.CCoutput2);
 
@@ -1377,26 +1374,40 @@ else
     ylabel(handles.current_trial_axes,'mV')
 end
 
-
 xlabel(handles.current_trial_axes,'seconds')
-
-ylabel(handles.Rs_axes,'megaohm')
-
-ylabel(handles.Ih_axes,'Ihold')
-xlabel(handles.Ih_axes, 'minutes')
-xlabel(handles.stim_axes, 'seconds')
-if get(handles.use_lut,'value')
-    ylabel(handles.stim_axes, 'mW')
+val = get(handles.Highpass_check, 'Value'); % check for highpass filtering
+if (val == 1)
+    ylabel(handles.current_trial_axes_Rs,'spikerate')
 else
-    ylabel(handles.stim_axes, 'Volts')
+    ylabel(handles.current_trial_axes_Rs,'megaohm')
 end
+ylabel(handles.current_trial_axes_Ih,'Ihold')
+ylabel(handles.current_trial_axes_Ir,'Ri')
+xlabel(handles.current_trial_axes_Ir, 'minutes')
+xlabel(handles.Whole_cell2_axes_Ir, 'minutes')
+xlabel(handles.stim_axes, 'seconds')
+ylabel(handles.stim_axes, 'Volts')
 
 % compute total experiment time
 TotalExpTime = max(handles.data.trialtime)+0.001;
 
-xlim(handles.Rs_axes,[0 TotalExpTime*1.33])
-xlim(handles.Ih_axes,[0 TotalExpTime*1.33])
+xlim(handles.current_trial_axes_Rs,[0 TotalExpTime*1.33])
+xlim(handles.current_trial_axes_Ih,[0 TotalExpTime*1.33])
+xlim(handles.current_trial_axes_Ir,[0 TotalExpTime*1.33])
+xlim(handles.Whole_cell2_axes_Ih,[0 TotalExpTime*1.33])
+xlim(handles.Whole_cell2_axes_Ir,[0 TotalExpTime*1.33])
+xlim(handles.Whole_cell2_axes_Rs,[0 TotalExpTime*1.33])
 
+ylim(handles.current_trial_axes_Rs,[0 100])
+ylim(handles.current_trial_axes_Ih,[-1000 0])
+ylim(handles.current_trial_axes_Ir,[0 300])
+ylim(handles.Whole_cell2_axes_Rs,[0 70])
+ylim(handles.Whole_cell2_axes_Ih,[-1000 0])
+ylim(handles.Whole_cell2_axes_Ir,[0 300])
+
+    
+    
+    
 
 
 % --- Executes on button press in test_pulse.
@@ -1416,6 +1427,27 @@ else
     handles.data.testpulse = zeros(trial_duration*Fs,1);
 end
 
+
+function roi_tag_Callback(hObject, eventdata, handles)
+% hObject    handle to roi_tag (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of roi_tag as text
+%        str2double(get(hObject,'String')) returns contents of roi_tag as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function roi_tag_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to roi_tag (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 
 % --- Executes when selected object is changed in run_type.
@@ -1683,7 +1715,7 @@ for i = 1:length(amps)
                     else
                         amplitude = amps(i);
                     end
-                    [handles.data.stim_conds.stims(i,j,k,l,m,:), handles.data.timebase] =...
+                    handles.data.stim_conds.stims(i,j,k,l,m,:) =...
                         makepulseoutputs(starttimes(m),numpulses(k),...
                         durations(j), amplitude, freqs(l), handles.defaults.Fs, handles.defaults.trial_length);
                     handles.data.stim_conds.cond_inds(cond_count,:) = [i j k l m];
@@ -1844,13 +1876,13 @@ function checkbox32_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of checkbox32
 
 
-% --- Executes on button press in Highpass_cell2_check.
-function Highpass_cell2_check_Callback(hObject, eventdata, handles)
-% hObject    handle to Highpass_cell2_check (see GCBO)
+% --- Executes on button press in checkbox33.
+function checkbox33_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox33 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of Highpass_cell2_check
+% Hint: get(hObject,'Value') returns toggle state of checkbox33
 
 
 
