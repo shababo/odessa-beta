@@ -156,12 +156,14 @@ switch handles.run_type
             start_color = get(handles.run,'BackgroundColor');
             set(handles.run,'BackgroundColor',[1 0 0]);
             set(handles.run,'String','Acq...')
-            [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
             
             cond_ind = handles.data.stim_conds.cond_inds(conditions(i),:);
-
-            handles.io_data = io(handles.s,[AO0, AO1, squeeze(handles.data.stim_conds.stims(cond_ind(1),cond_ind(2),cond_ind(3),cond_ind(4),cond_ind(5),:)), AO3]);
-
+            handles.data.stim_output = squeeze(handles.data.stim_conds.stims(cond_ind(1),cond_ind(2),cond_ind(3),cond_ind(4),cond_ind(5),:));
+            
+            [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
+           
+            handles.io_data = io(handles.s,[AO0, AO1,AO2,AO3]);
+            handles.data.tmp.cond_ind = cond_ind;
             set(handles.run,'backgroundColor',start_color)
             guidata(handles.acq_gui,handles)
             
@@ -517,51 +519,51 @@ if (SetSweepNumber >= sweepcount(2)) % if trying to view traces that don't exist
     
 else
     
-val = get(handles.Highpass_cell1_check, 'Value');
+    val = get(handles.Highpass_cell1_check, 'Value');
 
- 
-handles.data.SetSweepNumber=handles.data.SetSweepNumber+1;
 
-value3 = get(handles.record_cell2_check, 'Value'); % check if dual whole cell
- set(handles.SetSweepNumber,'String',num2str(handles.data.SetSweepNumber));
-sweeppoints=size(handles.data.sweeps{handles.data.SetSweepNumber});
-tim=linspace(0,sweeppoints(:,1)/handles.defaults.Fs,sweeppoints(:,1));
+    handles.data.SetSweepNumber=handles.data.SetSweepNumber+1;
 
-val4 = get(handles.axes_hold_check, 'Value'); % check if dual whole cell
-% if checked get current axes limits
-if (val4 == 1)
-    xlimits = get(handles.sweep_display_axes,'xlim');
-    ylimits = get(handles.sweep_display_axes, 'ylim');
-end
+    value3 = get(handles.record_cell2_check, 'Value'); % check if dual whole cell
+     set(handles.SetSweepNumber,'String',num2str(handles.data.SetSweepNumber));
+    sweeppoints=size(handles.data.sweeps{handles.data.SetSweepNumber});
+    tim=linspace(0,sweeppoints(:,1)/handles.defaults.Fs,sweeppoints(:,1));
 
-if (value3==1)
-    thissweep=handles.data.sweeps{handles.data.SetSweepNumber}; 
-    thissweep1=thissweep(:,1);
-    thissweep1= smart_zero(thissweep1,handles);
-    thissweep2=thissweep(:,2);
-    thissweep2 = smart_zero(thissweep2,handles);
-    plot(handles.sweep_display_axes,tim, thissweep1, tim, thissweep2);
-else
-    thissweep=handles.data.sweeps{handles.data.SetSweepNumber}; 
-    thissweep=thissweep(:,1);
-    thissweep = smart_zero(thissweep,handles);
-%     thissweep=thissweep-mean(thissweep(1:20000));
-    if (val == 1)
-        thissweep=highpass_filter(thissweep); % if checked highpass filter
-    end  
-    plot(handles.sweep_display_axes,tim, thissweep); % if just single cell just plot cell1
-end
+    val4 = get(handles.axes_hold_check, 'Value'); % check if dual whole cell
+    % if checked get current axes limits
+    if (val4 == 1)
+        xlimits = get(handles.sweep_display_axes,'xlim');
+        ylimits = get(handles.sweep_display_axes, 'ylim');
+    end
 
-if val4 == 1 % if holding axes limits
-    xlim(handles.sweep_display_axes, [xlimits(1) xlimits(2)]);
-    ylim(handles.sweep_display_axes, [ylimits(1) ylimits(2)]);
-end
+    if (value3==1)
+        thissweep=handles.data.sweeps{handles.data.SetSweepNumber}; 
+        thissweep1=thissweep(:,1);
+        thissweep1= smart_zero(thissweep1,handles);
+        thissweep2=thissweep(:,2);
+        thissweep2 = smart_zero(thissweep2,handles);
+        plot(handles.sweep_display_axes,tim, thissweep1, tim, thissweep2);
+    else
+        thissweep=handles.data.sweeps{handles.data.SetSweepNumber}; 
+        thissweep=thissweep(:,1);
+        thissweep = smart_zero(thissweep,handles);
+    %     thissweep=thissweep-mean(thissweep(1:20000));
+        if (val == 1)
+            thissweep=highpass_filter(thissweep); % if checked highpass filter
+        end  
+        plot(handles.sweep_display_axes,tim, thissweep); % if just single cell just plot cell1
+    end
 
-xlabel(handles.sweep_display_axes, 'seconds')
-ylabel(handles.sweep_display_axes, 'pA')
-% set(handles.stimulus_num,'String',num2str(handles.data.motorstim(handles.data.SetSweepNumber)));
-% set(handles.stimulus_num,'String',num2str(handles.data.stimulus_sequence(handles.data.SetSweepNumber)));
-% set(handles.stimulus_num,'String',num2str(handles.data.VisStimSeq(handles.data.SetSweepNumber)));
+    if val4 == 1 % if holding axes limits
+        xlim(handles.sweep_display_axes, [xlimits(1) xlimits(2)]);
+        ylim(handles.sweep_display_axes, [ylimits(1) ylimits(2)]);
+    end
+
+    xlabel(handles.sweep_display_axes, 'seconds')
+    ylabel(handles.sweep_display_axes, 'pA')
+    % set(handles.stimulus_num,'String',num2str(handles.data.motorstim(handles.data.SetSweepNumber)));
+    % set(handles.stimulus_num,'String',num2str(handles.data.stimulus_sequence(handles.data.SetSweepNumber)));
+    % set(handles.stimulus_num,'String',num2str(handles.data.VisStimSeq(handles.data.SetSweepNumber)));
 end
 
 guidata(hObject,handles)
@@ -763,7 +765,11 @@ if (value3==1)
     thissweep=handles.data.sweeps{handles.data.SetSweepNumber}; 
     thissweep1=thissweep(:,1);
     thissweep1= smart_zero(thissweep1,handles);
-    thissweep2=thissweep(:,2);
+    if get(handles.use_LED,'Value')
+        thissweep2=thissweep(:,3);
+    else
+        thissweep2=thissweep(:,4);
+    end
     thissweep2 = smart_zero(thissweep2,handles);
     plot(handles.sweep_display_axes,tim, thissweep1, tim, thissweep2);
 else
@@ -771,6 +777,7 @@ else
     thissweep=thissweep(:,1);
     plot(handles.sweep_display_axes,tim, thissweep); % if just single cell just plot cell1
 end
+
 % set(handles.stimulus_num,'String',num2str(handles.data.stimulus_sequence(handles.data.SetSweepNumber)));
 
 if val4 == 1 % if holding axes limits
@@ -973,15 +980,15 @@ val = get(hObject,'Value');
 switch val
     case 1
         handles.data.ch1.user_gain=1;
-        ylabel(handles.current_trial_axes,'pA')
+%         ylabel(handles.current_trial_axes,'pA')
         handles.data.ch1.externalcommandsensitivity=20;
     case 2
         handles.data.ch1.user_gain=20;
-        ylabel(handles.current_trial_axes,'mV')
+%         ylabel(handles.current_trial_axes,'mV')
         handles.data.ch1.externalcommandsensitivity=400;
     case 3
         handles.data.ch1.user_gain=500;
-        ylabel(handles.current_trial_axes,'mV')
+%         ylabel(handles.current_trial_axes,'mV')
 end 
 % Hints: contents = cellstr(get(hObject,'String')) returns Cell1_type_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from Cell1_type_popup
@@ -1371,14 +1378,14 @@ end
 
 function labelaxes(handles)
 
-if (get(handles.Cell1_type_popup,'Value'))==1
-    ylabel(handles.current_trial_axes,'pA')
-else
-    ylabel(handles.current_trial_axes,'mV')
-end
+% if (get(handles.Cell1_type_popup,'Value'))==1
+%     ylabel(handles.current_trial_axes,'pA')
+% else
+%     ylabel(handles.current_trial_axes,'mV')
+% end
 
 
-xlabel(handles.current_trial_axes,'seconds')
+% xlabel(handles.current_trial_axes,'seconds')
 
 ylabel(handles.Rs_axes,'megaohm')
 
@@ -1866,6 +1873,78 @@ function edit78_Callback(hObject, eventdata, handles)
 % --- Executes during object creation, after setting all properties.
 function edit78_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to edit78 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function notes_Callback(hObject, eventdata, handles)
+% hObject    handle to notes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of notes as text
+%        str2double(get(hObject,'String')) returns contents of notes as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function notes_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to notes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function hologram_id_Callback(hObject, eventdata, handles)
+% hObject    handle to hologram_id (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of hologram_id as text
+%        str2double(get(hObject,'String')) returns contents of hologram_id as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function hologram_id_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to hologram_id (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function exp_notes_Callback(hObject, eventdata, handles)
+% hObject    handle to exp_notes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of exp_notes as text
+%        str2double(get(hObject,'String')) returns contents of exp_notes as a double
+
+handles.data.experiment_notes = get(hObject,'String');
+guidata(hObject,handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function exp_notes_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to exp_notes (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

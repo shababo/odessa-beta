@@ -1,16 +1,18 @@
 function labelaxes(handles)
 
-% get(handles.Cell1_type_popup,'Value');
-if (get(handles.Cell1_type_popup,'Value'))==1
-    if length(handles.current_trial_axes) > 1
-        this_axes = handles.current_trial_axes(2);
-    else
-        this_axes = handles.current_trial_axes(1);
-    end
-    ylabel(this_axes,'pA')
-else
-    ylabel(this_axes,'mV')
-end
+% % get(handles.Cell1_type_popup,'Value');
+% if (get(handles.Cell1_type_popup,'Value'))==1
+%     ylabel(handles.current_trial_axes(1),'pA')
+% else
+%     ylabel(handles.current_trial_axes(1),'mV')
+% end
+% 
+% if get(handles.use_lut,'Value') && length(handles.current_trial_axes > 1)
+%     ylabel(handles.current_trial_axes(2),'mW')
+% elseif ~get(handles.use_lut,'Value') && length(handles.current_trial_axes > 1)
+%     ylabel(handles.current_trial_axes(2),'V')
+% end
+    
 
 
 % xlabel(handles.Whole_cell1_axes,'seconds')

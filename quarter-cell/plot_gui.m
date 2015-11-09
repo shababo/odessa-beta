@@ -33,7 +33,13 @@ plot_cell2 = get(handles.record_cell2_check, 'Value');
 pulse_over_sample = (handles.defaults.testpulse_start + handles.defaults.testpulse_duration + .1)*handles.defaults.Fs;
 
 timebase = handles.data.timebase(pulse_over_sample:end);
-handles.current_trial_axes = plotyy(handles.current_trial_axes,timebase,handles.data.ch1sweep(pulse_over_sample:end),timebase,handles.data.stim_sweep(pulse_over_sample:end));
+
+stim_sweep = handles.data.stim_sweep(pulse_over_sample:end);
+if get(handles.use_lut,'Value')
+    stim_sweep = stim_sweep/max(stim_sweep)*handles.data.trial_metadata(end).pulseamp;
+end
+
+handles.current_trial_axes = plotyy(handles.current_trial_axes(1),timebase,stim_sweep,timebase,handles.data.ch1sweep(pulse_over_sample:end));
 set(handles.current_trial_axes,'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
 % assignin('base','timebase',handles.data.timebase)
 plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
