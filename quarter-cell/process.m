@@ -11,7 +11,7 @@ thissweep=handles.io_data;
 
 % scale units
 if strcmp(handles.defaults.AO0,'ch1_out')==1 
-    thissweep=thissweep*1000; % scale from nA to pA or Volts to mV
+    thissweep(:,1)=thissweep(:,1)*1000; % scale from nA to pA or Volts to mV
 end
 
 % scale by user gain for each channel
@@ -21,6 +21,50 @@ thissweep(:,2)=thissweep(:,2)/handles.data.ch2.user_gain;
 
 % store the handles.io_data in cell array 'handles.data.sweeps'
 handles.data.sweeps{sweep_counter}=thissweep;
+
+switch handles.run_type
+    case 'loop'
+        
+        if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
+            handles.data.trial_metadata(sweep_counter).amp_units = 'mW';
+        else
+            handles.data.trial_metadata(sweep_counter).amp_units = 'V';
+        end
+        
+        handles.data.trial_metadata(sweep_counter).pulseamp = handles.data.stimulation.pulseamp;
+        handles.data.trial_metadata(sweep_counter).pulseduration = handles.data.stimulation.pulseduration;
+        handles.data.trial_metadata(sweep_counter).pulsenumber = handles.data.stimulation.pulsenumber;
+        handles.data.trial_metadata(sweep_counter).pulsefrequency = handles.data.stimulation.pulsefrequency;
+        handles.data.trial_metadata(sweep_counter).pulse_starttime = handles.data.stimulation.pulse_starttime;
+        
+        
+    case 'conditions'
+        
+        if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
+            handles.data.trial_metadata(sweep_counter).amp_units = 'mW';
+        else
+            handles.data.trial_metadata(sweep_counter).amp_units = 'V';
+        end
+        
+        handles.data.trial_metadata(sweep_counter).pulseamp = handles.data.stim_conds.amps(handles.data.tmp.cond_ind(1));
+        handles.data.trial_metadata(sweep_counter).pulseduration = handles.data.stim_conds.durations(handles.data.tmp.cond_ind(2));
+        handles.data.trial_metadata(sweep_counter).pulsenumber = handles.data.stim_conds.numpulses(handles.data.tmp.cond_ind(3));
+        handles.data.trial_metadata(sweep_counter).pulsefrequency = handles.data.stim_conds.freqs(handles.data.tmp.cond_ind(4));
+        handles.data.trial_metadata(sweep_counter).pulse_starttime =handles.data.stim_conds.starttimes(handles.data.tmp.cond_ind(5));
+end
+        
+
+if get(handles.use_LED,'Value')
+    handles.data.trial_metadata(sweep_counter).stim_type = 'LED';
+    handles.data.trial_metadata(sweep_counter).hologram_id = 'N/A';
+else
+    handles.data.trial_metadata(sweep_counter).stim_type = '2P';
+    handles.data.trial_metadata(sweep_counter).hologram_id = get(handles.hologram_id,'String');
+end
+
+handles.data.trial_metadata(sweep_counter).note = get(handles.notes,'String');
+handles.data.trial_metadata(sweep_counter).lut_used = get(handles.use_lut,'Value');
+
 
 %% store the analog outputs, but downsample them
 handles.data.stims{sweep_counter}={downsample(stim_output,10), downsample(ch1_output,10), downsample(ch2_output,10)};
