@@ -3,7 +3,7 @@ function data = setup_input_output(data, defaults)
 % set initial values for the stimulation output here
 pulseamp=0; % in volts%
 %pulseamp=[0 0.2 .4 .6 .8 1 1.2 1.4]; % in volts
-pulseduration=.001; % in seconds
+pulseduration=.010; % in seconds
 %pulsenumber=8;
 pulsenumber=1;
 pulsefrequency=0.5; % in Hz

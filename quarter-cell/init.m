@@ -69,3 +69,4 @@ set(handles.trial_length,'String',num2str(handles.defaults.trial_length));
 set(handles.ITI,'String',num2str(handles.defaults.intertrial_interval));
 
 handles.protocol_loaded = 0;
+handles.run_count = 0;
