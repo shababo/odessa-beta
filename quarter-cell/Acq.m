@@ -109,7 +109,9 @@ function run_Callback(hObject, eventdata, handles)
 
 default_color = [0.8627    0.8627    0.8627]; % grey
 set(hObject,'BackgroundColor',[0 1 .5]);
-
+if get(hObject,'Value')
+    handles.run_count = handles.run_count + 1;
+end
 switch handles.run_type
     case 'loop'
         disp('looping...')
@@ -1953,3 +1955,264 @@ function exp_notes_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+
+function comnum_Callback(hObject, eventdata, handles)
+% hObject    handle to comnum (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of comnum as text
+%        str2double(get(hObject,'String')) returns contents of comnum as a double
+handles.comnumber=get(hObject,'String');%Get COM port number
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function comnum_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to comnum (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in connect.
+function connect_Callback(hObject, eventdata, handles)
+% hObject    handle to connect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.mpc200 = serial(strcat('COM',handles.comnumber),'BaudRate',128000,'Terminator','CR');
+fopen(handles.mpc200);
+handles.mpc200.Parity = 'none';
+set(handles.mpc200_status,'String','Connected to MPC-200/NOT Calib');
+qstring=sprintf('Connected to Sutter Instrument ROE. ROE must be calibrated to work properly.\n\nWould you like to calibrate now?');
+Cali=questdlg(qstring,'Calibration Required','Yes','Not now','Yes');
+switch Cali
+    case 'Yes'
+        fprintf(handles.mpc200,'%c','N');
+        set(handles.mpc200_status,'String','Connected to MPC-200/Calib');
+end
+getpos_Callback(handles.getpos, eventdata, handles)
+guidata(hObject, handles);
+
+% --- Executes on button press in getpos.
+function getpos_Callback(hObject, eventdata, handles)
+% hObject    handle to getpos (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[x,y,z]=getpos(handles.mpc200);
+set(handles.currentx,'String',num2str(x));
+set(handles.currenty,'String',num2str(y));
+set(handles.currentz,'String',num2str(z));
+guidata(hObject, handles);
+
+
+function setx_Callback(hObject, eventdata, handles)
+% hObject    handle to setx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of setx as text
+%        str2double(get(hObject,'String')) returns contents of setx as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function setx_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to setx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function sety_Callback(hObject, eventdata, handles)
+% hObject    handle to sety (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of sety as text
+%        str2double(get(hObject,'String')) returns contents of sety as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function sety_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sety (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function setz_Callback(hObject, eventdata, handles)
+% hObject    handle to setz (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of setz as text
+%        str2double(get(hObject,'String')) returns contents of setz as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function setz_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to setz (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in gotopos.
+function gotopos_Callback(hObject, eventdata, handles)
+% hObject    handle to gotopos (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.x=str2double(get(handles.setx,'String'));
+handles.y=str2double(get(handles.sety,'String'));
+handles.z=str2double(get(handles.setz,'String'));
+gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+guidata(hObject, handles);
+% now_time = clock;
+% elapse = clock - now_time;
+% while ~(handles.mpc200.BytesAvailable > 1) && elapse(4) < 1, elapse = clock - now_time, end
+pause(.5)
+getpos_Callback(handles.getpos, eventdata, handles)
+
+
+
+function transx_Callback(hObject, eventdata, handles)
+% hObject    handle to transx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of transx as text
+%        str2double(get(hObject,'String')) returns contents of transx as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function transx_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to transx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function transy_Callback(hObject, eventdata, handles)
+% hObject    handle to transy (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of transy as text
+%        str2double(get(hObject,'String')) returns contents of transy as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function transy_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to transy (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function transz_Callback(hObject, eventdata, handles)
+% hObject    handle to transz (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of transz as text
+%        str2double(get(hObject,'String')) returns contents of transz as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function transz_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to transz (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in translate.
+function translate_Callback(hObject, eventdata, handles)
+% hObject    handle to translate (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ 
+[curr_x,curr_y,curr_z]=getpos(handles.mpc200);
+trans_x=str2double(get(handles.transx,'String'));
+trans_y=str2double(get(handles.transy,'String'));
+trans_z=str2double(get(handles.transz,'String'));
+new_x = curr_x + trans_x;
+new_y = curr_y + trans_y;
+new_z = curr_z + trans_z;
+gotopos(handles.mpc200, new_x, new_y, new_z);
+guidata(hObject, handles);
+pause(0.1);
+getpos_Callback(handles.getpos, eventdata, handles)
+
+
+
+% --- Executes on button press in calibrate.
+function calibrate_Callback(hObject, eventdata, handles)
+% hObject    handle to calibrate (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+fprintf(handles.mpc200,'%c','N');
+set(handles.mpc200_status,'String','Connected to MPC-200/Calib');
+pause(0.1);
+getpos_Callback(handles.getpos, eventdata, handles)
+guidata(hObject,handles)
+
+
+% --- Executes on button press in spatial_conds.
+function spatial_conds_Callback(hObject, eventdata, handles)
+% hObject    handle to spatial_conds (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of spatial_conds
+
+
+% --- Executes on button press in disconnect.
+function disconnect_Callback(hObject, eventdata, handles)
+% hObject    handle to disconnect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+fclose(handles.mpc200)

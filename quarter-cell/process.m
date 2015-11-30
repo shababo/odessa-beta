@@ -64,6 +64,15 @@ end
 
 handles.data.trial_metadata(sweep_counter).note = get(handles.notes,'String');
 handles.data.trial_metadata(sweep_counter).lut_used = get(handles.use_lut,'Value');
+handles.data.trial_metadata(sweep_counter).run_count = handles.run_count;
+
+clamp_mode = get(handles.Cell1_type_popup,'Value');
+switch clamp_mode
+    case 1
+        handles.data.trial_metadata(sweep_counter).clamp_type = 'voltage-clamp';
+    case 2
+        handles.data.trial_metadata(sweep_counter).clamp_type = 'current-clamp';
+end
 
 
 %% store the analog outputs, but downsample them
