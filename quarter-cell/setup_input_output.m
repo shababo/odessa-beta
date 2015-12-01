@@ -3,7 +3,7 @@ function data = setup_input_output(data, defaults)
 % set initial values for the stimulation output here
 pulseamp=0; % in volts%
 %pulseamp=[0 0.2 .4 .6 .8 1 1.2 1.4]; % in volts
-pulseduration=.001; % in seconds
+pulseduration=.010; % in seconds
 %pulsenumber=8;
 pulsenumber=1;
 pulsefrequency=0.5; % in Hz
@@ -18,10 +18,10 @@ data.testpulse = makepulseoutputs(defaults.testpulse_start, 1, defaults.testpuls
 
 % setup current injection params for cell1
 ccpulseamp1=0;
-ccpulse_dur1=0.500;
+ccpulse_dur1=0.300;
 ccnumpulses1=1;
 ccpulsefreq1=0.5;
-ccpulsestarttime1=0.200;
+ccpulsestarttime1=0.300;
 deltacurrentpulseamp1=100;
 ch1_output=makepulseoutputs(ccpulsestarttime1,ccnumpulses1, ccpulse_dur1, ccpulseamp1, ccpulsefreq1, defaults.Fs, defaults.trial_length);
 data.ch1_output=ch1_output/defaults.CCexternalcommandsensitivity; % scale by externalcommand sensitivity under Current clamp
@@ -42,7 +42,6 @@ highpass_freq2=500;
 series_r1=[];
 holding_i1=[];
 input_r1=[];
-spikerate1=[];
 
 series_r2=[];
 holding_i2=[];
