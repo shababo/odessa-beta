@@ -147,12 +147,11 @@ switch handles.run_type
         if get(handles.use_seed,'Value')
             rng(ceil(str2double(handles.rng_seed,'String')));
         end
-        conditions = repmat(1:size(handles.data.stim_conds.cond_inds,1),1,str2double(get(handles.num_trials,'String')))
-        conditions = conditions(randperm(length(conditions)))
+        conditions = repmat(1:size(handles.data.stim_conds.cond_inds,1),1,str2double(get(handles.num_trials,'String')));
+        conditions = conditions(randperm(length(conditions)));
         
         for i = 1:length(conditions)
             
-            conditions(i)
             start_color = get(handles.run,'BackgroundColor');
             set(handles.run,'BackgroundColor',[1 0 0]);
             set(handles.run,'String','Acq...')
