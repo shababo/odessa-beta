@@ -1,6 +1,8 @@
 function handles = init(handles)
 
 handles.run_type = handles.defaults.run_type;
+
+
 switch handles.run_type
     case 'loop'
         set(handles.loop,'Value',1)
@@ -18,6 +20,16 @@ switch handles.stim_type
     case '2P'
         set(handles.use_LED,'Value',0)
         set(handles.use_2P,'Value',1)
+end
+
+handles.saptial_layout = handles.defaults.spatial_layout;
+switch handles.saptial_layout
+    case 'circles'
+        set(handles.circles,'Value',1)
+        set(handles.grid,'Value',0)
+    case 'grid'
+        set(handles.circles,'Value',0)
+        set(handles.grid,'Value',1)
 end
 
 set(handles.current_sweep_number,'String',num2str(handles.data.sweep_counter));
