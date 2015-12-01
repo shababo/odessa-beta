@@ -1,6 +1,5 @@
 
- 
-function handles = analyze_series_r(handles)
+function handles = analyze_seal(handles)
 % function [series_r holding_i input_r] = analyze_series_r ()
 
 ch1sweep=handles.data.ch1sweep; ch2sweep=handles.data.ch2sweep;

@@ -10,6 +10,16 @@ switch handles.run_type
         set(handles.sequence,'Value',1)
 end
 
+handles.stim_type = handles.defaults.stim_type;
+switch handles.stim_type
+    case 'LED'
+        set(handles.use_LED,'Value',1)
+        set(handles.use_2P,'Value',0)
+    case '2P'
+        set(handles.use_LED,'Value',0)
+        set(handles.use_2P,'Value',1)
+end
+
 set(handles.current_sweep_number,'String',num2str(handles.data.sweep_counter));
 
 set(handles.ExperimentName,'String',handles.data.experiment_name);
@@ -59,3 +69,4 @@ set(handles.trial_length,'String',num2str(handles.defaults.trial_length));
 set(handles.ITI,'String',num2str(handles.defaults.intertrial_interval));
 
 handles.protocol_loaded = 0;
+handles.run_count = 0;
