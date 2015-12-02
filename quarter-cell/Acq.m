@@ -115,6 +115,8 @@ end
 switch handles.run_type
     case 'loop'
         disp('looping...')
+        [x,y,z] = getpos(handles.mpc200);
+        handles.data.obj_position = [x y z];
         if get(handles.loop_forever,'Value')
             while get(hObject,'Value')
 %                 handles = make_stim_out(handles);
@@ -134,6 +136,8 @@ switch handles.run_type
     case 'sequence'
         disp('sequencing...')
         %run sequence
+        [x,y,z] = getpos(handles.mpc200);
+        handles.data.obj_position = [x y z];
         if handles.protocol_loaded
             for i = 1:length(handles.protocol)
                 handles.io_data = io(handles.s,handles.protocol(i).output);
@@ -152,6 +156,8 @@ switch handles.run_type
         conditions = repmat(1:size(handles.data.stim_conds.cond_inds,1),1,str2double(get(handles.num_trials,'String')));
         conditions = conditions(randperm(length(conditions)));
         
+        [start_pos_x, start_pos_y,start_pos_z] = getpos(handles.mpc200);
+        start_pos = [start_pos_x start_pos_y];
         for i = 1:length(conditions)
             
             start_color = get(handles.run,'BackgroundColor');
@@ -160,6 +166,12 @@ switch handles.run_type
             
             cond_ind = handles.data.stim_conds.cond_inds(conditions(i),:);
             handles.data.stim_output = squeeze(handles.data.stim_conds.stims(cond_ind(1),cond_ind(2),cond_ind(3),cond_ind(4),cond_ind(5),:));
+            handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos start_pos_z];
+            
+            if i == 1
+                gotopos(handles.mpc200, handles.data.obj_position(1), handles.data.obj_position(2), handles.data.obj_position(3));
+                pause(.5)
+            end
             
             [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
            
@@ -168,6 +180,12 @@ switch handles.run_type
             set(handles.run,'backgroundColor',start_color)
             guidata(handles.acq_gui,handles)
             
+            if i < length(conditions)
+                cond_ind = handles.data.stim_conds.cond_inds(conditions(i+1),:);
+                tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos start_pos_z];
+                gotopos(handles.mpc200, tmp_obj_position(1), tmp_obj_position(2), tmp_obj_position(3));
+            end
+            
             handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
             
             if ~get(hObject,'Value')
@@ -175,6 +193,7 @@ switch handles.run_type
             end
         end
         set(hObject,'Value',0)
+        gotopos(handles.mpc200,start_pos(1), start_pos(2),start_pos_z)
         
 end
         
@@ -988,8 +1007,9 @@ switch val
 %         ylabel(handles.current_trial_axes,'mV')
         handles.data.ch1.externalcommandsensitivity=400;
     case 3
-        handles.data.ch1.user_gain=500;
+        handles.data.ch1.user_gain=1;
 %         ylabel(handles.current_trial_axes,'mV')
+        handles.data.ch1.externalcommandsensitivity=20;
 end 
 % Hints: contents = cellstr(get(hObject,'String')) returns Cell1_type_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from Cell1_type_popup
@@ -1673,8 +1693,49 @@ numpulses = strread(get(handles.numpulse_conditions,'String'));
 freqs = strread(get(handles.freq_conditions,'String'));
 starttimes = strread(get(handles.starttime_conditions,'String'));
 
+if get(handles.use_obj_spatial,'Value')
+    disp(handles.spatial_layout)
+    switch handles.spatial_layout
+        case 'grid'
+
+            % code me up, yo!
+
+
+        case 'circles'
+
+            radii_step = str2num(get(handles.radii_step,'String')); % in micrometers
+            num_circles = str2num(get(handles.num_circles,'String'));
+            points_per_circle = str2num(get(handles.points_per_circle,'String'));
+
+            relative_target_pos_base = zeros(points_per_circle,2);
+            relative_target_pos_base(1,:) = [radii_step 0];
+
+            theta = 2 * pi / points_per_circle;
+            rotation_matrix = [cos(theta) -sin(theta); sin(theta) cos(theta)];
+
+            for i = 2:points_per_circle
+
+                relative_target_pos_base(i,:) = round(relative_target_pos_base(i-1,:)*rotation_matrix');
+
+            end
+
+            num_targets = 1+points_per_circle*num_circles;
+
+            relative_target_pos = zeros(num_targets,2);
+            for i = 1:num_circles
+                relative_target_pos((i-1)*points_per_circle+2:i*points_per_circle+1,:) = i*relative_target_pos_base;
+            end
+
+            handles.data.stim_conds.relative_target_pos = relative_target_pos;
+
+    end
+else
+    handles.data.stim_conds.relative_target_pos = [0 0];
+    num_targets = 1;
+end
+
 handles.data.stim_conds.stims = zeros(length(amps),length(durations),length(numpulses),length(freqs),length(starttimes),handles.defaults.Fs * handles.defaults.trial_length);
-handles.data.stim_conds.cond_inds = zeros(length(amps)*length(durations)*length(numpulses)*length(freqs)*length(starttimes),5);
+handles.data.stim_conds.cond_inds = zeros(length(amps)*length(durations)*length(numpulses)*length(freqs)*length(starttimes)*num_targets,6);
 
 cond_count = 1;
 for i = 1:length(amps)
@@ -1694,8 +1755,10 @@ for i = 1:length(amps)
                     [handles.data.stim_conds.stims(i,j,k,l,m,:), handles.data.timebase] =...
                         makepulseoutputs(starttimes(m),numpulses(k),...
                         durations(j), amplitude, freqs(l), handles.defaults.Fs, handles.defaults.trial_length);
-                    handles.data.stim_conds.cond_inds(cond_count,:) = [i j k l m];
-                    cond_count = cond_count + 1;
+                    for n = 1:num_targets
+                        handles.data.stim_conds.cond_inds(cond_count,:) = [i j k l m n];
+                        cond_count = cond_count + 1;
+                    end
                 end
             end
         end
@@ -1707,6 +1770,8 @@ handles.data.stim_conds.durations = durations;
 handles.data.stim_conds.numpulses = numpulses;
 handles.data.stim_conds.freqs = freqs;
 handles.data.stim_conds.starttimes = starttimes;
+
+
 
 guidata(hObject,handles)
 
@@ -1997,7 +2062,7 @@ switch Cali
         fprintf(handles.mpc200,'%c','N');
         set(handles.mpc200_status,'String','Connected to MPC-200/Calib');
 end
-getpos_Callback(handles.getpos, eventdata, handles)
+% getpos_Callback(handles.getpos, eventdata, handles)
 guidata(hObject, handles);
 
 % --- Executes on button press in getpos.
@@ -2094,8 +2159,8 @@ guidata(hObject, handles);
 % now_time = clock;
 % elapse = clock - now_time;
 % while ~(handles.mpc200.BytesAvailable > 1) && elapse(4) < 1, elapse = clock - now_time, end
-pause(.5)
-getpos_Callback(handles.getpos, eventdata, handles)
+% pause(.5)
+% getpos_Callback(handles.getpos, eventdata, handles)
 
 
 
@@ -2182,8 +2247,8 @@ new_y = curr_y + trans_y;
 new_z = curr_z + trans_z;
 gotopos(handles.mpc200, new_x, new_y, new_z);
 guidata(hObject, handles);
-pause(0.1);
-getpos_Callback(handles.getpos, eventdata, handles)
+% pause(0.1);
+% getpos_Callback(handles.getpos, eventdata, handles)
 
 
 
@@ -2195,18 +2260,18 @@ function calibrate_Callback(hObject, eventdata, handles)
 
 fprintf(handles.mpc200,'%c','N');
 set(handles.mpc200_status,'String','Connected to MPC-200/Calib');
-pause(0.1);
-getpos_Callback(handles.getpos, eventdata, handles)
+% pause(0.1);
+% getpos_Callback(handles.getpos, eventdata, handles)
 guidata(hObject,handles)
 
 
-% --- Executes on button press in spatial_conds.
-function spatial_conds_Callback(hObject, eventdata, handles)
-% hObject    handle to spatial_conds (see GCBO)
+% --- Executes on button press in use_obj_spatial.
+function use_obj_spatial_Callback(hObject, eventdata, handles)
+% hObject    handle to use_obj_spatial (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of spatial_conds
+% Hint: get(hObject,'Value') returns toggle state of use_obj_spatial
 
 
 % --- Executes on button press in disconnect.
@@ -2214,7 +2279,7 @@ function disconnect_Callback(hObject, eventdata, handles)
 % hObject    handle to disconnect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-fclose(handles.mpc200)
+fclose(instrfind)
 
 
 
@@ -2241,18 +2306,18 @@ end
 
 
 
-function edit93_Callback(hObject, eventdata, handles)
-% hObject    handle to edit93 (see GCBO)
+function radii_step_Callback(hObject, eventdata, handles)
+% hObject    handle to radii_step (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit93 as text
-%        str2double(get(hObject,'String')) returns contents of edit93 as a double
+% Hints: get(hObject,'String') returns contents of radii_step as text
+%        str2double(get(hObject,'String')) returns contents of radii_step as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit93_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit93 (see GCBO)
+function radii_step_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to radii_step (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -2356,18 +2421,18 @@ end
 
 
 
-function edit98_Callback(hObject, eventdata, handles)
-% hObject    handle to edit98 (see GCBO)
+function points_per_circle_Callback(hObject, eventdata, handles)
+% hObject    handle to points_per_circle (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit98 as text
-%        str2double(get(hObject,'String')) returns contents of edit98 as a double
+% Hints: get(hObject,'String') returns contents of points_per_circle as text
+%        str2double(get(hObject,'String')) returns contents of points_per_circle as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit98_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit98 (see GCBO)
+function points_per_circle_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to points_per_circle (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -2379,18 +2444,18 @@ end
 
 
 
-function edit99_Callback(hObject, eventdata, handles)
-% hObject    handle to edit99 (see GCBO)
+function num_circles_Callback(hObject, eventdata, handles)
+% hObject    handle to num_circles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit99 as text
-%        str2double(get(hObject,'String')) returns contents of edit99 as a double
+% Hints: get(hObject,'String') returns contents of num_circles as text
+%        str2double(get(hObject,'String')) returns contents of num_circles as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit99_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit99 (see GCBO)
+function num_circles_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to num_circles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -2409,3 +2474,18 @@ function spatial_layout_SelectionChangedFcn(hObject, eventdata, handles)
 
 handles.spatial_layout = get(eventdata.NewValue,'Tag')
 guidata(hObject,handles);
+
+
+% --- Executes on button press in set_cell_pos.
+function set_cell_pos_Callback(hObject, eventdata, handles)
+% hObject    handle to set_cell_pos (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[x,y,z]=getpos(handles.mpc200);
+handles.data.cell_pos = [x y z];
+set(handles.cell_x,'String',num2str(x));
+set(handles.cell_y,'String',num2str(y));
+set(handles.cell_z,'String',num2str(z));
+guidata(hObject, handles);
+
