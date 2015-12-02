@@ -72,8 +72,16 @@ switch clamp_mode
         handles.data.trial_metadata(sweep_counter).clamp_type = 'voltage-clamp';
     case 2
         handles.data.trial_metadata(sweep_counter).clamp_type = 'current-clamp';
+    case 3
+        handles.data.trial_metadata(sweep_counter).clamp_type = 'cell-attached';
 end
 
+handles.data.trial_metadata(sweep_counter).obj_position = handles.data.obj_position;
+if isfield(handles.data,'cell_pos')
+    handles.data.trial_metadata(sweep_counter).cell_position = handles.data.cell_pos;
+else
+    handles.data.trial_metadata(sweep_counter).cell_position = NaN;
+end
 
 %% store the analog outputs, but downsample them
 handles.data.stims{sweep_counter}={downsample(stim_output,10), downsample(ch1_output,10), downsample(ch2_output,10)};

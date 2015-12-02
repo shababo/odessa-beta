@@ -67,7 +67,7 @@ trialtime = 0;
 
 running = [];
 
-spatial_layout = 'circle';
+spatial_layout = 'circles';
 
 defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', intertrial_interval, 'daqModel', device.Model, ...
     'total_sweeps', total_sweeps, 'amplifier', amplifier, ...

@@ -2,7 +2,6 @@ function handles = init(handles)
 
 handles.run_type = handles.defaults.run_type;
 
-
 switch handles.run_type
     case 'loop'
         set(handles.loop,'Value',1)

@@ -14,7 +14,7 @@ cell2_vc = get(handles.Cell2_type_popup,'Value');
 % set analog outputs to appropriate arrays based on values in Rig
 % Defaults set in setup_structs
 if (strcmp(handles.defaults.AO0,'ch1_out')==1) % if whole cell1 on AO0
-    if  cell1_vc==1 % if voltage clamp
+    if  cell1_vc==1 || cell1_vc ==3 % if voltage clamp
         AO0=testpulse;
     else          % if currentclamp
         AO0=ch1_output;
