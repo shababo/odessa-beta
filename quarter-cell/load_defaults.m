@@ -41,7 +41,7 @@ AO1 = 'ch2_out';
 AO2 = 'LED';
 AO3 = '2P';
 
-stim_type = 'LED';
+stim_type = '2P';
 
 testpulse_start = .050;
 testpulse_duration = .050;
@@ -67,7 +67,10 @@ trialtime = 0;
 
 running = [];
 
-spatial_layout = 'circles';
+spatial_layout = 'grid';
+
+lut_file = 'C:\data\Shababo\lut_012616_roi1_2p.mat';
+comnum = 9;
 
 defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', intertrial_interval, 'daqModel', device.Model, ...
     'total_sweeps', total_sweeps, 'amplifier', amplifier, ...
@@ -75,7 +78,7 @@ defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', i
     CCexternalcommandsensitivity, 'ifsave', ifsave, ...
     'AO0', AO0, 'AO1', AO1, 'AO2', AO2,'AO3',AO3,'run_type',run_type,...
     'testpulse_start',testpulse_start,'testpulse_duration',testpulse_duration,'testpulse_amp',testpulse_amp,'stim_type',stim_type,...
-    'spatial_layout',spatial_layout);
+    'spatial_layout',spatial_layout,'lut_file',lut_file,'comnum',comnum);
 data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', exp_name, 'stimulation', stimulation,...
     'save_name', save_name, 'save_path', save_path, 'experiment_name', experiment_name, 'SetSweepNumber', SetSweepNumber, 'ch1sweep', ch1sweep, 'ch2sweep', ch2sweep, ...
      'stims', stims, 'sweep_counter', sweep_counter, 'testpulse', testpulse, ...

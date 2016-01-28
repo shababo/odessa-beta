@@ -20,6 +20,9 @@ mins = num2str(mins);
  end
 current_sweep_time = strcat(mins,':', secs);
 
+set(handles.current_sweep_number,'String',num2str(handles.data.sweep_counter));
+set(handles.current_run_number,'String',num2str(handles.run_count));
+
 %% increment sweep counter
 handles.data.sweep_counter=handles.data.sweep_counter+1; 
 
@@ -30,8 +33,11 @@ plot_cell2 = get(handles.record_cell2_check, 'Value');
 
 
 %% plot the handles.io_data on the corresponding axes in the GUI figure
-pulse_over_sample = (handles.defaults.testpulse_start + handles.defaults.testpulse_duration + .1)*handles.defaults.Fs;
-
+if get(handles.test_pulse,'Value')
+    pulse_over_sample = (handles.defaults.testpulse_start + handles.defaults.testpulse_duration + .1)*handles.defaults.Fs;
+else
+    pulse_over_sample = 1;
+end
 timebase = handles.data.timebase(pulse_over_sample:end);
 
 stim_sweep = handles.data.stim_sweep(pulse_over_sample:end);
@@ -44,13 +50,13 @@ set(handles.current_trial_axes,'xlim',[handles.data.timebase(pulse_over_sample) 
 % assignin('base','timebase',handles.data.timebase)
 plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
 
-plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'o-');
+%plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'o-');
 % axis tight
 
-plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch1.series_r,'o-');
+%plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch1.series_r,'o-');
 % axis tight
 
-plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'o-')
+%plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'o-')
 % axis tight
 
 %% keep cursor lines on if checked % comment out to prevent cursur update

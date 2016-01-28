@@ -79,13 +79,23 @@ end
 handles.data.trial_metadata(sweep_counter).obj_position = handles.data.obj_position;
 if isfield(handles.data,'cell_pos')
     handles.data.trial_metadata(sweep_counter).cell_position = handles.data.cell_pos;
+    handles.data.trial_metadata(sweep_counter).relative_position = handles.data.obj_position - handles.data.cell_pos;
 else
     handles.data.trial_metadata(sweep_counter).cell_position = NaN;
+    handles.data.trial_metadata(sweep_counter).relative_position = NaN;
+end
+
+if isfield(handles.data,'start_pos')
+    handles.data.trial_metadata(sweep_counter).start_position = handles.data.start_pos;
+    handles.data.trial_metadata(sweep_counter).relative_to_start_position = handles.data.obj_position - handles.data.start_pos;
+else
+    handles.data.trial_metadata(sweep_counter).start_position = NaN;
+    handles.data.trial_metadata(sweep_counter).relative_to_start_position = NaN;
 end
 
 %% store the analog outputs, but downsample them
 handles.data.stims{sweep_counter}={downsample(stim_output,10), downsample(ch1_output,10), downsample(ch2_output,10)};
-set(handles.current_sweep_number,'String',num2str(sweep_counter));
+
 handles.data.ch1sweep=thissweep(:,1);
 handles.data.ch2sweep=thissweep(:,2);
 if get(handles.use_LED,'Value')
@@ -105,7 +115,7 @@ end
 
 %%
 %after handles.io_data collection analzye inputs for series_r and other properties
-handles = analyze_series_r(handles);
+%handles = analyze_series_r(handles);
 
 %% stores absolute time when first sweep is taken
 if handles.data.sweep_counter == 1
