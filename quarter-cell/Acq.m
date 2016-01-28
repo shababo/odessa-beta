@@ -157,7 +157,8 @@ switch handles.run_type
         conditions = conditions(randperm(length(conditions)));
         
         [start_pos_x, start_pos_y,start_pos_z] = getpos(handles.mpc200);
-        start_pos = [start_pos_x start_pos_y];
+        start_pos = [start_pos_x start_pos_y start_pos_z];
+        handles.data.start_pos = start_pos;
         for i = 1:length(conditions)
             
             start_color = get(handles.run,'BackgroundColor');
@@ -166,7 +167,7 @@ switch handles.run_type
             
             cond_ind = handles.data.stim_conds.cond_inds(conditions(i),:);
             handles.data.stim_output = squeeze(handles.data.stim_conds.stims(cond_ind(1),cond_ind(2),cond_ind(3),cond_ind(4),cond_ind(5),:));
-            handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos start_pos_z];
+            handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
             
             if i == 1
                 gotopos(handles.mpc200, handles.data.obj_position(1), handles.data.obj_position(2), handles.data.obj_position(3));
@@ -174,15 +175,18 @@ switch handles.run_type
             end
             
             [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
-           
+            start_time = clock;
+            wait_time = str2double(get(handles.trial_length,'String'));
             handles.io_data = io(handles.s,[AO0, AO1,AO2,AO3]);
+%             while etime(clock, start_time) < wait_time
+%             end
             handles.data.tmp.cond_ind = cond_ind;
             set(handles.run,'backgroundColor',start_color)
             guidata(handles.acq_gui,handles)
             
             if i < length(conditions)
                 cond_ind = handles.data.stim_conds.cond_inds(conditions(i+1),:);
-                tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos start_pos_z];
+                tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
                 gotopos(handles.mpc200, tmp_obj_position(1), tmp_obj_position(2), tmp_obj_position(3));
             end
             
@@ -193,9 +197,11 @@ switch handles.run_type
             end
         end
         set(hObject,'Value',0)
-        gotopos(handles.mpc200,start_pos(1), start_pos(2),start_pos_z)
+        gotopos(handles.mpc200,start_pos(1), start_pos(2),start_pos(3))
+    end
         
-end
+        
+
         
 set(hObject,'String','Start');
 set(hObject,'BackgroundColor',default_color);
@@ -1435,13 +1441,13 @@ function test_pulse_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of test_pulse
 
-trial_duration = num2str(get(handles.trial_length,'String'));
+trial_duration = str2double(get(handles.trial_length,'String'));
 
 if get(hObject,'Value')
     handles.data.testpulse = ...
         makepulseoutputs(handles.defaults.testpulse_start, 1, handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1, handles.defaults.Fs, trial_duration);
 else
-    handles.data.testpulse = zeros(trial_duration*Fs,1);
+    handles.data.testpulse = zeros(trial_duration*handles.defaults.Fs,1);
 end
 
 
@@ -1699,7 +1705,47 @@ if get(handles.use_obj_spatial,'Value')
         case 'grid'
 
             % code me up, yo!
-
+            spacing = str2num(get(handles.grid_spacing,'String'));
+            x_min = str2num(get(handles.x_obj_min,'String'));
+            x_max = str2num(get(handles.x_obj_max,'String'));
+            y_min = str2num(get(handles.y_obj_min,'String'));
+            y_max = str2num(get(handles.y_obj_max,'String'));
+            z_min = str2num(get(handles.z_obj_min,'String'));
+            z_max = str2num(get(handles.z_obj_max,'String'));
+            
+            x_range = x_max - x_min;
+            y_range = y_max - y_min;
+            z_range = z_max - z_min;
+            
+            x_points = floor(x_range/spacing) + 1;
+            y_points = floor(y_range/spacing) + 1;
+            z_points = floor(z_range/spacing) + 1;
+            
+            num_targets = x_points*y_points*z_points;
+%             relative_target_pos = zeros(0,3);
+            
+            protect_range = str2double(get(handles.protection_range,'String'));
+            count = 1;
+            for i = 1:x_points
+                for j = 1:y_points
+                    for k = 1:z_points
+                        relative_pos = [x_min + spacing*(i-1) y_min + spacing*(j-1) z_min + spacing*(k-1)]
+                        if (get(handles.protect_cell,'Value') && ~all(abs(relative_pos) <= protect_range))...
+                                || ~get(handles.protect_cell,'Value') 
+                            disp('adding target')
+                            relative_pos
+                            relative_target_pos(count,:) = relative_pos;
+                            count = count + 1;
+                        else
+                            'boo'
+                        end  
+                    end
+                end
+            end
+            num_targets = size(relative_target_pos,1)
+            
+            assignin('base','positions',relative_target_pos)
+            handles.data.stim_conds.relative_target_pos = relative_target_pos;
 
         case 'circles'
 
@@ -1707,30 +1753,62 @@ if get(handles.use_obj_spatial,'Value')
             num_circles = str2num(get(handles.num_circles,'String'));
             points_per_circle = str2num(get(handles.points_per_circle,'String'));
 
-            relative_target_pos_base = zeros(points_per_circle,2);
-            relative_target_pos_base(1,:) = [radii_step 0];
+            relative_target_pos_base = zeros(points_per_circle,3);
+            relative_target_pos_base(1,:) = [radii_step 0 0];
 
             theta = 2 * pi / points_per_circle;
-            rotation_matrix = [cos(theta) -sin(theta); sin(theta) cos(theta)];
+            rotation_matrix = [cos(theta) -sin(theta) 0; sin(theta) cos(theta) 0; 0 0 0];
 
             for i = 2:points_per_circle
 
                 relative_target_pos_base(i,:) = round(relative_target_pos_base(i-1,:)*rotation_matrix');
 
             end
+            
+            if get(handles.do_circle_z,'Value')
+                
+%                 z_min = str2num(get(handles.z_obj_circles_min,'String'));
+%                 z_max = str2num(get(handles.z_obj_circles_max,'String'));
 
-            num_targets = 1+points_per_circle*num_circles;
+%                 z_range = z_max - z_min;
+%                 z_points = floor(z_range/radii_step) + 1;
+                z_points = num_circles*2 + 1;
+                z_min = -radii_step*num_circles;
+%                 num_targets = z_points*(1+points_per_circle*num_circles);
+                num_targets = points_per_circle*num_circles+z_points;
+                relative_target_pos = zeros(num_targets,3);
+%                 for i = 1:num_circles
+%                     for j = 1:z_points
+%                         relative_target_pos((i-1)*points_per_circle+2:i*points_per_circle+1,:) = [i*relative_target_pos_base z_min + radii_step*(j-1)];
+%                     end
+%                 end
+                for i = 1:num_circles
+                    relative_target_pos((i-1)*points_per_circle+1:i*points_per_circle,:) = i*relative_target_pos_base;
+                end
+                count = 1;
+                for i = points_per_circle*num_circles+1:points_per_circle*num_circles+z_points
+                    relative_target_pos(i,:) = [0 0 z_min + radii_step*(count-1)];
+                    count = count + 1;
+                end
 
-            relative_target_pos = zeros(num_targets,2);
-            for i = 1:num_circles
-                relative_target_pos((i-1)*points_per_circle+2:i*points_per_circle+1,:) = i*relative_target_pos_base;
+                handles.data.stim_conds.relative_target_pos = relative_target_pos;
+                
+            else
+
+                num_targets = 1+points_per_circle*num_circles;
+
+                relative_target_pos = zeros(num_targets,3);
+                for i = 1:num_circles
+                    relative_target_pos((i-1)*points_per_circle+2:i*points_per_circle+1,:) = i*relative_target_pos_base;
+                end
+
+                handles.data.stim_conds.relative_target_pos = relative_target_pos;
             end
-
-            handles.data.stim_conds.relative_target_pos = relative_target_pos;
-
+            assignin('base','relative_target_pos',relative_target_pos)
     end
 else
-    handles.data.stim_conds.relative_target_pos = [0 0];
+    disp('no spatial')
+    handles.data.stim_conds.relative_target_pos = [0 0 0];
     num_targets = 1;
 end
 
@@ -2489,3 +2567,90 @@ set(handles.cell_y,'String',num2str(y));
 set(handles.cell_z,'String',num2str(z));
 guidata(hObject, handles);
 
+
+
+
+function z_obj_min_Callback(hObject, eventdata, handles)
+% hObject    handle to z_obj_min (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of z_obj_min as text
+%        str2double(get(hObject,'String')) returns contents of z_obj_min as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function z_obj_min_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to z_obj_min (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function z_obj_max_Callback(hObject, eventdata, handles)
+% hObject    handle to z_obj_max (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of z_obj_max as text
+%        str2double(get(hObject,'String')) returns contents of z_obj_max as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function z_obj_max_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to z_obj_max (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in do_circle_z.
+function do_circle_z_Callback(hObject, eventdata, handles)
+% hObject    handle to do_circle_z (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of do_circle_z
+
+
+% --- Executes on button press in protect_cell.
+function protect_cell_Callback(hObject, eventdata, handles)
+% hObject    handle to protect_cell (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of protect_cell
+
+
+
+function protection_range_Callback(hObject, eventdata, handles)
+% hObject    handle to protection_range (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of protection_range as text
+%        str2double(get(hObject,'String')) returns contents of protection_range as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function protection_range_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to protection_range (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

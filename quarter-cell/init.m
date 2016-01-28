@@ -21,8 +21,8 @@ switch handles.stim_type
         set(handles.use_2P,'Value',1)
 end
 
-handles.saptial_layout = handles.defaults.spatial_layout;
-switch handles.saptial_layout
+handles.spatial_layout = handles.defaults.spatial_layout;
+switch handles.spatial_layout
     case 'circles'
         set(handles.circles,'Value',1)
         set(handles.grid,'Value',0)
@@ -79,5 +79,26 @@ set(handles.trial_length,'String',num2str(handles.defaults.trial_length));
 
 set(handles.ITI,'String',num2str(handles.defaults.intertrial_interval));
 
+set(handles.comnum,'String',num2str(handles.defaults.comnum));
+get(handles.comnum,'String')
+
 handles.protocol_loaded = 0;
+
+% connect to MPC200
+if ~isempty(instrfind)
+    fclose(instrfind);
+end
+handles.mpc200 = serial(strcat('COM',get(handles.comnum,'String')),'BaudRate',128000,'Terminator','CR');
+fopen(handles.mpc200);
+handles.mpc200.Parity = 'none';
+set(handles.mpc200_status,'String','Connected to MPC-200/NOT Calib');
+
+% load default lut
+
+load(handles.defaults.lut_file,'lut')
+handles.data.lut = lut;
+
+set(handles.load_lut,'ForegroundColor',[0 .5 .5])
+
+
 handles.run_count = 0;
