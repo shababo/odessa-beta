@@ -198,6 +198,7 @@ switch handles.run_type
         end
         set(hObject,'Value',0)
         gotopos(handles.mpc200,start_pos(1), start_pos(2),start_pos(3))
+        getpos_Callback(handles.getpos, [], handles)
     end
         
         
@@ -2148,7 +2149,12 @@ function getpos_Callback(hObject, eventdata, handles)
 % hObject    handle to getpos (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[x,y,z]=getpos(handles.mpc200);
+
+[x,y,z]=getpos(handles.mpc200)
+while any([x,y,z] > 21500)
+    [x,y,z]=getpos(handles.mpc200);
+end
+
 set(handles.currentx,'String',num2str(x));
 set(handles.currenty,'String',num2str(y));
 set(handles.currentz,'String',num2str(z));
@@ -2561,6 +2567,9 @@ function set_cell_pos_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 [x,y,z]=getpos(handles.mpc200);
+x
+y
+z
 handles.data.cell_pos = [x y z];
 set(handles.cell_x,'String',num2str(x));
 set(handles.cell_y,'String',num2str(y));
@@ -2654,3 +2663,35 @@ function protection_range_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in goto_cell.
+function goto_cell_Callback(hObject, eventdata, handles)
+% hObject    handle to goto_cell (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+cell_pos = handles.data.cell_pos;
+handles.x=cell_pos(1);
+handles.y=cell_pos(2);
+handles.z=cell_pos(3);
+gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+guidata(hObject, handles);
+
+
+% --- Executes on button press in translate_back.
+function translate_back_Callback(hObject, eventdata, handles)
+% hObject    handle to translate_back (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+ 
+[curr_x,curr_y,curr_z]=getpos(handles.mpc200);
+trans_x=str2double(get(handles.transx,'String'));
+trans_y=str2double(get(handles.transy,'String'));
+trans_z=str2double(get(handles.transz,'String'));
+new_x = curr_x - trans_x;
+new_y = curr_y - trans_y;
+new_z = curr_z - trans_z;
+gotopos(handles.mpc200, new_x, new_y, new_z);
+guidata(hObject, handles);
