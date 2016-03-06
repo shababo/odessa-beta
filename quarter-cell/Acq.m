@@ -197,8 +197,8 @@ switch handles.run_type
             end
         end
         set(hObject,'Value',0)
-        gotopos(handles.mpc200,start_pos(1), start_pos(2),start_pos(3))
-        getpos_Callback(handles.getpos, [], handles)
+%         gotopos(handles.mpc200,start_pos(1), start_pos(2),start_pos(3))
+%         getpos_Callback(handles.getpos, [], handles)
     end
         
         
@@ -513,7 +513,8 @@ if (value3==1)
 else
     thissweep=handles.data.sweeps{SetSweepNumber}; 
     thissweep=thissweep(:,1);
-    thissweep=thissweep-mean(thissweep(1:20000));
+%     thissweep=thissweep-mean(thissweep(1:20000));
+    thissweep = thissweep - thissweep(1);
     if (val == 1)
         thissweep=highpass_filter(thissweep); % if checked highpass filter
     end  
@@ -2151,8 +2152,13 @@ function getpos_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 [x,y,z]=getpos(handles.mpc200)
-while any([x,y,z] > 21500)
+try_times = 0
+while any([x,y,z] > 21500) || any([x,y,z] < 0)
     [x,y,z]=getpos(handles.mpc200);
+    try_times = try_times + 1;
+    if try_times > 5
+        break
+    end
 end
 
 set(handles.currentx,'String',num2str(x));

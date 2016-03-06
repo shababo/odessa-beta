@@ -114,8 +114,9 @@ end
 % end
 
 %%
-%after handles.io_data collection analzye inputs for series_r and other properties
-%handles = analyze_series_r(handles);
+% after handles.io_data collection analzye inputs for series_r and other properties
+handles = analyze_series_r(handles);
+
 
 %% stores absolute time when first sweep is taken
 if handles.data.sweep_counter == 1

@@ -50,13 +50,13 @@ set(handles.current_trial_axes,'xlim',[handles.data.timebase(pulse_over_sample) 
 % assignin('base','timebase',handles.data.timebase)
 plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
 
-%plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'o-');
+plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'o-');
 % axis tight
 
-%plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch1.series_r,'o-');
+plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch1.series_r,'o-');
 % axis tight
 
-%plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'o-')
+plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'o-')
 % axis tight
 
 %% keep cursor lines on if checked % comment out to prevent cursur update
