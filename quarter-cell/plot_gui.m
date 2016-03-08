@@ -48,7 +48,9 @@ end
 handles.current_trial_axes = plotyy(handles.current_trial_axes(1),timebase,stim_sweep,timebase,handles.data.ch1sweep(pulse_over_sample:end));
 set(handles.current_trial_axes,'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
 % assignin('base','timebase',handles.data.timebase)
-plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
+if get(handles.test_pulse,'Value')
+    plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
+end
 
 plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'o-');
 % axis tight

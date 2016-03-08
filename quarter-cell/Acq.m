@@ -112,6 +112,8 @@ set(hObject,'BackgroundColor',[0 1 .5]);
 if get(hObject,'Value')
     handles.run_count = handles.run_count + 1;
 end
+handles.is_test_trial = 0;
+
 switch handles.run_type
     case 'loop'
         disp('looping...')
@@ -126,7 +128,12 @@ switch handles.run_type
         else
             for loop_ind = 1:str2num(get(handles.loop_count,'String'))
                 handles.io_data = step_loop(handles);
-                handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
+                handles = process_plot(handles);
+                % wait
+                start_time = clock;
+                while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
+                end
+                drawnow
                 if ~get(hObject,'Value')
                     break
                 end
@@ -141,7 +148,12 @@ switch handles.run_type
         if handles.protocol_loaded
             for i = 1:length(handles.protocol)
                 handles.io_data = io(handles.s,handles.protocol(i).output);
-                handles = process_plot_wait(handles,handles.protocol(i).intertrial_interval);
+                handles = process_plot(handles);
+                % wait
+                start_time = clock;
+                while etime(clock, start_time) < handles.protocol(i).intertrial_interval
+                end
+                drawnow
                 if ~get(hObject,'Value')
                     break
                 end
@@ -159,24 +171,73 @@ switch handles.run_type
         [start_pos_x, start_pos_y,start_pos_z] = getpos(handles.mpc200);
         start_pos = [start_pos_x start_pos_y start_pos_z];
         handles.data.start_pos = start_pos;
-        for i = 1:length(conditions)
+        
+        trials_per_test_pulse = str2double(get(handles.trials_per_pulse,'String'));
+        
+        handles.test_trial = 0;
+        test_trial_count = 0;
+        
+        num_test_trials = ceil(length(conditions)/trials_per_test_pulse);
+        if mod(length(conditions),trials_per_test_pulse) == 0
+            num_test_trials = num_test_trials + 1;
+        end
+        do_test_pulse = get(handles.test_pulse,'Value');
+        
+        ii = 0;
+        i = 1;
+        repeat_test_trial = 0;
+        
+        run_conditions = 1;
+        while run_conditions
+            
+            ii = ii + 1 - repeat_test_trial;
+
             
             start_color = get(handles.run,'BackgroundColor');
             set(handles.run,'BackgroundColor',[1 0 0]);
             set(handles.run,'String','Acq...')
             
+            is_test_trial = (repeat_test_trial || mod(ii-1,trials_per_test_pulse) == 0) && ~(2 == get(handles.Cell1_type_popup,'Value'));
+            handles.is_test_trial = is_test_trial;
             cond_ind = handles.data.stim_conds.cond_inds(conditions(i),:);
-            handles.data.stim_output = squeeze(handles.data.stim_conds.stims(cond_ind(1),cond_ind(2),cond_ind(3),cond_ind(4),cond_ind(5),:));
-            handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
-            
-            if i == 1
-                gotopos(handles.mpc200, handles.data.obj_position(1), handles.data.obj_position(2), handles.data.obj_position(3));
-                pause(.5)
+            if is_test_trial
+                
+                set(handles.test_pulse,'Value',1);
+                
+                trial_length = 1.0;
+                 
+                [handles.data.stim_output,handles.data.timebase] = makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, 0, handles.data.ch1.pulsefrequency, handles.defaults.Fs, trial_length);
+
+                % [handles.data.stim_output,handles.data.timebase] = ...
+                %     makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration,...
+                %     handles.data.stimulation.pulseamp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, trial_length);
+
+
+                handles.data.ch1_output=makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, trial_length);
+                handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity;
+                [handles.data.testpulse, handles.data.timebase] = makepulseoutputs(handles.defaults.testpulse_start, 1, handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1, handles.defaults.Fs, trial_length);
+                guidata(hObject,handles)
+            else
+                
+                set(handles.test_pulse,'Value',do_test_pulse);
+                
+                trial_length = str2double(get(handles.trial_length,'String'));
+                handles.data.stim_output = squeeze(handles.data.stim_conds.stims(cond_ind(1),cond_ind(2),cond_ind(3),cond_ind(4),cond_ind(5),:));
+                [handles.data.ch1_output,handles.data.timebase]=makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, trial_length);
+                handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity;
+                handles.test_trial = 0;
+                
+                if i == 1
+                    gotopos(handles.mpc200, handles.data.obj_position(1), handles.data.obj_position(2), handles.data.obj_position(3));
+                    pause(.5)
+                end
+                guidata(hObject,handles)
             end
             
+            handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
+            
             [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
-            start_time = clock;
-            wait_time = str2double(get(handles.trial_length,'String'));
+
             handles.io_data = io(handles.s,[AO0, AO1,AO2,AO3]);
 %             while etime(clock, start_time) < wait_time
 %             end
@@ -184,21 +245,53 @@ switch handles.run_type
             set(handles.run,'backgroundColor',start_color)
             guidata(handles.acq_gui,handles)
             
-            if i < length(conditions)
+            if i < length(conditions) && ~is_test_trial
                 cond_ind = handles.data.stim_conds.cond_inds(conditions(i+1),:);
                 tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
                 gotopos(handles.mpc200, tmp_obj_position(1), tmp_obj_position(2), tmp_obj_position(3));
             end
             
-            handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
+            if is_test_trial
+                test_trial_count = test_trial_count + 1;
+            else
+                i = i + 1;
+            end
             
+            handles = process_plot(handles);
+            
+            % wait
+            start_time = clock;
+            while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
+            end
+            drawnow
+            disp('???')
+            length(handles.data.ch1.series_r)
             if ~get(hObject,'Value')
                 break
             end
+            if is_test_trial && check_series_resistance(handles)
+                response = questdlg('Series Resistance is High... continue?');
+                if strcmpi(response,'No')
+                    break
+                elseif strcmpi(response,'Yes')
+                    repeat_test_trial = 1;
+                else
+                    repeat_test_trial = 0;
+                end
+            else
+                repeat_test_trial = 0;
+            end
+            
+            if i > length(conditions)
+                run_conditions = 0;
+            end
+                
+            
         end
         set(hObject,'Value',0)
 %         gotopos(handles.mpc200,start_pos(1), start_pos(2),start_pos(3))
 %         getpos_Callback(handles.getpos, [], handles)
+        set(handles.test_pulse,'Value',do_test_pulse);
     end
         
         
@@ -212,21 +305,18 @@ handles = trial_length_Callback(handles.trial_length, [], handles);
 
 guidata(hObject,handles)
 
-function handles = process_plot_wait(handles,wait_time)
+function handles = process_plot(handles)
 
-start_time = clock;
+
 set(handles.run,'String','Process')
 handles = process(handles);
 guidata(handles.acq_gui,handles) % needed?
 handles = plot_gui(handles);
 guidata(handles.acq_gui,handles) % needed?
 drawnow
-% PUT PLOT HERE! (take out of process.m)
 set(handles.run,'String','ITI')
 drawnow
-    while etime(clock, start_time) < wait_time
-    end
-drawnow
+
 
 
 
@@ -2701,3 +2791,49 @@ new_y = curr_y - trans_y;
 new_z = curr_z - trans_z;
 gotopos(handles.mpc200, new_x, new_y, new_z);
 guidata(hObject, handles);
+
+
+
+function trials_per_pulse_Callback(hObject, eventdata, handles)
+% hObject    handle to trials_per_pulse (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of trials_per_pulse as text
+%        str2double(get(hObject,'String')) returns contents of trials_per_pulse as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function trials_per_pulse_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to trials_per_pulse (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function series_r_max_Callback(hObject, eventdata, handles)
+% hObject    handle to series_r_max (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of series_r_max as text
+%        str2double(get(hObject,'String')) returns contents of series_r_max as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function series_r_max_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to series_r_max (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

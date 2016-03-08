@@ -65,6 +65,7 @@ end
 handles.data.trial_metadata(sweep_counter).note = get(handles.notes,'String');
 handles.data.trial_metadata(sweep_counter).lut_used = get(handles.use_lut,'Value');
 handles.data.trial_metadata(sweep_counter).run_count = handles.run_count;
+handles.data.trial_metadata(sweep_counter).test_trial = handles.is_test_trial;
 
 clamp_mode = get(handles.Cell1_type_popup,'Value');
 switch clamp_mode
