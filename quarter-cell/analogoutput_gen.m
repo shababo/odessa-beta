@@ -18,7 +18,7 @@ if (strcmp(handles.defaults.AO0,'ch1_out')==1) % if whole cell1 on AO0
         if get(handles.test_pulse,'Value')
             AO0=testpulse;
         else
-            AO0 = zeros(size(testpulse));
+            AO0 = zeros(size(ch1_output));
         end
     else          % if currentclamp
         AO0=ch1_output;
@@ -27,16 +27,16 @@ else
     AO0 = zeros(size(testpulse));
 end
 
-if (strcmp(handles.defaults.AO1,'ch2_out')==1) % if whole cell1 on AO0
-    if  cell2_vc==1 % if voltage clamp
-        AO1=testpulse;
-    else          % if currentclamp
-        AO1=ch2_output;
-    end
-else
-    AO1 = zeros(size(AO0));
-end
-
+% if (strcmp(handles.defaults.AO1,'ch2_out')==1) % if whole cell1 on AO0
+%     if  cell2_vc==1 % if voltage clamp
+%         AO1=testpulse;
+%     else          % if currentclamp
+%         AO1=ch2_output;
+%     end
+% else
+%     AO1 = zeros(size(AO0));
+% end
+AO1 = AO0;
 
 if (strcmp(handles.defaults.AO2,'LED')==1) && get(handles.use_LED,'Value')
     AO2=handles.data.stim_output;

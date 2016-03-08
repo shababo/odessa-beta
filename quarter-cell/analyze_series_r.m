@@ -2,11 +2,11 @@
  
 function handles = analyze_series_r(handles)
 % function [series_r holding_i input_r] = analyze_series_r ()
-
+sweep_counter=handles.data.sweep_counter;
 if get(handles.test_pulse,'Value') && ~(2 == get(handles.Cell1_type_popup,'Value'));
 
     ch1sweep=handles.data.ch1sweep;
-    Fs=handles.defaults.Fs; sweep_counter=handles.data.sweep_counter;
+    Fs=handles.defaults.Fs; 
 
     % find max and min around test pulse which should go from 50-100 ms
     Max = max(handles.data.ch1sweep((Fs*.040):(Fs*.060)));
