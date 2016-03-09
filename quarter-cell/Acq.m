@@ -256,16 +256,14 @@ switch handles.run_type
             else
                 i = i + 1;
             end
-            
+            start_time = clock;
             handles = process_plot(handles);
             
             % wait
-            start_time = clock;
+            
             while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
             end
-            drawnow
-            disp('???')
-            length(handles.data.ch1.series_r)
+%             drawnow
             if ~get(hObject,'Value')
                 break
             end
@@ -314,8 +312,8 @@ guidata(handles.acq_gui,handles) % needed?
 handles = plot_gui(handles);
 guidata(handles.acq_gui,handles) % needed?
 drawnow
-set(handles.run,'String','ITI')
-drawnow
+% set(handles.run,'String','ITI')
+% drawnow
 
 
 
