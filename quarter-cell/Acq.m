@@ -123,14 +123,22 @@ switch handles.run_type
             while get(hObject,'Value')
 %                 handles = make_stim_out(handles);
                 handles.io_data = step_loop(handles);
-                handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
+%                 handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
+                start_time = clock;
+                handles = process_plot(handles);
+            
+            % wait
+            
+                while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
+                end
             end
         else
             for loop_ind = 1:str2num(get(handles.loop_count,'String'))
                 handles.io_data = step_loop(handles);
+                start_time = clock;
                 handles = process_plot(handles);
                 % wait
-                start_time = clock;
+                
                 while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
                 end
                 drawnow
@@ -148,9 +156,10 @@ switch handles.run_type
         if handles.protocol_loaded
             for i = 1:length(handles.protocol)
                 handles.io_data = io(handles.s,handles.protocol(i).output);
+                start_time = clock;
                 handles = process_plot(handles);
                 % wait
-                start_time = clock;
+                
                 while etime(clock, start_time) < handles.protocol(i).intertrial_interval
                 end
                 drawnow
@@ -2835,3 +2844,12 @@ function series_r_max_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in tf_on.
+function tf_on_Callback(hObject, eventdata, handles)
+% hObject    handle to tf_on (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of tf_on
