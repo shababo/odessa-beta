@@ -69,7 +69,7 @@ running = [];
 
 spatial_layout = 'grid';
 
-lut_file = 'C:\data\Shababo\lut_040116_roi1_2p_notf.mat';
+lut_file = 'C:\data\Shababo\lut_041216_roi1_2p_notf.mat';
 comnum = 9;
 
 defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', intertrial_interval, 'daqModel', device.Model, ...
