@@ -114,6 +114,7 @@ if get(hObject,'Value')
 end
 handles.is_test_trial = 0;
 
+% what type of run are we going to do?
 switch handles.run_type
     case 'loop'
         disp('looping...')
@@ -148,27 +149,27 @@ switch handles.run_type
             end
         end
         set(hObject,'Value',0)
-    case 'sequence'
-        disp('sequencing...')
-        %run sequence
-        [x,y,z] = getpos(handles.mpc200);
-        handles.data.obj_position = [x y z];
-        if handles.protocol_loaded
-            for i = 1:length(handles.protocol)
-                handles.io_data = io(handles.s,handles.protocol(i).output);
-                start_time = clock;
-                handles = process_plot(handles);
-                % wait
-                
-                while etime(clock, start_time) < handles.protocol(i).intertrial_interval
-                end
-                drawnow
-                if ~get(hObject,'Value')
-                    break
-                end
-            end
-        end
-        set(hObject,'Value',0)
+%     case 'sequence'
+%         disp('sequencing...')
+%         %run sequence
+%         [x,y,z] = getpos(handles.mpc200);
+%         handles.data.obj_position = [x y z];
+%         if handles.protocol_loaded
+%             for i = 1:length(handles.protocol)
+%                 handles.io_data = io(handles.s,handles.protocol(i).output);
+%                 start_time = clock;
+%                 handles = process_plot(handles);
+%                 % wait
+%                 
+%                 while etime(clock, start_time) < handles.protocol(i).intertrial_interval
+%                 end
+%                 drawnow
+%                 if ~get(hObject,'Value')
+%                     break
+%                 end
+%             end
+%         end
+%         set(hObject,'Value',0)
     case 'conditions'
         disp('running conditions')
         if get(handles.use_seed,'Value')
@@ -529,11 +530,11 @@ guidata(hObject,handles)
 
 function handles = make_stim_out(handles)
 
-handles.data.stimulation.pulseamp=str2double(get(handles.pulseamp,'String'));
-handles.data.stimulation.pulseduration=str2double(get(handles.pulseduration,'String'));
-handles.data.stimulation.pulsenumber=str2double(get(handles.pulsenumber,'String'));
-handles.data.stimulation.pulsefrequency=str2double(get(handles.pulsefrequency,'String'));
-handles.data.stimulation.pulse_starttime=str2double(get(handles.pulse_starttime,'String'));
+handles.data.stimulation.pulseamp=0;%str2double(get(handles.pulseamp,'String'));
+handles.data.stimulation.pulseduration=0;%str2double(get(handles.pulseduration,'String'));
+handles.data.stimulation.pulsenumber=1;%str2double(get(handles.pulsenumber,'String'));
+handles.data.stimulation.pulsefrequency=1;%str2double(get(handles.pulsefrequency,'String'));
+handles.data.stimulation.pulse_starttime=0;%str2double(get(handles.pulse_starttime,'String'));
 
 if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
     amplitude = get_voltage(handles.data.lut,handles.data.stimulation.pulseamp);
@@ -1533,12 +1534,6 @@ ylabel(handles.Rs_axes,'megaohm')
 
 ylabel(handles.Ih_axes,'Ihold')
 xlabel(handles.Ih_axes, 'minutes')
-xlabel(handles.stim_axes, 'seconds')
-if get(handles.use_lut,'value')
-    ylabel(handles.stim_axes, 'mW')
-else
-    ylabel(handles.stim_axes, 'Volts')
-end
 
 % compute total experiment time
 TotalExpTime = max(handles.data.trialtime)+0.001;

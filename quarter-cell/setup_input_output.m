@@ -1,6 +1,6 @@
 function data = setup_input_output(data, defaults)
 
-% set initial values for the stimulation output here
+% % set initial values for the stimulation output here
 pulseamp=0; % in volts%
 %pulseamp=[0 0.2 .4 .6 .8 1 1.2 1.4]; % in volts
 pulseduration=.010; % in seconds
@@ -8,9 +8,9 @@ pulseduration=.010; % in seconds
 pulsenumber=1;
 pulsefrequency=0.5; % in Hz
 pulse_starttime=.300; % in seconds
-
-
-[data.stim_output, data.timebase] = makepulseoutputs(pulse_starttime, pulsenumber, pulseduration, pulseamp ,pulsefrequency, defaults.Fs, defaults.trial_length);
+% 
+% 
+[data.stim_output, data.timebase] = makepulseoutputs(0, 1, 0, 0 ,1, defaults.Fs, defaults.trial_length);
 
 
 % setup testpulse for votlage clamp
@@ -18,12 +18,12 @@ data.testpulse = makepulseoutputs(defaults.testpulse_start, 1, defaults.testpuls
 
 % setup current injection params for cell1
 ccpulseamp1=0;
-ccpulse_dur1=0.300;
+ccpulse_dur1=0;
 ccnumpulses1=1;
 ccpulsefreq1=0.5;
-ccpulsestarttime1=0.300;
-deltacurrentpulseamp1=100;
-ch1_output=makepulseoutputs(ccpulsestarttime1,ccnumpulses1, ccpulse_dur1, ccpulseamp1, ccpulsefreq1, defaults.Fs, defaults.trial_length);
+ccpulsestarttime1=0;
+deltacurrentpulseamp1=0;
+ch1_output=makepulseoutputs(ccpulsestarttime1, ccnumpulses1, ccpulse_dur1, ccpulseamp1 ,ccpulsefreq1, defaults.Fs, defaults.trial_length);%makepulseoutputs(ccpulsestarttime1,ccnumpulses1, ccpulse_dur1, ccpulseamp1, ccpulsefreq1, defaults.Fs, defaults.trial_length);
 data.ch1_output=ch1_output/defaults.CCexternalcommandsensitivity; % scale by externalcommand sensitivity under Current clamp
 
 % setup current injection params for cell2
@@ -31,13 +31,13 @@ ccpulseamp2=0;
 ccpulse_dur2=0;
 ccnumpulses2=1;
 ccpulsefreq2=20;
-ccpulsestarttime2=.200;
-deltacurrentpulseamp2=100;
-ch2_output=makepulseoutputs(ccpulsestarttime2,ccnumpulses2, ccpulse_dur2, ccpulseamp2, ccpulsefreq2, defaults.Fs, defaults.trial_length);
+ccpulsestarttime2=0;
+deltacurrentpulseamp2=0;
+ch2_output=makepulseoutputs(ccpulsestarttime2, ccnumpulses2, ccpulse_dur2, ccpulseamp2 ,ccpulsefreq2, defaults.Fs, defaults.trial_length);%makepulseoutputs(ccpulsestarttime2,ccnumpulses2, ccpulse_dur2, ccpulseamp2, ccpulsefreq2, defaults.Fs, defaults.trial_length);
 data.ch2_output=ch2_output/defaults.CCexternalcommandsensitivity; % scale by externalcommand sensitivity under Current clamp
 
-highpass_freq1=500;
-highpass_freq2=500;
+highpass_freq1 = 500;
+highpass_freq2 = 500;
 
 series_r1=[];
 holding_i1=[];

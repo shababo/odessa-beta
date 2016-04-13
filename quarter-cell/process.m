@@ -6,12 +6,16 @@ ch1_output = handles.data.ch1_output; ch2_output=handles.data.ch2_output;
 sweep_counter = handles.data.sweep_counter;
 
 %store channels 1 and 2 in thissweep for further processing
-thissweep=handles.io_data;
+thissweep = handles.io_data;
 
 
 % scale units
 if strcmp(handles.defaults.AO0,'ch1_out')==1 
     thissweep(:,1)=thissweep(:,1)*1000; % scale from nA to pA or Volts to mV
+end
+
+if strcmp(handles.defaults.AO1,'ch2_out')==1 
+    thissweep(:,2)=thissweep(:,2)*1000; % scale from nA to pA or Volts to mV
 end
 
 % scale by user gain for each channel
@@ -23,6 +27,7 @@ thissweep(:,2)=thissweep(:,2)/handles.data.ch2.user_gain;
 handles.data.sweeps{sweep_counter}=thissweep;
 
 switch handles.run_type
+    
     case 'loop'
         
         if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
@@ -71,12 +76,25 @@ handles.data.trial_metadata(sweep_counter).tf_on = get(handles.tf_on,'Value');
 clamp_mode = get(handles.Cell1_type_popup,'Value');
 switch clamp_mode
     case 1
-        handles.data.trial_metadata(sweep_counter).clamp_type = 'voltage-clamp';
+        handles.data.trial_metadata(sweep_counter).cell1_clamp_type = 'voltage-clamp';
     case 2
-        handles.data.trial_metadata(sweep_counter).clamp_type = 'current-clamp';
+        handles.data.trial_metadata(sweep_counter).cell1_clamp_type = 'current-clamp';
     case 3
-        handles.data.trial_metadata(sweep_counter).clamp_type = 'cell-attached';
+        handles.data.trial_metadata(sweep_counter).cell1_clamp_type = 'cell-attached';
 end
+
+clamp_mode = get(handles.Cell2_type_popup,'Value');
+switch clamp_mode
+    case 1
+        handles.data.trial_metadata(sweep_counter).cell2_clamp_type = 'voltage-clamp';
+    case 2
+        handles.data.trial_metadata(sweep_counter).cell2_clamp_type = 'current-clamp';
+    case 3
+        handles.data.trial_metadata(sweep_counter).cell2_clamp_type = 'cell-attached';
+end
+
+handles.data.trial_metadata(sweep_counter).cell1_highpass = get(handles.Highpass_cell1_check, 'Value');
+handles.data.trial_metadata(sweep_counter).cell2_highpass = get(handles.Highpass_cell2_check, 'Value');
 
 handles.data.trial_metadata(sweep_counter).obj_position = handles.data.obj_position;
 if isfield(handles.data,'cell_pos')
@@ -98,8 +116,9 @@ end
 %% store the analog outputs, but downsample them
 handles.data.stims{sweep_counter}={downsample(stim_output,10), downsample(ch1_output,10), downsample(ch2_output,10)};
 
-handles.data.ch1sweep=thissweep(:,1);
-handles.data.ch2sweep=thissweep(:,2);
+handles.data.ch1sweep = thissweep(:,1);
+handles.data.ch2sweep = thissweep(:,2);
+
 if get(handles.use_LED,'Value')
     handles.data.stim_sweep = thissweep(:,3);
 else
@@ -108,12 +127,12 @@ end
 
 %% high pass handles.data.sweeps if checked
 
-% if get(handles.Highpass_cell1_check, 'Value')
-%     handles.data.ch1sweep=highpass_filter(handles.data.ch1sweep);
-% end
-% if get(handles.Highpass_cell2_check, 'Value')
-%     handles.data.ch2sweep=highpass_filter(handles.data.ch2sweep);
-% end
+if get(handles.Highpass_cell1_check, 'Value')
+    handles.data.ch1sweep=highpass_filter(handles.data.ch1sweep,handles.defaults.Fs);
+end
+if get(handles.Highpass_cell2_check, 'Value')
+    handles.data.ch2sweep=highpass_filter(handles.data.ch2sweep,handles.defaults.Fs);
+end
 
 %%
 % after handles.io_data collection analzye inputs for series_r and other properties
