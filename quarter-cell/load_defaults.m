@@ -2,7 +2,7 @@ function [defaults, s, data] = load_defaults()
 
 
 %%--set Rig Defaults Values here----%%
-run_type = 'loop'; % loop or sequence
+run_type = 'conditions'; % loop or sequence or conditions
 
 % set default path for saving files here
 save_path='C:\data\Shababo\';
@@ -17,10 +17,10 @@ Fs = 20000;
 
 % set default inter-stimulus-interval; this is the total time between
 % successive trigers from the timer fcn, not the time between trials
-intertrial_interval = 1.0; %in sec
+intertrial_interval = .12; %in sec
 
 % set default sweep duration (in seconds)
-trial_length = 1.0;
+trial_length = .1;
 
 % set default state for saving after each trial, 0 for no saving, 1 for saving after each trial
 % may want no saving if will hang up computer on long experiments with long

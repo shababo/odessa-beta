@@ -45,20 +45,43 @@ if get(handles.use_lut,'Value')
     stim_sweep = stim_sweep/max(stim_sweep)*handles.data.trial_metadata(end).pulseamp;
 end
 
-handles.current_trial_axes = plotyy(handles.current_trial_axes(1),timebase,stim_sweep,timebase,handles.data.ch1sweep(pulse_over_sample:end));
+handles.current_trial_axes = plotyy(handles.current_trial_axes(1),timebase,handles.data.ch1sweep(pulse_over_sample:end),timebase,handles.data.ch2sweep(pulse_over_sample:end));
 set(handles.current_trial_axes,'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
+
+plot(handles.current_trial_stim_axes,timebase,stim_sweep)
+set(handles.current_trial_stim_axes,'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
+set(handles.current_trial_stim_axes,'xticklabel',[]);
+
+
 % assignin('base','timebase',handles.data.timebase)
+
+
 if get(handles.test_pulse,'Value')
-    plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
+    handles.testpulse_axes = plotyy(handles.testpulse_axes(1),handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample),...
+        handles.data.timebase(1:pulse_over_sample),handles.data.ch2sweep(1:pulse_over_sample));
+%     plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
+%     plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
 end
 
-plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'o-');
+% axes(handles.Ih_axes)
+% hold(handles.Ih_axes, 'on')
+plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'.-');
+hold(handles.Ih_axes)
+plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch2.holding_i,'.-');
+% hold(handles.Ih_axes, 'off')
+
 % axis tight
 
-plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch1.series_r,'o-');
+
+plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch1.series_r,'.-');
+hold(handles.Rs_axes)
+plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch2.series_r,'.-');
+set(handles.Rs_axes,'ylim',[0 30])
 % axis tight
 
-plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'o-')
+plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'.-')
+hold(handles.Ir_axes)
+plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch2.input_r,'.-')
 % axis tight
 
 %% keep cursor lines on if checked % comment out to prevent cursur update
@@ -76,7 +99,7 @@ plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'o-')
 %     plot(handles.Whole_cell2_axes_Ir,handles.data.ch2.input_r,'o');
 % end
 
-labelaxes(handles)
+% labelaxes(handles)
 
 %% draw elapsed experiment time in whole cell1 axes
 % ymax = get(handles.current_trial_axes, 'YLim'); ymax = ymax(2);
