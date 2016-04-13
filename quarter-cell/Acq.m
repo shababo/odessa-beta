@@ -206,6 +206,7 @@ switch handles.run_type
             set(handles.run,'BackgroundColor',[1 0 0]);
             set(handles.run,'String','Acq...')
             
+            trials_per_test_pulse = str2double(get(handles.trials_per_pulse,'String'));
             is_test_trial = (repeat_test_trial || mod(ii-1,trials_per_test_pulse) == 0) && ~(2 == get(handles.Cell1_type_popup,'Value'));
             handles.is_test_trial = is_test_trial;
             cond_ind = handles.data.stim_conds.cond_inds(conditions(i),:);
@@ -237,7 +238,15 @@ switch handles.run_type
                 handles.test_trial = 0;
                 
                 if i == 1
-                    gotopos(handles.mpc200, handles.data.obj_position(1), handles.data.obj_position(2), handles.data.obj_position(3));
+                    move_good = check_move(handles,  handles.data.obj_position);
+
+                    if move_good
+                        disp('good move!')
+                        gotopos(handles.mpc200, handles.data.obj_position(1), handles.data.obj_position(2), handles.data.obj_position(3));
+                    else
+                        disp('bad move!')
+                        break
+                    end
                     pause(.5)
                 end
                 guidata(hObject,handles)
@@ -257,7 +266,14 @@ switch handles.run_type
             if i < length(conditions) && ~is_test_trial
                 cond_ind = handles.data.stim_conds.cond_inds(conditions(i+1),:);
                 tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
-                gotopos(handles.mpc200, tmp_obj_position(1), tmp_obj_position(2), tmp_obj_position(3));
+%                 move_good = check_move(handles, tmp_obj_position);
+
+%                     if move_good
+                        gotopos(handles.mpc200, tmp_obj_position(1), tmp_obj_position(2), tmp_obj_position(3));
+%                     else
+%                         disp('bad move!')
+%                     end
+                
             end
             
             if is_test_trial
@@ -2341,7 +2357,15 @@ function gotopos_Callback(hObject, eventdata, handles)
 handles.x=str2double(get(handles.setx,'String'));
 handles.y=str2double(get(handles.sety,'String'));
 handles.z=str2double(get(handles.setz,'String'));
-gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+
+move_good = check_move(handles, [handles.x handles.y handles.z]);
+
+if move_good
+    disp('good move!')
+    gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+else
+    disp('bad move!')
+end
 guidata(hObject, handles);
 % now_time = clock;
 % elapse = clock - now_time;
@@ -2432,7 +2456,15 @@ trans_z=str2double(get(handles.transz,'String'));
 new_x = curr_x + trans_x;
 new_y = curr_y + trans_y;
 new_z = curr_z + trans_z;
-gotopos(handles.mpc200, new_x, new_y, new_z);
+
+move_good = check_move(handles, [new_x new_y new_z]);
+
+if move_good
+    disp('good move!')
+    gotopos(handles.mpc200, new_x, new_y, new_z);
+else
+    disp('bad move!')
+end
 guidata(hObject, handles);
 % pause(0.1);
 % getpos_Callback(handles.getpos, eventdata, handles)
@@ -2778,8 +2810,22 @@ cell_pos = handles.data.cell_pos;
 handles.x=cell_pos(1);
 handles.y=cell_pos(2);
 handles.z=cell_pos(3);
-gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+move_good = check_move(handles, [handles.x handles.y handles.z]);
+
+if move_good
+    disp('good move!')
+    gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+else
+    disp('bad move!')
+end
 guidata(hObject, handles);
+
+function move_good = check_move(handles,new_pos)
+
+[curr_x,curr_y,curr_z]=getpos(handles.mpc200);
+
+move_good = ~any( abs([curr_x,curr_y,curr_z]-new_pos) > 1000);
+    
 
 
 % --- Executes on button press in translate_back.
@@ -2796,7 +2842,15 @@ trans_z=str2double(get(handles.transz,'String'));
 new_x = curr_x - trans_x;
 new_y = curr_y - trans_y;
 new_z = curr_z - trans_z;
-gotopos(handles.mpc200, new_x, new_y, new_z);
+
+move_good = check_move(handles, [new_x new_y new_z]);
+
+if move_good
+    disp('good move!')
+    gotopos(handles.mpc200, new_x, new_y, new_z);
+else
+    disp('bad move!')
+end
 guidata(hObject, handles);
 
 
