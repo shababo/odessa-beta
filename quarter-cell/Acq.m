@@ -114,12 +114,15 @@ if get(hObject,'Value')
 end
 handles.is_test_trial = 0;
 
+
+[x,y,z] = getpos(handles.mpc200);
+handles.data.obj_position = [x y z];
+        
 % what type of run are we going to do?
 switch handles.run_type
     case 'loop'
         disp('looping...')
-        [x,y,z] = getpos(handles.mpc200);
-        handles.data.obj_position = [x y z];
+        
         if get(handles.loop_forever,'Value')
             while get(hObject,'Value')
 %                 handles = make_stim_out(handles);
@@ -180,7 +183,16 @@ switch handles.run_type
         
         [start_pos_x, start_pos_y,start_pos_z] = getpos(handles.mpc200);
         start_pos = [start_pos_x start_pos_y start_pos_z];
+        switch handles.spatial_layout
+            case 'grid'
+                offset_pos = start_pos;
+            case 'cross'
+                offset_pos = start_pos;
+            case 'locations'
+                offset_pos = [0 0 0];
+        end
         handles.data.start_pos = start_pos;
+        handles.data.offset_pos = offset_pos;
         
         trials_per_test_pulse = str2double(get(handles.trials_per_pulse,'String'));
         
@@ -238,6 +250,8 @@ switch handles.run_type
                 handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity;
                 handles.test_trial = 0;
                 
+                handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + offset_pos];
+                
                 if i == 1
                     move_good = check_move(handles,  handles.data.obj_position);
 
@@ -253,7 +267,7 @@ switch handles.run_type
                 guidata(hObject,handles)
             end
             
-            handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
+            
             
             [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
 
@@ -266,7 +280,7 @@ switch handles.run_type
             
             if i < length(conditions) && ~is_test_trial
                 cond_ind = handles.data.stim_conds.cond_inds(conditions(i+1),:);
-                tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + start_pos];
+                tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + offset_pos];
 %                 move_good = check_move(handles, tmp_obj_position);
 
 %                     if move_good
@@ -1831,7 +1845,7 @@ if get(handles.use_obj_spatial,'Value')
             y_points = floor(y_range/spacing) + 1;
             z_points = floor(z_range/spacing) + 1;
             
-            num_targets = x_points*y_points*z_points;
+%             num_targets = x_points*y_points*z_points;
 %             relative_target_pos = zeros(0,3);
             
             protect_range = str2double(get(handles.protection_range,'String'));
@@ -1916,7 +1930,8 @@ if get(handles.use_obj_spatial,'Value')
             end
             assignin('base','relative_target_pos',relative_target_pos)
         case 'locations'
-            disp('make this code now')
+            handles.data.stim_conds.relative_target_pos = handles.data.marked_locs(cell2mat(handles.data.stim_loc),:);
+            num_targets = size(handles.data.stim_conds.relative_target_pos,1)
     end
 else
     disp('no spatial')
@@ -2821,8 +2836,8 @@ guidata(hObject, handles);
 function move_good = check_move(handles,new_pos)
 
 [curr_x,curr_y,curr_z]=getpos(handles.mpc200);
-
-move_good = ~any( abs([curr_x,curr_y,curr_z]-new_pos) > 1000);
+abs([curr_x,curr_y,curr_z]-new_pos)
+move_good = ~any( abs([curr_x,curr_y,curr_z]-new_pos) > [5000 5000 1500]);
     
 
 
@@ -2970,6 +2985,21 @@ function settransform_Callback(hObject, eventdata, handles)
 % hObject    handle to settransform (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+[x,y,z]=getpos(handles.mpc200);
+x
+y
+z
+x= x - str2double(get(handles.currentx,'String'));
+y= y - str2double(get(handles.currenty,'String'));
+z= z - str2double(get(handles.currentz,'String'));
+
+set(handles.transx,'String',num2str(x))
+set(handles.transy,'String',num2str(y))
+set(handles.transz,'String',num2str(z))
+guidata(hObject, handles);
+
+
+
 
 
 % --- Executes on button press in goto_marked_loc.
@@ -2978,20 +3008,36 @@ function goto_marked_loc_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+loc_i = str2double(get(handles.marked_loc_i,'String'));
+
+pos = handles.data.marked_locs(loc_i,:);
+handles.x=pos(1);
+handles.y=pos(2);
+handles.z=pos(3);
+move_good = check_move(handles, [handles.x handles.y handles.z]);
+
+if move_good
+    disp('good move!')
+    gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+else
+    disp('bad move!')
+end
+guidata(hObject, handles);
 
 
-function marked_cell_in_Callback(hObject, eventdata, handles)
-% hObject    handle to marked_cell_in (see GCBO)
+
+function marked_loc_i_Callback(hObject, eventdata, handles)
+% hObject    handle to marked_loc_i (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of marked_cell_in as text
-%        str2double(get(hObject,'String')) returns contents of marked_cell_in as a double
+% Hints: get(hObject,'String') returns contents of marked_loc_i as text
+%        str2double(get(hObject,'String')) returns contents of marked_loc_i as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function marked_cell_in_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to marked_cell_in (see GCBO)
+function marked_loc_i_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to marked_loc_i (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -3008,9 +3054,93 @@ function remove_marked_loc_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+loc_i = str2double(get(handles.marked_loc_i,'String'));
+
+handles.data.marked_locs(loc_i,:) = [];
+handles.data.stim_loc(loc_i) = [];
+
+set(handles.marked_locs_table,'Data',[num2cell(handles.data.marked_locs) handles.data.stim_loc])
+guidata(hObject, handles);
+
 
 % --- Executes on button press in mark_loc.
 function mark_loc_Callback(hObject, eventdata, handles)
 % hObject    handle to mark_loc (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+[x,y,z]=getpos(handles.mpc200);
+
+if isfield(handles.data,'marked_locs')
+    locs_tmp = [handles.data.marked_locs; x y z];
+    stim_loc_tmp = [handles.data.stim_loc; {true}];
+else
+    locs_tmp = [x y z];
+    stim_loc_tmp = {true};
+end
+
+handles.data.marked_locs = locs_tmp;
+handles.data.stim_loc = stim_loc_tmp;
+
+set(handles.marked_locs_table,'Data',[num2cell(handles.data.marked_locs) handles.data.stim_loc])
+guidata(hObject, handles);
+
+
+
+
+% --- Executes on button press in clear_locs.
+function clear_locs_Callback(hObject, eventdata, handles)
+% hObject    handle to clear_locs (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.data.marked_locs = [];
+handles.data.stim_loc = {};
+
+set(handles.marked_locs_table,'Data',[num2cell(handles.data.marked_locs) handles.data.stim_loc])
+guidata(hObject, handles);
+
+
+% --- Executes when entered data in editable cell(s) in marked_locs_table.
+function marked_locs_table_CellEditCallback(hObject, eventdata, handles)
+% hObject    handle to marked_locs_table (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.TABLE)
+%	Indices: row and column indices of the cell(s) edited
+%	PreviousData: previous data for the cell(s) edited
+%	EditData: string(s) entered by the user
+%	NewData: EditData or its converted form set on the Data property. Empty if Data was not changed
+%	Error: error string when failed to convert EditData to appropriate value for Data
+% handles    structure with handles and user data (see GUIDATA)
+
+tmp_data = get(hObject,'data');
+
+if eventdata.Indices(2) == 4 % stim or don't
+    tmp_stim_loc = handles.data.stim_loc;
+    tmp_stim_loc{eventdata.Indices(1)} = tmp_data{eventdata.Indices(1),eventdata.Indices(2)};
+    handles.data.stim_loc = tmp_stim_loc;
+else % changing location
+    tmp_marked_locs = handles.data.marked_locs;
+    tmp_marked_locs(eventdata.Indices(1),eventdata.Indices(2)) = tmp_data{eventdata.Indices(1),eventdata.Indices(2)};
+    handles.data.marked_locs = tmp_marked_locs;
+end
+
+guidata(hObject,handles);
+    
+
+
+% --- Executes on button press in load_locs.
+function load_locs_Callback(hObject, eventdata, handles)
+% hObject    handle to load_locs (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[filename,pathname] = uigetfile('*.mat','Select the data file to load locs from...');
+in_data = load([pathname '/' filename],'data');
+
+handles.data.marked_locs = in_data.data.marked_locs;
+handles.data.stim_loc = in_data.data.stim_loc;
+
+set(handles.marked_locs_table,'Data',[num2cell(handles.data.marked_locs) handles.data.stim_loc])
+guidata(hObject, handles);
+
+

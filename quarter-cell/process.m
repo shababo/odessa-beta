@@ -105,6 +105,14 @@ else
     handles.data.trial_metadata(sweep_counter).relative_position = NaN;
 end
 
+if isfield(handles.data,'cell2_pos')
+    handles.data.trial_metadata(sweep_counter).cell_position = handles.data.cell2_pos;
+    handles.data.trial_metadata(sweep_counter).relative_position_cell2 = handles.data.obj_position - handles.data.cell2_pos;
+else
+    handles.data.trial_metadata(sweep_counter).cell2_position = NaN;
+    handles.data.trial_metadata(sweep_counter).relative_position_cell2 = NaN;
+end
+
 if isfield(handles.data,'start_pos')
     handles.data.trial_metadata(sweep_counter).start_position = handles.data.start_pos;
     handles.data.trial_metadata(sweep_counter).relative_to_start_position = handles.data.obj_position - handles.data.start_pos;
