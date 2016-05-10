@@ -23,12 +23,18 @@ end
 
 handles.spatial_layout = handles.defaults.spatial_layout;
 switch handles.spatial_layout
-    case 'circles'
-        set(handles.circles,'Value',1)
+    case 'cross'
+        set(handles.cross,'Value',1)
         set(handles.grid,'Value',0)
+        set(handles.locations,'Value',0)
     case 'grid'
-        set(handles.circles,'Value',0)
+        set(handles.cross,'Value',0)
         set(handles.grid,'Value',1)
+        set(handles.locations,'Value',0)
+    case 'locations'
+        set(handles.cross,'Value',0)
+        set(handles.grid,'Value',0)
+        set(handles.locations,'Value',1)
 end
 
 set(handles.current_sweep_number,'String',num2str(handles.data.sweep_counter));

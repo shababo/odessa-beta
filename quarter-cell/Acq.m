@@ -1857,7 +1857,7 @@ if get(handles.use_obj_spatial,'Value')
             assignin('base','positions',relative_target_pos)
             handles.data.stim_conds.relative_target_pos = relative_target_pos;
 
-        case 'circles'
+        case 'cross'
 
             radii_step = str2num(get(handles.radii_step,'String')); % in micrometers
             num_circles = str2num(get(handles.num_circles,'String'));
@@ -1915,6 +1915,8 @@ if get(handles.use_obj_spatial,'Value')
                 handles.data.stim_conds.relative_target_pos = relative_target_pos;
             end
             assignin('base','relative_target_pos',relative_target_pos)
+        case 'locations'
+            disp('make this code now')
     end
 else
     disp('no spatial')
@@ -2686,7 +2688,8 @@ function spatial_layout_SelectionChangedFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.spatial_layout = get(eventdata.NewValue,'Tag')
+handles.spatial_layout = get(eventdata.NewValue,'Tag');
+disp(handles.spatial_layout)
 guidata(hObject,handles);
 
 
@@ -2902,3 +2905,112 @@ function tf_on_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of tf_on
+
+
+% --- Executes on button press in locations.
+function locations_Callback(hObject, eventdata, handles)
+% hObject    handle to locations (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of locations
+
+
+
+
+% --- Executes on button press in cross.
+function cross_Callback(hObject, eventdata, handles)
+% hObject    handle to cross (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of cross
+
+
+% --- Executes on button press in set_cell2_pos.
+function set_cell2_pos_Callback(hObject, eventdata, handles)
+% hObject    handle to set_cell2_pos (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[x,y,z]=getpos(handles.mpc200);
+x
+y
+z
+handles.data.cell2_pos = [x y z];
+set(handles.cell2_x,'String',num2str(x));
+set(handles.cell2_y,'String',num2str(y));
+set(handles.cell2_z,'String',num2str(z));
+guidata(hObject, handles);
+
+
+% --- Executes on button press in gotocell2.
+function gotocell2_Callback(hObject, eventdata, handles)
+% hObject    handle to gotocell2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+cell2_pos = handles.data.cell2_pos;
+handles.x=cell2_pos(1);
+handles.y=cell2_pos(2);
+handles.z=cell2_pos(3);
+move_good = check_move(handles, [handles.x handles.y handles.z]);
+
+if move_good
+    disp('good move!')
+    gotopos(handles.mpc200, handles.x, handles.y, handles.z);
+else
+    disp('bad move!')
+end
+guidata(hObject, handles);
+
+
+% --- Executes on button press in settransform.
+function settransform_Callback(hObject, eventdata, handles)
+% hObject    handle to settransform (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in goto_marked_loc.
+function goto_marked_loc_Callback(hObject, eventdata, handles)
+% hObject    handle to goto_marked_loc (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function marked_cell_in_Callback(hObject, eventdata, handles)
+% hObject    handle to marked_cell_in (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of marked_cell_in as text
+%        str2double(get(hObject,'String')) returns contents of marked_cell_in as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function marked_cell_in_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to marked_cell_in (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in remove_marked_loc.
+function remove_marked_loc_Callback(hObject, eventdata, handles)
+% hObject    handle to remove_marked_loc (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in mark_loc.
+function mark_loc_Callback(hObject, eventdata, handles)
+% hObject    handle to mark_loc (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
