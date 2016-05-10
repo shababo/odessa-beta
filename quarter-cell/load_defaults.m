@@ -17,10 +17,10 @@ Fs = 20000;
 
 % set default inter-stimulus-interval; this is the total time between
 % successive trigers from the timer fcn, not the time between trials
-intertrial_interval = .12; %in sec
+intertrial_interval = 1.0; %in sec
 
 % set default sweep duration (in seconds)
-trial_length = .1;
+trial_length = 1.0;
 
 % set default state for saving after each trial, 0 for no saving, 1 for saving after each trial
 % may want no saving if will hang up computer on long experiments with long
@@ -69,7 +69,7 @@ running = [];
 
 spatial_layout = 'grid';
 
-lut_file = 'C:\data\Shababo\lut_041216_roi1_2p_notf.mat';
+lut_file = 'C:\data\Shababo\lut_050316_roi1_2p_notf.mat';
 comnum = 9;
 
 defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', intertrial_interval, 'daqModel', device.Model, ...

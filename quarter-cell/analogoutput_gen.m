@@ -46,17 +46,26 @@ else
     AO1 = zeros(size(ch2_output));
 end
 
-
-if (strcmp(handles.defaults.AO2,'LED')==1) && get(handles.use_LED,'Value')
-    AO2=handles.data.stim_output;
+if strcmp(handles.run_type,'loop')
+    AO2 = zeros(size(AO0));
+    AO3 = AO2;
 else
-    AO2=zeros(size(AO0));
+
+    if (strcmp(handles.defaults.AO2,'LED')==1) && get(handles.use_LED,'Value')
+        AO2=handles.data.stim_output;
+    else
+        AO2=zeros(size(AO0));
+    end
+
+    if (strcmp(handles.defaults.AO3,'2P')==1) && get(handles.use_2P,'Value')
+        AO3=handles.data.stim_output;
+    else
+        AO3=zeros(size(AO0));
+    end
 end
 
-if (strcmp(handles.defaults.AO3,'2P')==1) && get(handles.use_2P,'Value')
-    AO3=handles.data.stim_output;
-else
-    AO3=zeros(size(AO0));
-end
-
+length(AO0)
+length(AO1)
+length(AO2)
+length(AO3)
 
