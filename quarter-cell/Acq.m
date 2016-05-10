@@ -250,7 +250,7 @@ switch handles.run_type
                 handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity;
                 handles.test_trial = 0;
                 
-                handles.data.obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + offset_pos];
+                handles.data.obj_position = handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + offset_pos;
                 
                 if i == 1
                     move_good = check_move(handles,  handles.data.obj_position);
@@ -279,6 +279,7 @@ switch handles.run_type
             guidata(handles.acq_gui,handles)
             
             if i < length(conditions) && ~is_test_trial
+                
                 cond_ind = handles.data.stim_conds.cond_inds(conditions(i+1),:);
                 tmp_obj_position = [handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + offset_pos];
 %                 move_good = check_move(handles, tmp_obj_position);
@@ -1875,7 +1876,7 @@ if get(handles.use_obj_spatial,'Value')
 
             radii_step = str2num(get(handles.radii_step,'String')); % in micrometers
             num_circles = str2num(get(handles.num_circles,'String'));
-            points_per_circle = str2num(get(handles.points_per_circle,'String'));
+            points_per_circle = 4; % hard coded to make this protocol into "cross"
 
             relative_target_pos_base = zeros(points_per_circle,3);
             relative_target_pos_base(1,:) = [radii_step 0 0];
