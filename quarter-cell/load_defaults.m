@@ -88,10 +88,12 @@ data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', ex
 
 s = daq.createSession('ni');
 s.Rate = Fs;
-s.addAnalogInputChannel('dev1',0:3,'Voltage');
+s.addAnalogInputChannel('dev1',0:5,'Voltage');
 s.Channels(1).InputType = 'SingleEnded';
 s.Channels(2).InputType = 'SingleEnded';
 s.Channels(3).InputType = 'SingleEnded';
 s.Channels(4).InputType = 'SingleEnded';
+s.Channels(5).InputType = 'SingleEnded';
+s.Channels(6).InputType = 'SingleEnded';
 
 s.addAnalogOutputChannel('dev1',0:3,'Voltage');

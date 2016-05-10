@@ -97,6 +97,7 @@ handles.data.trial_metadata(sweep_counter).cell1_highpass = get(handles.Highpass
 handles.data.trial_metadata(sweep_counter).cell2_highpass = get(handles.Highpass_cell2_check, 'Value');
 
 handles.data.trial_metadata(sweep_counter).obj_position = handles.data.obj_position;
+
 if isfield(handles.data,'cell_pos')
     handles.data.trial_metadata(sweep_counter).cell_position = handles.data.cell_pos;
     handles.data.trial_metadata(sweep_counter).relative_position = handles.data.obj_position - handles.data.cell_pos;
@@ -136,10 +137,10 @@ end
 %% high pass handles.data.sweeps if checked
 
 if get(handles.Highpass_cell1_check, 'Value')
-    handles.data.ch1sweep=highpass_filter(handles.data.ch1sweep,handles.defaults.Fs);
+    handles.data.ch1sweep = highpass_filter(handles.data.ch1sweep,handles.defaults.Fs);
 end
 if get(handles.Highpass_cell2_check, 'Value')
-    handles.data.ch2sweep=highpass_filter(handles.data.ch2sweep,handles.defaults.Fs);
+    handles.data.ch2sweep = highpass_filter(handles.data.ch2sweep,handles.defaults.Fs);
 end
 
 %%
