@@ -64,6 +64,7 @@ else
     end
 end
 
+disp('length')
 length(AO0)
 length(AO1)
 length(AO2)

@@ -189,7 +189,10 @@ switch handles.run_type
             case 'cross'
                 offset_pos = start_pos;
             case 'locations'
-                offset_pos = [0 0 0];
+                offset_x = str2double(get(handles.offset_x,'String'));
+                offset_y = str2double(get(handles.offset_y,'String'));
+                offset_z = str2double(get(handles.offset_z,'String'));
+                offset_pos = [offset_x offset_y offset_z];
         end
         handles.data.start_pos = start_pos;
         handles.data.offset_pos = offset_pos;
@@ -1164,23 +1167,23 @@ end
 function Cell2_type_popup_Callback(hObject, eventdata, handles)
 
 
-val = get(hObject,'Value');
-switch val
-    case 1
-        handles.data.ch2.user_gain=1;
-        ylabel(handles.Whole_cell2_axes,'pA')
-        handles.data.ch2.externalcommandsensitivity=20;
-    case 2
-        handles.data.ch2.user_gain=20;
-        ylabel(handles.Whole_cell2_axes,'mV')
-        handles.data.ch2.externalcommandsensitivity=400;
-    case 3
-        handles.data.ch2.user_gain=500;
-        ylabel(handles.Whole_cell2_axes,'mV')
-    case 4
-        handles.data.ch2.user_gain=1; % should be 1 but set to 1/1000 to correct for multiplication in acquire function
-        ylabel(handles.Whole_cell2_axes, 'Volts')
-end 
+% val = get(hObject,'Value');
+% switch val
+%     case 1
+%         handles.data.ch2.user_gain=1;
+%         ylabel(handles.Whole_cell2_axes,'pA')
+%         handles.data.ch2.externalcommandsensitivity=20;
+%     case 2
+%         handles.data.ch2.user_gain=20;
+%         ylabel(handles.Whole_cell2_axes,'mV')
+%         handles.data.ch2.externalcommandsensitivity=400;
+%     case 3
+%         handles.data.ch2.user_gain=500;
+%         ylabel(handles.Whole_cell2_axes,'mV')
+%     case 4
+%         handles.data.ch2.user_gain=1; % should be 1 but set to 1/1000 to correct for multiplication in acquire function
+%         ylabel(handles.Whole_cell2_axes, 'Volts')
+% end 
 % Hints: contents = cellstr(get(hObject,'String')) returns Cell2_type_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from Cell2_type_popup
 guidata(hObject,handles)
@@ -1830,7 +1833,8 @@ if get(handles.use_obj_spatial,'Value')
         case 'grid'
 
             % code me up, yo!
-            spacing = str2num(get(handles.grid_spacing,'String'));
+            spacing = str2num(get(handles.grid_spacing,'String'))
+            z_spacing = str2num(get(handles.grid_spacing_z,'String'))
             x_min = str2num(get(handles.x_obj_min,'String'));
             x_max = str2num(get(handles.x_obj_max,'String'));
             y_min = str2num(get(handles.y_obj_min,'String'));
@@ -1844,7 +1848,7 @@ if get(handles.use_obj_spatial,'Value')
             
             x_points = floor(x_range/spacing) + 1;
             y_points = floor(y_range/spacing) + 1;
-            z_points = floor(z_range/spacing) + 1;
+            z_points = floor(z_range/z_spacing) + 1;
             
 %             num_targets = x_points*y_points*z_points;
 %             relative_target_pos = zeros(0,3);
@@ -1854,7 +1858,7 @@ if get(handles.use_obj_spatial,'Value')
             for i = 1:x_points
                 for j = 1:y_points
                     for k = 1:z_points
-                        relative_pos = [x_min + spacing*(i-1) y_min + spacing*(j-1) z_min + spacing*(k-1)]
+                        relative_pos = [x_min + spacing*(i-1) y_min + spacing*(j-1) z_min + z_spacing*(k-1)]
                         if (get(handles.protect_cell,'Value') && ~all(abs(relative_pos) <= protect_range))...
                                 || ~get(handles.protect_cell,'Value') 
                             disp('adding target')
@@ -1951,7 +1955,7 @@ for i = 1:length(amps)
                 for m = 1:length(starttimes)
                     if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
 
-                        amplitude = get_voltage(handles.data.lut,amps(i));
+                        amplitude = get_voltage(handles.data.lut,amps(i))
                         if isempty(amplitude)
                             amplitude = 0;
                         end
@@ -2099,7 +2103,7 @@ handles.data.metadata.injection_age = get(handles.injection_age,'String');
 handles.data.metadata.slice_number = get(handles.slice_number,'String');
 handles.data.metadata.cell_number = get(handles.cell_number,'String');
 handles.data.metadata.cell_type = get(handles.cell_type,'String');
-
+handles.data.metadata.cell2_type = get(handles.cell_2_type,'String');
 
 clock_array = clock;
 savename = [num2str(clock_array(2)) '_' num2str(clock_array(3)) '_slice' handles.data.metadata.slice_number '_cell' handles.data.metadata.cell_number '.mat'];
@@ -3145,3 +3149,173 @@ set(handles.marked_locs_table,'Data',[num2cell(handles.data.marked_locs) handles
 guidata(hObject, handles);
 
 
+
+
+
+function grid_spacing_z_Callback(hObject, eventdata, handles)
+% hObject    handle to grid_spacing_z (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of grid_spacing_z as text
+%        str2double(get(hObject,'String')) returns contents of grid_spacing_z as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function grid_spacing_z_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to grid_spacing_z (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function offset_x_Callback(hObject, eventdata, handles)
+% hObject    handle to offset_x (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of offset_x as text
+%        str2double(get(hObject,'String')) returns contents of offset_x as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function offset_x_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to offset_x (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function offset_y_Callback(hObject, eventdata, handles)
+% hObject    handle to offset_y (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of offset_y as text
+%        str2double(get(hObject,'String')) returns contents of offset_y as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function offset_y_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to offset_y (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function offset_z_Callback(hObject, eventdata, handles)
+% hObject    handle to offset_z (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of offset_z as text
+%        str2double(get(hObject,'String')) returns contents of offset_z as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function offset_z_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to offset_z (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function cell_2_type_Callback(hObject, eventdata, handles)
+% hObject    handle to cell_2_type (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of cell_2_type as text
+%        str2double(get(hObject,'String')) returns contents of cell_2_type as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function cell_2_type_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to cell_2_type (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes when selected object is changed in roi_id.
+function roi_id_SelectionChangedFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in roi_id 
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.roi_id = get(eventdata.NewValue,'Tag');
+disp(handles.roi_id)
+
+switch handles.roi_id
+    case 'roi1'
+
+        load(handles.defaults.lut_file1,'lut')
+        
+
+   case 'roi2'
+
+        load(handles.defaults.lut_file2,'lut')
+
+    case 'roi3'
+ 
+        load(handles.defaults.lut_file3,'lut')
+
+end
+
+handles.data.lut = lut;
+set(handles.load_lut,'ForegroundColor',[0 .5 .5])
+
+
+guidata(hObject,handles);
+
+
+
+function series_r2_max_Callback(hObject, eventdata, handles)
+% hObject    handle to series_r2_max (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of series_r2_max as text
+%        str2double(get(hObject,'String')) returns contents of series_r2_max as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function series_r2_max_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to series_r2_max (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

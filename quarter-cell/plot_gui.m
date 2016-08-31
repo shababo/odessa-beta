@@ -38,26 +38,29 @@ if get(handles.test_pulse,'Value')
 else
     pulse_over_sample = 1;
 end
-timebase = handles.data.timebase(pulse_over_sample:end);
+timebase = handles.data.timebase;
 
-stim_sweep = handles.data.stim_sweep(pulse_over_sample:end);
+stim_sweep = handles.data.stim_sweep;
 if get(handles.use_lut,'Value')
     stim_sweep = stim_sweep/max(stim_sweep)*handles.data.trial_metadata(end).pulseamp;
 end
 
 if get(handles.record_cell2_check,'Value')
-    size(timebase)
+    size(timebase(pulse_over_sample:end))
     size(handles.data.ch1sweep(pulse_over_sample:end))
-    handles.current_trial_axes = plotyy(handles.current_trial_axes(1),timebase,handles.data.ch1sweep(pulse_over_sample:end),timebase,handles.data.ch2sweep(pulse_over_sample:end));
+    handles.current_trial_axes = plotyy(handles.current_trial_axes(1),timebase(pulse_over_sample:end),handles.data.ch1sweep(pulse_over_sample:end),timebase(pulse_over_sample:end),handles.data.ch2sweep(pulse_over_sample:end));
+    set(handles.current_trial_axes(1),'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
+    set(handles.current_trial_axes(2),'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
 else
-    size(timebase)
+    size(timebase(pulse_over_sample:end))
     size(handles.data.ch1sweep(pulse_over_sample:end))
     handles.current_trial_axes(1)
-    plot(handles.current_trial_axes(1),timebase,handles.data.ch1sweep(pulse_over_sample:end));
+    plot(handles.current_trial_axes(1),timebase(pulse_over_sample:end),handles.data.ch1sweep(pulse_over_sample:end));
+    set(handles.current_trial_axes(1),'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
 end
-set(gca,'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
 
-plot(handles.current_trial_stim_axes,timebase,stim_sweep)
+
+plot(handles.current_trial_stim_axes,timebase(pulse_over_sample:end),stim_sweep(pulse_over_sample:end))
 set(handles.current_trial_stim_axes,'xlim',[handles.data.timebase(pulse_over_sample) handles.data.timebase(end)])
 set(handles.current_trial_stim_axes,'xticklabel',[]);
 
@@ -71,31 +74,36 @@ if get(handles.test_pulse,'Value')
         handles.testpulse_axes = plotyy(handles.testpulse_axes(1),handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample),...
             handles.data.timebase(1:pulse_over_sample),handles.data.ch2sweep(1:pulse_over_sample));
     else
-        plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample));
+        plot(handles.testpulse_axes(1),handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample));
     end
 %     plot(handles.testpulse_axes,handles.data.timebase(1:pulse_over_sample),handles.data.ch1sweep(1:pulse_over_sample))
-end
+
 
 % axes(handles.Ih_axes)
 % hold(handles.Ih_axes, 'on')
 plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch1.holding_i,'.-');
-% hold(handles.Ih_axes);
-% plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch2.holding_i,'.-');
+hold(handles.Ih_axes);
+plot(handles.Ih_axes, handles.data.trialtime, handles.data.ch2.holding_i,'.-');
 % hold(handles.Ih_axes, 'off')
-
+set(handles.ih_text,'string',['Ih1: ' num2str(handles.data.ch1.holding_i(end)) ', Ih2: ' num2str(handles.data.ch2.holding_i(end))])
 axis tight
 
 
 plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch1.series_r,'.-');
-% hold(handles.Rs_axes);
-% plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch2.series_r,'.-');
-set(handles.Rs_axes,'ylim',[0 30])
+hold(handles.Rs_axes);
+plot(handles.Rs_axes, handles.data.trialtime, handles.data.ch2.series_r,'.-');
+% set(handles.Rs_axes,'ylim',[0 30])
 % axis tight
+set(handles.rs_text,'string',['Rs1: ' num2str(handles.data.ch1.series_r(end)) ', Rs2: ' num2str(handles.data.ch2.series_r(end))])
 
 plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch1.input_r,'.-')
-% hold(handles.Ir_axes);
-% plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch2.input_r,'.-')
+hold(handles.Ir_axes);
+plot(handles.Ir_axes, handles.data.trialtime, handles.data.ch2.input_r,'.-')
+set(handles.ri_text,'string',['Ri1: ' num2str(handles.data.ch1.input_r(end)) ', Ri2: ' num2str(handles.data.ch2.input_r(end))])
+
 axis tight
+
+end
 
 %% keep cursor lines on if checked % comment out to prevent cursur update
 % if (get(handles.addcursors_radio,'Value')==1)
