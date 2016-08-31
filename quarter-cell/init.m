@@ -5,11 +5,38 @@ handles.run_type = handles.defaults.run_type;
 switch handles.run_type
     case 'loop'
         set(handles.loop,'Value',1)
-        set(handles.sequence,'Value',0)
-    case 'sequence'
+        set(handles.conditions,'Value',0)
+    case 'conditions'
         set(handles.loop,'Value',0)
-        set(handles.sequence,'Value',1)
+        set(handles.conditions,'Value',1)
 end
+
+
+handles.roi_id = handles.defaults.roi_id;
+switch handles.roi_id
+    case 'roi1'
+        set(handles.roi1,'Value',1)
+        set(handles.roi2,'Value',0)
+        set(handles.roi3,'Value',0)
+        load(handles.defaults.lut_file1,'lut')
+        
+
+   case 'roi2'
+        set(handles.roi1,'Value',0)
+        set(handles.roi2,'Value',1)
+        set(handles.roi3,'Value',0)
+        load(handles.defaults.lut_file2,'lut')
+
+    case 'roi3'
+        set(handles.roi1,'Value',0)
+        set(handles.roi2,'Value',0)
+        set(handles.roi3,'Value',1)    
+        load(handles.defaults.lut_file3,'lut')
+
+end
+
+handles.data.lut = lut;
+set(handles.load_lut,'ForegroundColor',[0 .5 .5])
 
 handles.stim_type = handles.defaults.stim_type;
 switch handles.stim_type
@@ -85,16 +112,11 @@ if ~isempty(instrfind)
     fclose(instrfind);
 end
 handles.mpc200 = serial(strcat('COM',get(handles.comnum,'String')),'BaudRate',128000,'Terminator','CR');
-fopen(handles.mpc200);
+% fopen(handles.mpc200); %UNCOMMENT FOR OBJECTIVE CONTROL!!
 handles.mpc200.Parity = 'none';
 set(handles.mpc200_status,'String','Connected to MPC-200/NOT Calib');
 
-% load default lut
 
-load(handles.defaults.lut_file,'lut')
-handles.data.lut = lut;
-
-set(handles.load_lut,'ForegroundColor',[0 .5 .5])
 
 
 handles.run_count = 0;

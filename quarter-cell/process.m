@@ -64,7 +64,7 @@ if get(handles.use_LED,'Value')
     handles.data.trial_metadata(sweep_counter).hologram_id = 'N/A';
 else
     handles.data.trial_metadata(sweep_counter).stim_type = '2P';
-    handles.data.trial_metadata(sweep_counter).hologram_id = get(handles.hologram_id,'String');
+    handles.data.trial_metadata(sweep_counter).hologram_id = handles.roi_id;
 end
 
 handles.data.trial_metadata(sweep_counter).note = get(handles.notes,'String');
@@ -107,7 +107,7 @@ else
 end
 
 if isfield(handles.data,'cell2_pos')
-    handles.data.trial_metadata(sweep_counter).cell_position = handles.data.cell2_pos;
+    handles.data.trial_metadata(sweep_counter).cell2_position = handles.data.cell2_pos;
     handles.data.trial_metadata(sweep_counter).relative_position_cell2 = handles.data.obj_position - handles.data.cell2_pos;
 else
     handles.data.trial_metadata(sweep_counter).cell2_position = NaN;
