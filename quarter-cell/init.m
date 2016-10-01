@@ -112,7 +112,7 @@ if ~isempty(instrfind)
     fclose(instrfind);
 end
 handles.mpc200 = serial(strcat('COM',get(handles.comnum,'String')),'BaudRate',128000,'Terminator','CR');
-% fopen(handles.mpc200); %UNCOMMENT FOR OBJECTIVE CONTROL!!
+% fopen(handles.mpc200); %COMMENT FOR OBJECTIVE CONTROL!!
 handles.mpc200.Parity = 'none';
 set(handles.mpc200_status,'String','Connected to MPC-200/NOT Calib');
 
