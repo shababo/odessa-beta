@@ -13,7 +13,7 @@ save_name = [save_path experiment_name];
 amplifier = 'Axon CNS'; % or Multiclamp
 
 % set sampling frequency in Hz
-Fs = 20000;  
+Fs = 5000;  
 
 % set default inter-stimulus-interval; this is the total time between
 % successive trigers from the timer fcn, not the time between trials
@@ -38,8 +38,8 @@ CCexternalcommandsensitivity = 400;%400;  % for multiclamp
 % set default type of output for each analog output channel
 AO0 = 'ch1_out'; 
 AO1 = 'ch2_out';
-AO2 = 'LED';
-AO3 = '2P';
+AO2 = '2P';
+AO3 = 'SHUTTER';
 
 stim_type = '2P';
 

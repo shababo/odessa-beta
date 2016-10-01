@@ -47,18 +47,27 @@ else
 end
 
 if strcmp(handles.run_type,'loop')
+    
     AO2 = zeros(size(AO0));
     AO3 = AO2;
+    AO2(1:100) = 2.0;
+    
+    
 else
 
     if (strcmp(handles.defaults.AO2,'LED')==1) && get(handles.use_LED,'Value')
+        AO2=handles.data.stim_output;
+    elseif (strcmp(handles.defaults.AO2,'2P')==1) && get(handles.use_2P,'Value')
         AO2=handles.data.stim_output;
     else
         AO2=zeros(size(AO0));
     end
 
+
     if (strcmp(handles.defaults.AO3,'2P')==1) && get(handles.use_2P,'Value')
         AO3=handles.data.stim_output;
+    elseif (strcmp(handles.defaults.AO3,'SHUTTER')==1) && get(handles.use_2P,'Value')
+        AO3 = handles.data.shutter;
     else
         AO3=zeros(size(AO0));
     end
