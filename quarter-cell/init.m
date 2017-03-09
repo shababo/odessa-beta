@@ -11,6 +11,10 @@ switch handles.run_type
         set(handles.conditions,'Value',1)
 end
 
+load(handles.defaults.lut_file1,'lut','ratio_map')
+handles.data.lut = lut;
+handles.data.ratio_map = ratio_map;
+set(handles.load_lut,'ForegroundColor',[0 .5 .5])
 
 handles.roi_id = handles.defaults.roi_id;
 switch handles.roi_id
@@ -35,8 +39,6 @@ switch handles.roi_id
 
 end
 
-handles.data.lut = lut;
-set(handles.load_lut,'ForegroundColor',[0 .5 .5])
 
 handles.stim_type = handles.defaults.stim_type;
 switch handles.stim_type
@@ -111,10 +113,10 @@ handles.protocol_loaded = 0;
 if ~isempty(instrfind)
     fclose(instrfind);
 end
-handles.mpc200 = serial(strcat('COM',get(handles.comnum,'String')),'BaudRate',128000,'Terminator','CR');
-% fopen(handles.mpc200); %COMMENT FOR OBJECTIVE CONTROL!!
-handles.mpc200.Parity = 'none';
-set(handles.mpc200_status,'String','Connected to MPC-200/NOT Calib');
+% handles.mpc200 = serial(strcat('COM',get(handles.comnum,'String')),'BaudRate',128000,'Terminator','CR');
+% fopen(handles.mpc200); %UNCOMMENT FOR OBJECTIVE CONTROL!!
+% handles.mpc200.Parity = 'none';
+% set(handles.mpc200_status,'String','Connected to MPC-200/NOT Calib');
 
 
 
