@@ -22,7 +22,7 @@ function varargout = spatial_power_measure(varargin)
 
 % Edit the above text to modify the response to help spatial_power_measure
 
-% Last Modified by GUIDE v2.5 31-Aug-2016 10:31:49
+% Last Modified by GUIDE v2.5 01-Oct-2016 10:00:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,6 +54,9 @@ function spatial_power_measure_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for spatial_power_measure
 handles.output = struct();
+
+handles.lut = varargin{1};
+handles.ratio_map = varargin{2};
 
 % Update handles structure
 guidata(hObject, handles);
@@ -411,6 +414,7 @@ function build_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % build holograms
+
 precomputed_target_base.mode = 'Disks';
 precomputed_target_base.radius = str2double(get(handles.disc_radius,'String'));
 precomputed_target_base.x = 0;
@@ -426,45 +430,110 @@ y_min = str2double(get(handles.y_min,'String'));
 y_max = str2double(get(handles.y_max,'String'));
 y_spacing = str2double(get(handles.y_spacing,'String'));
 
-count = 1;
-for i = x_min:x_spacing:x_max
-    for j = y_min:y_spacing:y_max
-        precomputed_target(count) = precomputed_target_base;
-        precomputed_target(count).x = i;
-        precomputed_target(count).y = j;
-        count = count + 1;
-    end
-end
+x_positions = x_min:x_spacing:x_max;
+y_positions = y_min:y_spacing:y_max;
 
-num_holograms = length(precomputed_target);
-        
-if get(handles.rand_order,'Value')
-    order = 1:length(precomputed_target);
-    precomputed_target = precomputed_target(order);
-end
+% powers = 1.2:.4:2.0;
 
-% build sequence
+num_holograms = length(x_positions) * length(y_positions);
+precomputed_target(num_holograms) = precomputed_target_base;
+
 sequence_base.start = 0;
 sequence_base.duration = str2double(get(handles.measure_duration,'String'))*1000;
 sequence_base.power = str2double(get(handles.pockels_voltage,'String'))*100;
 sequence_base.filter_configuration = 'Femto Phasor';
+sequence_base.precomputed_target_index = 1;
 
+sequence(num_holograms) = sequence_base;
 start_time = str2double(get(handles.start_time,'String'))*1000;
 iti = str2double(get(handles.intermeasure_interval,'String'))*1000;
 
-for i = 1:num_holograms
+target_power = str2double(get(handles.target_power,'String'));
 
-        sequence(i) = sequence_base;
-        sequence(i).start = start_time + (i-1)*(iti + sequence_base.duration);
+count = 1;
 
+conversion = -160:40:160;
+
+image_test = zeros(length(x_positions),length(y_positions));
+
+% for k = 1:str2double(get(handles.num_repeats,'String'))
+    for i = 1:length(x_positions)
+        for j = 1:length(y_positions)
+
+
+    %         for k = 1:length(powers)
+                precomputed_target(count) = precomputed_target_base;
+                precomputed_target(count).x = x_positions(i);
+                precomputed_target(count).y = y_positions(j);
+
+                sequence(count) = sequence_base;
+                sequence(count).precomputed_target_index = count;
+                if get(handles.equal_power,'Value')
+                    [~, c_i] = min(abs(x_positions(i) - conversion));
+                    [~, c_j] = min(abs(y_positions(j) - conversion));
+                    scaled_power = target_power * handles.ratio_map(c_i,c_j);
+    %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_power);
+                    voltage = get_voltage(handles.lut,scaled_power);
+                    image_test(i,j) = voltage;
+                    sequence(count).power = voltage*100;
+                end
+%                 sequence(count).start = start_time + (count-1)*(iti + sequence_base.duration);
+    %             sequence(count).power = powers(k)*100;
+
+                count = count + 1;
+    %         end
+
+        end
+    end
+% end
+bad_list = [];
+for i = 1:length(precomputed_target)
+    precomputed_target(i).x
+%     if abs(precomputed_target(i).x) > 150 || abs(precomputed_target(i).y) > 150
+%         bad_list = [bad_list i];
+%     end
 end
 
-time_padding = 10.0; % in seconds
+% sequence(bad_list) = [];
+
+num_repeats = str2double(get(handles.num_repeats,'String'));
+figure; imagesc(image_test); colorbar
+num_holograms = length(precomputed_target);
+% num_holograms = length(sequence);
+
+    
+
+if num_holograms > 1 && get(handles.rand_order,'Value')
+    
+    order = zeros(num_holograms*num_repeats,1);
+    for i = 1:num_repeats
+        order((i-1)*num_holograms+1:i*num_holograms) = randperm(num_holograms);
+    end
+    
+else
+    order = repmat(1:num_holograms,1,num_repeats);
+    
+end
+
+% precomputed_target = precomputed_target(order);
+sequence = sequence(order);
+
+
+for i = 1:length(sequence)
+    sequence(i).start = start_time + (i-1)*(iti + sequence_base.duration);
+end
+
+time_padding = 20.0; % in seconds
 total_duration = (sequence(end).start + iti)/1000 + time_padding;
 
 handles.output.precomputed_target = precomputed_target;
 handles.output.sequence = sequence;
 handles.output.total_duration = total_duration;
+if get(handles.equal_power,'Value')
+    handles.output.target_power = target_power;
+else
+    handles.output.target_power = NaN;
+end
 
 guidata(hObject,handles)
 
@@ -481,4 +550,59 @@ uiresume(hObject);
 else
 % The GUI is no longer waiting, just close it
 delete(hObject);
+end
+
+
+
+function num_repeats_Callback(hObject, eventdata, handles)
+% hObject    handle to num_repeats (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of num_repeats as text
+%        str2double(get(hObject,'String')) returns contents of num_repeats as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function num_repeats_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to num_repeats (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in equal_power.
+function equal_power_Callback(hObject, eventdata, handles)
+% hObject    handle to equal_power (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of equal_power
+
+
+
+function target_power_Callback(hObject, eventdata, handles)
+% hObject    handle to target_power (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of target_power as text
+%        str2double(get(hObject,'String')) returns contents of target_power as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function target_power_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to target_power (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end

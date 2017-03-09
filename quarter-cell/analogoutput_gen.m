@@ -66,8 +66,10 @@ else
 
     if (strcmp(handles.defaults.AO3,'2P')==1) && get(handles.use_2P,'Value')
         AO3=handles.data.stim_output;
-    elseif (strcmp(handles.defaults.AO3,'SHUTTER')==1) && get(handles.use_2P,'Value')
+    elseif (get(handles.use_2P,'Value'))
         AO3 = handles.data.shutter;
+    elseif (strcmp(handles.defaults.AO3,'LED')==1) && get(handles.use_LED,'Value')
+        AO3=handles.data.stim_output;
     else
         AO3=zeros(size(AO0));
     end

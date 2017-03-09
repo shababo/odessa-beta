@@ -181,7 +181,11 @@ switch handles.run_type
         conditions = repmat(1:size(handles.data.stim_conds.cond_inds,1),1,str2double(get(handles.num_trials,'String')));
         conditions = conditions(randperm(length(conditions)));
         
-        [start_pos_x, start_pos_y,start_pos_z] = getpos(handles.mpc200);
+        if isfield(handles,'mpc200')
+            [start_pos_x, start_pos_y,start_pos_z] = getpos(handles.mpc200);
+        else
+            start_pos_x = 0; start_pos_y = 0; start_pos_z = 0;
+        end
         start_pos = [start_pos_x start_pos_y start_pos_z];
         switch handles.spatial_layout
             case 'grid'
@@ -233,7 +237,7 @@ switch handles.run_type
                 trial_length = 1.0;
                  
                 [handles.data.stim_output,handles.data.timebase] = makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, 0, handles.data.ch1.pulsefrequency, handles.defaults.Fs, trial_length);
-
+                handles.data.shutter = zeros(size(handles.data.stim_output));
                 % [handles.data.stim_output,handles.data.timebase] = ...
                 %     makepulseoutputs(handles.data.stimulation.pulse_starttime,handles.data.stimulation.pulsenumber, handles.data.stimulation.pulseduration,...
                 %     handles.data.stimulation.pulseamp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, trial_length);
@@ -256,7 +260,7 @@ switch handles.run_type
                 
                 handles.data.obj_position = handles.data.stim_conds.relative_target_pos(cond_ind(6),:) + offset_pos;
                 
-                if i == 1
+                if i == 1 && isfield(handles,'mpc200')
                     move_good = check_move(handles,  handles.data.obj_position);
 
                     if move_good
@@ -289,7 +293,9 @@ switch handles.run_type
 %                 move_good = check_move(handles, tmp_obj_position);
 
 %                     if move_good
-                        gotopos(handles.mpc200, tmp_obj_position(1), tmp_obj_position(2), tmp_obj_position(3));
+                        if isfield(handles,'mpc200')
+                            gotopos(handles.mpc200, tmp_obj_position(1), tmp_obj_position(2), tmp_obj_position(3));
+                        end
 %                     else
 %                         disp('bad move!')
 %                     end
@@ -710,7 +716,7 @@ else
         thissweep = smart_zero(thissweep,handles);
     %     thissweep=thissweep-mean(thissweep(1:20000));
         if (val == 1)
-            thissweep=highpass_filter(thissweep); % if checked highpass filter
+            thissweep=highpass_filter(thissweep,1/20000); % if checked highpass filter
         end  
         plot(handles.sweep_display_axes,tim, thissweep); % if just single cell just plot cell1
     end
@@ -1686,6 +1692,7 @@ function load_lut_Callback(hObject, eventdata, handles)
 [handles.data.lut_filename, handles.data.lut_filepath] = uigetfile();
 load([handles.data.lut_filepath '\' handles.data.lut_filename],'lut')
 handles.data.lut = lut;
+handles.data.ratio_map = ratio_map;
 
 set(hObject,'ForegroundColor',[0 .5 .5])
 
@@ -1947,6 +1954,7 @@ end
 
 handles.data.stim_conds.stims = zeros(length(amps),length(durations),length(numpulses),length(freqs),length(starttimes),handles.defaults.Fs * handles.defaults.trial_length);
 handles.data.stim_conds.cond_inds = zeros(length(amps)*length(durations)*length(numpulses)*length(freqs)*length(starttimes)*num_targets,6);
+handles.data.stim_conds.shutters = zeros(size(handles.data.stim_conds.stims));
 
 cond_count = 1;
 for i = 1:length(amps)
@@ -2844,9 +2852,13 @@ guidata(hObject, handles);
 
 function move_good = check_move(handles,new_pos)
 
-[curr_x,curr_y,curr_z]=getpos(handles.mpc200);
-abs([curr_x,curr_y,curr_z]-new_pos)
-move_good = ~any( abs([curr_x,curr_y,curr_z]-new_pos) > [5000 5000 1500]);
+if isfield(handles,'mpc200')
+    [curr_x,curr_y,curr_z]=getpos(handles.mpc200);
+    abs([curr_x,curr_y,curr_z]-new_pos)
+    move_good = ~any( abs([curr_x,curr_y,curr_z]-new_pos) > [5000 5000 1500]);
+else
+    move_good = 1;
+end
     
 
 
@@ -3332,11 +3344,21 @@ function spatial_power_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 warndlg('Have you opened the socket?','Open Socket','modal')
-spatial_power_output = spatial_power_measure;
+rng(1234)
+spatial_power_output = spatial_power_measure(handles.data.lut,handles.data.ratio_map');
 
 set(handles.trial_length,'String',num2str(spatial_power_output.total_duration))
 handles = trial_length_Callback(handles.trial_length, [], handles);
 
+spatial_power_output.trial_create = handles.run_count + 1;
+
+if isfield(handles.data,'spatial_stim_info')
+    handles.data.spatial_stim_info(end + 1) = spatial_power_output;
+else
+    handles.data.spatial_stim_info = spatial_power_output;
+end
+
+guidata(hObject,handles);
 mssend(handles.sock,spatial_power_output)
 
 
@@ -3367,3 +3389,19 @@ function close_socket_Callback(hObject, eventdata, handles)
 
 msclose(handles.sock);
 guidata(hObject,handles);
+
+
+% --- Executes on button press in set_pia_pos.
+function set_pia_pos_Callback(hObject, eventdata, handles)
+% hObject    handle to set_pia_pos (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[x,y,z]=getpos(handles.mpc200);
+x
+y
+z
+handles.data.pia_pos = [x y z];
+set(handles.pia_x,'String',num2str(x));
+set(handles.pia_y,'String',num2str(y));
+set(handles.pia_z,'String',num2str(z));
+guidata(hObject, handles);
