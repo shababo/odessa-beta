@@ -100,7 +100,7 @@ function current_trial_axes_CreateFcn(hObject, eventdata, handles)
 
 
 % --- Executes on button press in run.
-function run_Callback(hObject, eventdata, handles)
+function handles = run_Callback(hObject, eventdata, handles)
 % str2double(get(handles.ITI,'String'))
 % handles.globalTimer=timer('TimerFcn', @acquire, 'TaskstoExecute', handles.defaults.total_sweeps, 'Period',str2double(get(handles.ITI,'String')), 'ExecutionMode','fixedRate','UserData',handles);
 % guidata(hObject,handles)
@@ -115,9 +115,14 @@ end
 handles.is_test_trial = 0;
 
 
+    
 % [x,y,z] = getpos(handles.mpc200);
-handles.data.obj_position = [0 0 0];%[x y z];
-        
+if isfield(handles.data,'obj_position_socket')
+    handles.data.obj_position = handles.data.obj_position_socket;
+else
+    handles.data.obj_position = [0 0 0];%[x y z];
+end
+
 % what type of run are we going to do?
 switch handles.run_type
     case 'loop'
@@ -380,7 +385,8 @@ end
 
 function handles = trial_length_Callback(hObject, eventdata, handles)
 
-trial_length = str2double(get(hObject,'String'));
+disp('updating trial length stuff')
+trial_length = str2double(get(hObject,'String'))
 handles.defaults.trial_length = trial_length;
 
 handles = make_stim_out(handles);
@@ -1963,8 +1969,11 @@ for i = 1:length(amps)
             for l = 1:length(freqs)
                 for m = 1:length(starttimes)
                     if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
-
-                        amplitude = get_voltage(handles.data.lut,amps(i))
+                        if get(handles.tf_on,'Value')
+                            amplitude = get_voltage(handles.data.lut_tf,amps(i))
+                        else
+                            amplitude = get_voltage(handles.data.lut,amps(i))
+                        end
                         if isempty(amplitude)
                             amplitude = 0;
                         end
@@ -3405,3 +3414,12 @@ set(handles.pia_x,'String',num2str(x));
 set(handles.pia_y,'String',num2str(y));
 set(handles.pia_z,'String',num2str(z));
 guidata(hObject, handles);
+
+
+% --- Executes on button press in trigger_seq.
+function trigger_seq_Callback(hObject, eventdata, handles)
+% hObject    handle to trigger_seq (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of trigger_seq

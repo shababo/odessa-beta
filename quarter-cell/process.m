@@ -25,7 +25,8 @@ thissweep(:,2)=thissweep(:,2)/handles.data.ch2.user_gain;
 
 % store the handles.io_data in cell array 'handles.data.sweeps'
 handles.data.sweeps{sweep_counter}=thissweep;
-
+handles.data.trial_metadata(sweep_counter).spots_key = [];
+handles.data.trial_metadata(sweep_counter).sequence = [];
 switch handles.run_type
     
     case 'loop'
@@ -41,7 +42,10 @@ switch handles.run_type
         handles.data.trial_metadata(sweep_counter).pulsenumber = handles.data.stimulation.pulsenumber;
         handles.data.trial_metadata(sweep_counter).pulsefrequency = handles.data.stimulation.pulsefrequency;
         handles.data.trial_metadata(sweep_counter).pulse_starttime = handles.data.stimulation.pulse_starttime;
-        
+        if isfield(handles.data,'spots_key')
+            handles.data.trial_metadata(sweep_counter).spots_key = handles.data.spots_key;
+            handles.data.trial_metadata(sweep_counter).sequence = handles.data.sequence;
+        end
         
     case 'conditions'
         
@@ -129,7 +133,7 @@ handles.data.ch1sweep = thissweep(:,1);
 handles.data.ch2sweep = thissweep(:,2);
 
 if get(handles.use_LED,'Value')
-    handles.data.stim_sweep = thissweep(:,3);
+    handles.data.stim_sweep = stim_output;%    thissweep(:,4);
 else
     handles.data.stim_sweep = thissweep(:,4);
 end

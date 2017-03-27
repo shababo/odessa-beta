@@ -13,7 +13,14 @@ end
 
 load(handles.defaults.lut_file1,'lut','ratio_map')
 handles.data.lut = lut;
-handles.data.ratio_map = ratio_map;
+if exist('ratio_map','var')
+    handles.data.ratio_map = ratio_map;
+end
+load(handles.defaults.lut_tf_file,'lut','ratio_map')
+handles.data.lut_tf = lut;
+if exist('ratio_map','var')
+    handles.data.ratio_map = ratio_map;
+end
 set(handles.load_lut,'ForegroundColor',[0 .5 .5])
 
 handles.roi_id = handles.defaults.roi_id;
@@ -113,6 +120,7 @@ handles.protocol_loaded = 0;
 if ~isempty(instrfind)
     fclose(instrfind);
 end
+
 % handles.mpc200 = serial(strcat('COM',get(handles.comnum,'String')),'BaudRate',128000,'Terminator','CR');
 % fopen(handles.mpc200); %UNCOMMENT FOR OBJECTIVE CONTROL!!
 % handles.mpc200.Parity = 'none';
