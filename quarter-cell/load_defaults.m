@@ -39,7 +39,7 @@ CCexternalcommandsensitivity = 400;%400;  % for multiclamp
 AO0 = 'ch1_out'; 
 AO1 = 'ch2_out';
 AO2 = '2P';
-AO3 = 'LED';
+AO3 = 'SHUTTER';
 
 stim_type = '2P';
 
@@ -70,9 +70,11 @@ running = [];
 spatial_layout = 'grid';
 roi_id = 'roi1';
 
-lut_file1 = 'C:\data\Shababo\011817-full-lut-400um.mat';
+lut_file1 = 'C:\data\Shababo\03172017-notf-lut.mat';
 % lut_file2 = 'C:\data\Shababo\lut_063016_roi1_2p_notf.mat';
 % lut_file3 = 'C:\data\Shababo\lut_063016_roi1_2p_notf.mat';
+
+lut_tf_file = 'C:\data\Shababo\03172017-tf-lut.mat';
 
 comnum = 9;
 
@@ -82,7 +84,7 @@ defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', i
     CCexternalcommandsensitivity, 'ifsave', ifsave, ...
     'AO0', AO0, 'AO1', AO1, 'AO2', AO2,'AO3',AO3,'run_type',run_type,...
     'testpulse_start',testpulse_start,'testpulse_duration',testpulse_duration,'testpulse_amp',testpulse_amp,'stim_type',stim_type,...
-    'spatial_layout',spatial_layout,'lut_file1',lut_file1,'comnum',comnum,'roi_id',roi_id);
+    'spatial_layout',spatial_layout,'lut_file1',lut_file1,'lut_tf_file',lut_tf_file,'comnum',comnum,'roi_id',roi_id);
 data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', exp_name, 'stimulation', stimulation,...
     'save_name', save_name, 'save_path', save_path, 'experiment_name', experiment_name, 'SetSweepNumber', SetSweepNumber, 'ch1sweep', ch1sweep, 'ch2sweep', ch2sweep, ...
      'stims', stims, 'sweep_counter', sweep_counter, 'testpulse', testpulse, ...
