@@ -362,6 +362,7 @@ guidata(hObject,handles)
 function handles = process_plot(handles)
 
 
+
 set(handles.run,'String','Process')
 handles = process(handles);
 guidata(handles.acq_gui,handles) % needed?
@@ -400,7 +401,10 @@ handles.data.ch1_output=makepulseoutputs(handles.data.ch1.pulse_starttime,handle
 handles.data.ch2_output=makepulseoutputs(handles.data.ch2.pulse_starttime,handles.data.ch2.pulsenumber, handles.data.ch2.pulseduration, handles.data.ch2.pulseamp, handles.data.ch2.pulsefrequency, handles.defaults.Fs, trial_length);
 handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity;
 handles.data.ch2_output=handles.data.ch2_output/handles.defaults.CCexternalcommandsensitivity;
-[handles.data.testpulse, handles.data.timebase] = makepulseoutputs(handles.defaults.testpulse_start, 1, handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1, handles.defaults.Fs, trial_length);
+[handles.data.testpulse, handles.data.timebase] = ...
+    makepulseoutputs(handles.defaults.testpulse_start, 1, ...
+    handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1, ...
+    handles.defaults.Fs, trial_length);
 guidata(hObject,handles)
 
 handles = updateAOaxes(handles);
@@ -745,7 +749,7 @@ guidata(hObject,handles)
 % --- Executes on button press in update_cc_cell1_button.
 function update_cc_cell1_button_Callback(hObject, eventdata, handles)
 
-handles.data.ch1_output=makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
+handles.data.ch1_output=make_fi_curve_output(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
 handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity; % scale by external command sensititvity under Current Clamp
 handles = updateAOaxes(handles);
 
@@ -3423,3 +3427,34 @@ function trigger_seq_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of trigger_seq
+
+
+% --- Executes on button press in cell1_intrinsics.
+function cell1_intrinsics_Callback(hObject, eventdata, handles)
+% hObject    handle to cell1_intrinsics (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[intrinsic_curr_out, ~, trial_length] = make_fi_curve_output(Fs);
+handles.data.ch1_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity; % scale by external command sensititvity under Current Clamp
+handles.data.ch2_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity;
+
+set(handles.trial_length,'String',num2str(trial_length))
+handles.defaults.trial_length = trial_length;
+handles = make_stim_out(handles);
+
+[handles.data.testpulse, handles.data.timebase] = ...
+    makepulseoutputs(handles.defaults.testpulse_start, 1, ...
+    handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1,...
+    handles.defaults.Fs, trial_length);
+guidata(hObject,handles)
+
+handles = updateAOaxes(handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in cell2_intrinsics.
+function cell2_intrinsics_Callback(hObject, eventdata, handles)
+% hObject    handle to cell2_intrinsics (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

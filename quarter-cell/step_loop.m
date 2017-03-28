@@ -3,6 +3,7 @@ function  data = step_loop(handles)
 % function when triggering internally, and is the re-called for each
 % trigger when using external triggers
 
+
 % generate analog output vectors for each trial
 
 start_color = get(handles.run,'BackgroundColor');

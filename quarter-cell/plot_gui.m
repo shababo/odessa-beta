@@ -23,9 +23,6 @@ current_sweep_time = strcat(mins,':', secs);
 set(handles.current_sweep_number,'String',num2str(handles.data.sweep_counter));
 set(handles.current_run_number,'String',num2str(handles.run_count));
 
-%% increment sweep counter
-handles.data.sweep_counter=handles.data.sweep_counter+1; 
-
 % test if should plot handles.io_data from channel2
 plot_cell2 = get(handles.record_cell2_check, 'Value');
 
