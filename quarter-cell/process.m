@@ -3,6 +3,8 @@ function handles = process(handles)
 stim_output = handles.data.stim_output;
 ch1_output = handles.data.ch1_output; ch2_output=handles.data.ch2_output;
 
+% increment sweep counter
+handles.data.sweep_counter=handles.data.sweep_counter+1; 
 sweep_counter = handles.data.sweep_counter;
 
 %store channels 1 and 2 in thissweep for further processing
@@ -151,6 +153,18 @@ end
 % after handles.io_data collection analzye inputs for series_r and other properties
 handles = analyze_series_r(handles);
 
+%% spike detect
+
+if handles.spike_detect
+    clamp_mode = get(handles.Cell1_type_popup,'Value');
+    switch clamp_mode
+        case 1
+        case 2
+            handles.data.trial_metadata(sweep_counter).cell1_clamp_type = 'current-clamp';
+        case 3
+            handles.data.trial_metadata(sweep_counter).cell1_clamp_type = 'cell-attached';
+    end
+end
 
 %% stores absolute time when first sweep is taken
 if handles.data.sweep_counter == 1
