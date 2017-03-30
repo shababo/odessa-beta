@@ -131,6 +131,7 @@ switch handles.run_type
         if get(handles.loop_forever,'Value')
             while get(hObject,'Value')
 %                 handles = make_stim_out(handles);
+                 
                 handles.io_data = step_loop(handles);
 %                 handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
                 start_time = clock;
@@ -397,10 +398,13 @@ handles = make_stim_out(handles);
 %     handles.data.stimulation.pulseamp, handles.data.stimulation.pulsefrequency, handles.defaults.Fs, trial_length);
 
  
-handles.data.ch1_output=makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, trial_length);
+[handles.data.ch1_output, handles.data.timebase]=makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, trial_length);
 handles.data.ch2_output=makepulseoutputs(handles.data.ch2.pulse_starttime,handles.data.ch2.pulsenumber, handles.data.ch2.pulseduration, handles.data.ch2.pulseamp, handles.data.ch2.pulsefrequency, handles.defaults.Fs, trial_length);
 handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity;
 handles.data.ch2_output=handles.data.ch2_output/handles.defaults.CCexternalcommandsensitivity;
+if ~get(handles.test_pulse,'Value')
+    handles.data.testpulse = zeros(size(handles.data.ch1_output));
+end
 [handles.data.testpulse, handles.data.timebase] = ...
     makepulseoutputs(handles.defaults.testpulse_start, 1, ...
     handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1, ...
@@ -3430,12 +3434,12 @@ function trigger_seq_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in cell1_intrinsics.
-function cell1_intrinsics_Callback(hObject, eventdata, handles)
+function handles = cell1_intrinsics_Callback(hObject, eventdata, handles)
 % hObject    handle to cell1_intrinsics (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-[intrinsic_curr_out, ~, trial_length] = make_fi_curve_output(Fs);
+[intrinsic_curr_out, ~, trial_length] = make_fi_curve_output(handles.defaults.Fs);
 handles.data.ch1_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity; % scale by external command sensititvity under Current Clamp
 handles.data.ch2_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity;
 

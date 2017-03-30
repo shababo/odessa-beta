@@ -55,7 +55,7 @@ device = daq.getDevices;
 daqModel = device.Model;
 
 %initialize sweep counter to 1
-sweep_counter = 1; 
+sweep_counter = 0; 
 
 % setup other fields
 ch1_output=[]; ch2_output=[]; exp_name=''; stimulation=[]; save_name=save_name; save_path = save_path;
