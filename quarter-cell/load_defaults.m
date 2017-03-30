@@ -2,7 +2,7 @@ function [defaults, s, data] = load_defaults()
 
 
 %%--set Rig Defaults Values here----%%
-run_type = 'loop'; % loop or sequence
+run_type = 'loop'; % loop or sequence or conditions
 
 % set default path for saving files here
 save_path='C:\data\Shababo\';
@@ -20,7 +20,7 @@ Fs = 20000;
 intertrial_interval = 1.0; %in sec
 
 % set default sweep duration (in seconds)
-trial_length = 1.0;
+trial_length = 0.1;
 
 % set default state for saving after each trial, 0 for no saving, 1 for saving after each trial
 % may want no saving if will hang up computer on long experiments with long
@@ -41,7 +41,7 @@ AO1 = 'ch2_out';
 AO2 = 'LED';
 AO3 = '2P';
 
-stim_type = 'LED';
+stim_type = '2P';
 
 testpulse_start = .050;
 testpulse_duration = .050;
@@ -67,7 +67,14 @@ trialtime = 0;
 
 running = [];
 
-spatial_layout = 'circle';
+spatial_layout = 'grid';
+roi_id = 'roi1';
+
+lut_file1 = 'C:\data\Shababo\lut_063016_roi1_2p_notf.mat';
+lut_file2 = 'C:\data\Shababo\lut_063016_roi1_2p_notf.mat';
+lut_file3 = 'C:\data\Shababo\lut_063016_roi1_2p_notf.mat';
+
+comnum = 9;
 
 defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', intertrial_interval, 'daqModel', device.Model, ...
     'total_sweeps', total_sweeps, 'amplifier', amplifier, ...
@@ -75,7 +82,7 @@ defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', i
     CCexternalcommandsensitivity, 'ifsave', ifsave, ...
     'AO0', AO0, 'AO1', AO1, 'AO2', AO2,'AO3',AO3,'run_type',run_type,...
     'testpulse_start',testpulse_start,'testpulse_duration',testpulse_duration,'testpulse_amp',testpulse_amp,'stim_type',stim_type,...
-    'spatial_layout',spatial_layout);
+    'spatial_layout',spatial_layout,'lut_file1',lut_file1,'lut_file2',lut_file2,'lut_file3',lut_file3,'comnum',comnum,'roi_id',roi_id);
 data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', exp_name, 'stimulation', stimulation,...
     'save_name', save_name, 'save_path', save_path, 'experiment_name', experiment_name, 'SetSweepNumber', SetSweepNumber, 'ch1sweep', ch1sweep, 'ch2sweep', ch2sweep, ...
      'stims', stims, 'sweep_counter', sweep_counter, 'testpulse', testpulse, ...
@@ -85,10 +92,12 @@ data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', ex
 
 s = daq.createSession('ni');
 s.Rate = Fs;
-s.addAnalogInputChannel('dev1',0:3,'Voltage');
+s.addAnalogInputChannel('dev1',0:5,'Voltage');
 s.Channels(1).InputType = 'SingleEnded';
 s.Channels(2).InputType = 'SingleEnded';
 s.Channels(3).InputType = 'SingleEnded';
 s.Channels(4).InputType = 'SingleEnded';
+s.Channels(5).InputType = 'SingleEnded';
+s.Channels(6).InputType = 'SingleEnded';
 
 s.addAnalogOutputChannel('dev1',0:3,'Voltage');
