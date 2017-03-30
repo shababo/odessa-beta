@@ -22,7 +22,7 @@ function varargout = socket_control_tester(varargin)
 
 % Edit the above text to modify the response to help socket_control_tester
 
-% Last Modified by GUIDE v2.5 29-Mar-2017 06:57:22
+% Last Modified by GUIDE v2.5 30-Mar-2017 09:56:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -260,7 +260,7 @@ start_time = 1.0*1000; % hard set to 1 second for now
 iti = str2double(get(handles.iti,'String'))*1000
 
 target_power = str2double(get(handles.target_intensity,'String'));
-
+ind_mult = str2double(get(handles.ind_mult,'String'));
 count = 1;
 ind_offset = str2double(get(handles.ind_offset,'String'));
 for k = 1:length(all_powers)
@@ -1122,6 +1122,8 @@ handles = update_obj_pos_Callback(handles.update_obj_pos, eventdata, handles);
 acq_gui = findobj('Tag','acq_gui');
 acq_gui_data = guidata(acq_gui);
 
+handles.data.cell1_pos = handles.data.obj_position;
+guidata(hObject,handles)
 acq_gui_data.data.cell_pos = handles.data.obj_position;
 set(acq_gui_data.cell_x,'String',num2str(handles.data.obj_position(1)));
 set(acq_gui_data.cell_y,'String',num2str(handles.data.obj_position(2)));
@@ -1776,3 +1778,407 @@ function close_socket_check_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of close_socket_check
+
+
+% --- Executes on button press in neural_resp_prot3.
+function neural_resp_prot3_Callback(hObject, eventdata, handles)
+% hObject    handle to neural_resp_prot3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% fields_to_get = {'z_start','z_stop','z_spacing'};
+set(handles.close_socket_check,'Value',0)
+set(handles.rand_order,'Value',1)
+guidata(hObject,handles);
+% z_start = str2double(get(handles.z_start,'String'));
+% z_stop = str2double(get(handles.z_stop,'String'));
+% z_spacing = str2double(get(handles.z_spacing,'String'));
+% z_offsets = z_start:z_spacing:z_stop;
+% z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
+% z_offsets = [-50 -10 0 10 50]';
+
+z_offsets = [-60 -40 -20 -10 0 10 20 40 60]';
+grid_edge_size = [3 3 5 7 9 7 5 3 3]';
+obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+
+set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
+handles = guidata(hObject);
+% pause(.1)
+% get_obj_pos_Callback(hObject, eventdata, handles)
+% handles = guidata(hObject);
+% handles.data.obj_pos
+num_repeats = 1;
+set(handles.num_repeats,'String',num2str(1));
+start_position = handles.data.obj_position;
+% build obj_positions
+obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
+
+% num_repeats = str2double(get(handles.tf_test_num_repeats,'String'));
+obj_positions = repmat(obj_positions,num_repeats,1);
+all_grid_sizes = repmat(grid_edge_size,num_repeats,1).^2;
+if get(handles.rand_order,'Value')
+    order = randperm(size(obj_positions,1));
+    obj_positions = obj_positions(order,:);
+    all_grid_sizes = all_grid_sizes(order);
+end
+% assignin('base','obj_positions',obj_positions)
+guidata(hObject,handles);
+% pause(.1)
+
+
+% get Acq handles
+acq_gui = findobj('Tag','acq_gui');
+acq_gui_data = get_acq_gui_data();
+% shift focus
+figure(acq_gui)
+
+% confirm everything ready
+user_confirm = msgbox('Cell-attached? Test pulse off? V_m set to 0? I_h set to 0?');
+waitfor(user_confirm)
+
+power_curve = '10 25 50 100 150';
+power_curve_num = strread(power_curve);
+% set(acq_gui.use_lut,'Value',1);
+% set(acq_gui.use_LED,'Value',0);
+% set(acq_gui.use_2P,'Value',1);
+
+% run power curve in cell-attached
+% set sequence paraqms
+set(handles.num_stim,'String',num2str(1));
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(0.5));
+set(handles.num_repeats,'String',num2str(5));
+set(handles.target_intensity,'String',power_curve)
+
+offsets_powcurve = [-20 -10 0 10 20]';
+grid_sizes_powcurve = ([3 5 5 5 3].^2)';
+num_locs = 9;
+power_curve_inds = randsample(length(offsets_powcurve),num_locs,1);
+offsets_powcurve = offsets_powcurve(power_curve_inds);
+grid_sizes_powcurve = offsets_powcurve(grid_sizes_powcurve);
+power_curve_obj_positions = [zeros(length(offsets),1) zeros(length(offsets),1) offsets_powcurve];
+power_curve_obj_positions = bsxfun(@plus,power_curve_obj_positions,handles.data.obj_position);
+power_curve_obj_positions = [handles.data.obj_position; power_curve_obj_positions];
+
+% build sequence
+build_seq_Callback(hObject, eventdata, handles)
+pause(2.0)
+handles = guidata(hObject);
+acq_gui_data = guidata(acq_gui);
+% set acq params
+set(acq_gui_data.run,'String','Prepping...')
+set(acq_gui_data.Cell1_type_popup,'Value',3)
+set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(acq_gui,acq_gui_data)
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+set(acq_gui_data.Highpass_cell1_check, 'Value',0)
+% run trial
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+% cleanup
+
+% show data
+try
+    cur_trial = acq_gui_data.data.sweep_counter;
+    this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+    [trace_stack] = ...
+        get_stim_stack(acq_gui_data.data,cur_trial,...
+        length(this_seq));
+    trace_grid = cell(length(power_curve_num),1);
+    for i = 1:length(power_curve_num)
+        trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
+    end
+    cell_attached_spikes_fig = figure;
+    plot_trace_stack_grid(trace_grid,Inf,1,0);
+catch e
+    disp('failed to plot data')
+end
+
+power_curve_grid_inds = zeros(size(grid_sizes_powcurve));
+for i = 1:num_locs
+    % move obj
+    set(handles.thenewx,'String',num2str(power_curve_obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(power_curve_obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(power_curve_obj_positions(i,3)))
+    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
+    handles = guidata(hObject);
+    
+
+    set(handles.num_stim,'String',num2str(1));
+    power_curve_grid_inds(i) = randsample(25,1);
+    set(handles.ind_mult,'String',num2str(power_curve_grid_inds(i)));
+    build_seq_Callback(hObject, eventdata, handles)
+    
+    handles = guidata(hObject);
+    acq_gui_data = get_acq_gui_data();
+    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    guidata(acq_gui,acq_gui_data)
+
+    set(acq_gui_data.run,'String','Prepping...')
+
+    pause(2.5)
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+end
+set(handles.ind_mult,'String',num2str(1));
+guidata(hObject,handles);
+set(acq_gui_data.trigger_seq,'Value',0)
+% move obj
+set(handles.thenewx,'String',num2str(start_position(1)))
+set(handles.thenewy,'String',num2str(start_position(2)))
+set(handles.thenewz,'String',num2str(start_position(3)))
+obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+pause(.1)
+
+% get_obj_pos_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
+guidata(hObject,handles);
+
+
+% tell user to break in and be in VC
+user_confirm = msgbox('Break in! Test pulse off?');
+waitfor(user_confirm)
+
+
+% do single testpulse trial to get Rs
+% set acq params
+set(acq_gui_data.run,'String','Prepping...')
+set(acq_gui_data.Cell1_type_popup,'Value',1)
+set(acq_gui_data.trial_length,'String',1.0)
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+set(acq_gui_data.trigger_seq,'Value',0)
+% run trial
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+% tell user to switch to I=0
+user_confirm = msgbox('Please switch Multiclamp to CC with I = 0');
+waitfor(user_confirm)
+
+% run intrinsic ephys
+% set acq params
+set(acq_gui_data.run,'String','Prepping...')
+set(acq_gui_data.Cell1_type_popup,'Value',2)
+acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+guidata(acq_gui,acq_gui_data);
+set(acq_gui_data.test_pulse,'Value',0)
+set(acq_gui_data.trigger_seq,'Value',0)
+% run trial
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+% get baseline Vm
+prompt = {'Enter intrinsic Vm:'};
+dlg_title = 'Input';
+num_lines = 1;
+defaultans = {'-65'};
+Vm = str2double(inputdlg(prompt,dlg_title,num_lines,defaultans));
+
+% run power curve on cell in CC
+% set sequence paraqms
+set(handles.num_stim,'String',num2str(1));
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(0.5));
+set(handles.num_repeats,'String',num2str(5));
+set(handles.target_intensity,'String','10 25 50 100 150')
+% build seq
+build_seq_Callback(hObject, eventdata, handles)
+pause(2.0)
+handles = guidata(hObject);
+acq_gui_data = guidata(acq_gui);
+% set acq params
+set(acq_gui_data.run,'String','Prepping...')
+% set(acq_gui_data.Cell1_type_popup,'Value',2)
+set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(acq_gui,acq_gui_data)
+set(acq_gui_data.test_pulse,'Value',0)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+% run trial
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+% show data
+try
+    cur_trial = acq_gui_data.data.sweep_counter;
+    this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+    [trace_stack] = ...
+        get_stim_stack(acq_gui_data.data,cur_trial,...
+        length(this_seq));
+    trace_grid = cell(length(power_curve_num),1);
+    for i = 1:length(power_curve_num)
+        trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
+    end
+    cc_power_curve_fig = figure;
+    plot_trace_stack_grid(trace_grid,Inf,1,0);
+catch e
+    disp('failed to plot data')
+end
+
+for i = 1:num_locs
+    % move obj
+    set(handles.thenewx,'String',num2str(power_curve_obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(power_curve_obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(power_curve_obj_positions(i,3)))
+    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
+    handles = guidata(hObject);
+    
+
+    set(handles.num_stim,'String',num2str(1));
+    set(handles.ind_mult,'String',num2str(power_curve_grid_inds(i)));
+    build_seq_Callback(hObject, eventdata, handles)
+    
+    handles = guidata(hObject);
+    acq_gui_data = get_acq_gui_data();
+    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    guidata(acq_gui,acq_gui_data)
+
+    set(acq_gui_data.run,'String','Prepping...')
+
+    pause(2.5)
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+end
+set(handles.ind_mult,'String',num2str(1));
+% get this_cell_power
+prompt = {'Enter Target Power For Cell:'};
+dlg_title = 'Input';
+num_lines = 1;
+defaultans = {'50'};
+this_cell_power = str2double(inputdlg(prompt,dlg_title,num_lines,defaultans));
+
+% run power curve on cell in VC
+% tell user to switch to VC with Vm offset to ealier Vm
+user_confirm = msgbox(['In VC with Vm set to ' num2str(Vm)]);
+waitfor(user_confirm)
+
+% set sequence paraqms
+% set(handles.num_stim,'String',num2str(1));
+% set(handles.duration,'String',num2str(.003));
+% set(handles.iti,'String',num2str(1.0));
+set(handles.num_repeats,'String',num2str(1));
+% build seq
+% build_seq_Callback(hObject, eventdata, handles)
+% pause(2.0)
+% acq_gui_data = guidata(acq_gui);
+% handles = guidata(hObject);
+% % set acq params
+% set(acq_gui_data.run,'String','Prepping...')
+% set(acq_gui_data.test_pulse,'Value',0)
+% % run trial
+% acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+% waitfor(acq_gui_data.run,'String','Start')
+% guidata(acq_gui,acq_gui_data)
+
+
+% GO SPATIAL
+
+
+num_trials = size(obj_positions,1);
+set(acq_gui_data.test_pulse,'Value',0)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+% set(acq_gui_data.conditions,'Value',0)
+set(acq_gui_data.loop_count,'String',num2str(1))
+set(handles.target_intensity,'String',this_cell_power)
+set(handles.num_repeats,'String',num2str(1));
+for i = 1:num_trials
+    % move obj
+    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
+    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+%     pause(.5)
+    % store/confirm new position
+%     get_obj_pos_Callback(hObject, eventdata, handles)
+    handles = guidata(hObject);
+    
+    % handles.close_socket = 1;
+%     set(handles.ind_offset,'String','0')
+    
+%     if i ~= 1
+%         instruction.type = 31; % RETRIGGER
+%         instruction.close_socket = 0;
+%         [return_info,success,handles] = do_instruction(instruction,handles);
+%         guidata(hObject,handles)
+%     end
+    set(handles.num_stim,'String',num2str(all_grid_sizes(i)));
+    build_seq_Callback(hObject, eventdata, handles)
+    
+    handles = guidata(hObject);
+    acq_gui_data = get_acq_gui_data();
+    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+%     acq_gui = findobj('Tag','acq_gui');
+    guidata(acq_gui,acq_gui_data)
+
+%     set(acq_gui_data.loop_count,'String',num2str(1))
+    set(acq_gui_data.run,'String','Prepping...')
+%     waitfig = warndlg('Is SlideBook Ready?');
+%     waitfor(waitfig)
+%     pause(3.0)
+    pause(2.5)
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+end
+
+guidata(hObject,handles);
+set(acq_gui_data.trigger_seq,'Value',0)
+% move obj
+set(handles.close_socket_check,'Value',1)
+set(handles.thenewx,'String',num2str(start_position(1)))
+set(handles.thenewy,'String',num2str(start_position(2)))
+set(handles.thenewz,'String',num2str(start_position(3)))
+obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+pause(.1)
+
+% get_obj_pos_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
+guidata(hObject,handles);
+
+
+
+function ind_mult_Callback(hObject, eventdata, handles)
+% hObject    handle to ind_mult (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of ind_mult as text
+%        str2double(get(hObject,'String')) returns contents of ind_mult as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function ind_mult_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ind_mult (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
