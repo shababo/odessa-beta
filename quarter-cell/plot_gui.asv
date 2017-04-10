@@ -38,10 +38,10 @@ end
 timebase = handles.data.timebase;
 
 stim_sweep = handles.data.stim_sweep;
-% if get(handles.use_lut,'Value')
-%     disp('lut_use?')
-%     stim_sweep = stim_sweep/max(stim_sweep)*handles.data.trial_metadata(end).pulseamp;
-% end
+if get(handles.use_lut,'Value')
+    disp('lut_use
+    stim_sweep = stim_sweep/max(stim_sweep)*handles.data.trial_metadata(end).pulseamp;
+end
 
 if get(handles.record_cell2_check,'Value')
     size(timebase(pulse_over_sample:end))

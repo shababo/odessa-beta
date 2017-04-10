@@ -5,7 +5,7 @@ baseline_duration = 5.0;
 pulse_duration = 1.0;
 interpulse_duration = 2.0;
 
-pulse_amps = [-200 -100 50:50:500];
+pulse_amps = [-200 -100 50:50:350];
 
 trial_length = 2*baseline_duration + (pulse_duration + interpulse_duration)*length(pulse_amps);
 timebase = linspace(0,trial_length - 1/Fs,Fs*trial_length)';
