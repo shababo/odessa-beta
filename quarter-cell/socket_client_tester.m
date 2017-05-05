@@ -55,6 +55,23 @@ function socket_client_tester_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for socket_client_tester
 handles.output = hObject;
 
+if ~isempty(varargin) && ~isempty(varargin{1})
+    location = varargin{1};
+else
+    location = 'slidebook';
+end
+
+switch location
+    case 'slidebook'
+        handles.server_ipaddress = '128.32.177.239';
+        handles.port_num = 3000;
+        handles.client_port = 3001;
+    case 'turing'
+        handles.server_ipaddress = '128.32.177.238';
+        handles.port_num = 3001;
+end
+
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -88,7 +105,7 @@ end
 
 while handles.sock < 0
     disp('attempting to open socket')
-    handles.sock = msconnect('128.32.177.239',3000);
+    handles.sock = msconnect(handles.server_ipaddress,handles.port_num);
     drawnow
 end
 
@@ -393,7 +410,7 @@ instruction.close_socket = 1;
 % end
 if ~isfield(handles,'sock')
     disp('opening socket...')
-    srvsock = mslisten(3001);
+    srvsock = mslisten(handles.client_port);
 %     handles.sock = -1;
     handles.sock = msaccept(srvsock);
     disp('socket open..')
