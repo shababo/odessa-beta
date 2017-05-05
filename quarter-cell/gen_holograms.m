@@ -99,6 +99,36 @@ for i = 1:length(x_pos)
     end
 end
 
+%% 10um shift
+
+this_trans = twophoton_slm_trans_new;
+% generate individual spots
+clear target
+
+x_pos = -5:1:4;
+% theta = 5.82;
+% scale_vec = [-1.55 1.55 0];
+target.mode = '3D spots';
+target.wavelength = 1040;
+target.numericalAperture = 1;
+target.refractiveIndex = 1.33;
+target.spotLocations = [];
+tf_fine_grid_spots_phase = zeros(600,792,length(x_pos)^2);
+tf_fine_grid_spots_key = zeros(length(x_pos)^2,3);
+count = 1;
+for i = 1:length(x_pos)
+    for j = 1:length(x_pos)
+        this_spot = [x_pos(i) x_pos(j)]';
+        this_spot_slm = (this_trans*this_spot)';
+        target.spotLocations = repmat([this_spot_slm 0],3,1);
+        isTargetPatternReady = 1;
+        pause(5)
+        tf_fine_grid_spots_phase(:,:,count) = P;
+        tf_fine_grid_spots_key(count,:) = [x_pos(i) x_pos(j) 0];
+        count = count + 1;
+    end
+end
+
 %% MAKE DISK
 diskRadii = [5 7.5 10]*1.5;
 
@@ -472,10 +502,11 @@ clear tf_disk_grid
 clear notf_precomputed_target
 clear tf_stim_key
 tf_disk_grid = zeros(600,792,size(tf_all_spots_phase,3));
-% center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
-linear_ind = find(tf_spots_key(:,1) == 60 & tf_spots_key(:,2) == 60);
-[center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
-steps_from_center = 4;
+center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
+steps_from_center = center-1;
+% linear_ind = find(tf_spots_key(:,1) == 60 & tf_spots_key(:,2) == 60);
+% [center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
+% steps_from_center = 4;
 % spacing = 20;
 avail = 1:num_spots;
 count = 1;
@@ -491,17 +522,19 @@ for i = 0:steps_from_center
             if any(avail == linear_ind)
                 order(count) = linear_ind;
 %                 tf_precomputed_target(count) = target_base_fast;
-                fullF = zeros(600,792);
+%                 fullF = zeros(600,792);
                 this_spot = linear_ind;
 
-                fullF = fullF + exp(1i*tf_phase(:,:,this_spot));
-                convP = angle(fullF) + diskPhaseLocal;
+%                 fullF = fullF + exp(1i*tf_phase(:,:,this_spot));
+%                 convP = angle(fullF) + diskPhaseLocal;
+                
+                convP = tf_phase(:,:,this_spot) + diskPhaseLocal;
                 convP(convP < -pi) = convP(convP < -pi) + 2*pi;
                 convP(convP > pi) = convP(convP > pi) - 2*pi;
                 tf_precomputed_target(count).pattern = convP;
                 tf_precomputed_target(count).mode = 'Phase';
                 tf_disk_grid(:,:,count) = convP;
-                tf_stim_key(count,:) = tf_spots_key(linear_ind,:);
+                tf_disk_key(count,:) = tf_spots_key(linear_ind,:);
                 
 %                 notf_precomputed_target(count) = target_base_fast;
 %                 fullF = zeros(600,792);
@@ -570,3 +603,45 @@ convP(convP > pi) = convP(convP > pi) - 2*pi;
 target.pattern = convP;
 
 isTargetPatternReady = 1
+
+
+%% keep grid structure
+
+tf_phase = tf_all_spots_phase;
+% notf_phase = notf_all_spots_phase;
+diskPhaseLocal = diskPhase(:,:,2);
+tic
+target_base_fast.mode = 'Phase';
+target_base_fast.pattern = 1040;
+num_spots = size(tf_phase,3);
+clear tf_precomputed_target
+clear tf_disk_grid
+clear notf_precomputed_target
+clear tf_stim_key
+tf_disk_grid = zeros(600,792,size(tf_all_spots_phase,3));
+% center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
+% steps_from_center = center-1;
+% linear_ind = find(tf_spots_key(:,1) == 60 & tf_spots_key(:,2) == 60);
+% [center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
+% steps_from_center = 4;
+% spacing = 20;
+
+order = [];
+% tf_disk_precomputed_target(size(tf_all_spots_phase,3)) = struct();
+tf_disk_key = tf_spots_key;
+for i = 1:num_spots
+
+
+    convP = tf_phase(:,:,i) + diskPhaseLocal;
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+    tf_disk_precomputed_target(i).pattern = convP;
+    tf_disk_precomputed_target(i).mode = 'Phase';
+    tf_disk_grid(:,:,i) = convP;
+
+    
+end
+
+
+toc
+clear tf_phase

@@ -122,6 +122,10 @@ RETRIGGER_SEQ = 31;
 GET_VAR = 40;
 PRECOMPUTE_PHASE = 50;
 OBJ_GO_TO = 60;
+DETECT_NUC = 70;
+DETECT_NUC_LOCAL = 71;
+DETECT_NUC_SERVE = 72;
+PRECOMPUTE_PHASE_NUCLEAR = 81;
 PRINT = 00;
 instruction.type
 return_info = struct();
@@ -256,6 +260,18 @@ if success >= 0
         case GET_VAR
             assignin_base({instruction.name},{instruction.value})
             return_info.success = 1;
+        case DETECT_NUC_LOCAL
+            system(['smbclient //adesnik2.ist.berkeley.edu/inhibition adesnik110623 -c ''cd /shababo ; '...
+                'get ' instruction.stackname '_C0.tif ' instruction.stackname '_C0.tif''']);
+            pause(1)
+            nuclear_locs = detect_nuclei([instruction.stackname '_C0.tif']);
+            return_info.nuclear_locs = nuclear_locs;
+        case DETECT_NUC_SERVE
+            instruction_out.type = DETECT_NUC_SERVE;
+            instruction_out.stackname = instruction.stackname;
+            copyfile([instruction.stackname '_C0.tif'], ['Y:\shababo\' instruction.stackname '.tif']);
+            [return_info,success,handles] = do_instruction(instruction_out,handles) ;
+            
         case PRECOMPUTE_PHASE
             tf_flag = instruction.tf_flag;
             if tf_flag
@@ -267,7 +283,23 @@ if success >= 0
             end
             diskRadii = evalin('base','diskRadii');
             diskPhase = evalin('base','diskPhase');
+        case PRECOMPUTE_PHASE_NUCLEAR
             
+            disk_grid = evalin('base','tf_disk_grid');
+            disk_key = evalin('base','tf_disk_key');
+            fine_spot_grid = evalin('base','tf_fine_spots_phase');
+            fine_spot_key = evalin('base','tf_fine_spots_key');
+            do_target = 0;
+            phase_masks_target = ...
+                build_single_loc_phases(locations,coarse_disks,disk_key,...
+                fine_spots,spot_key,do_target);
+            if do_target
+                vars{1} = phase_masks_target;
+                names{1} = 'precomputed_target';
+                evalin('base','set_precomp_target_ready')
+            end
+                
+            assignin_base(names,vars);
     end
     
     
@@ -352,3 +384,37 @@ else
 end
 
 set(handles.socket_status,'String','Socket: Closed')
+
+function [return_info, success, handles] = do_instruction(instruction, handles)
+
+instruction.close_socket = 1;
+% if instruction.type == 21
+%     handles.sock
+% end
+if ~isfield(handles,'sock')
+    disp('opening socket...')
+    srvsock = mslisten(3001);
+%     handles.sock = -1;
+    handles.sock = msaccept(srvsock);
+    disp('socket open..')
+    msclose(srvsock);
+end
+% if isfield(handles,'close_socket')
+%     instruction.close_socket = get(handles.close_socket_check,'Value');
+% else
+%     instruction.close_socket = 1;
+% end
+pause(.1)
+disp('sending instruction...')
+mssend(handles.sock,instruction);
+disp('getting return info...')
+pause(.1)
+[return_info, success] = msrecv(handles.sock,15);
+assignin('base','return_info',return_info)
+% success = 1;
+
+if instruction.close_socket
+    disp('closing socket')
+    msclose(handles.sock)
+    handles = rmfield(handles,'sock');
+end
