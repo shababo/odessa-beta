@@ -146,6 +146,12 @@ else
     handles.data.trial_metadata(sweep_counter).relative_to_start_position = NaN;
 end
 
+if isfield(handles.data,'stackname')
+    handles.data.trial_metadata(sweep_counter).stackname = handles.data.stackname;
+else
+    handles.data.trial_metadata(sweep_counter).stackname = [];
+end
+
 %% store the analog outputs, but downsample them
 handles.data.stims{sweep_counter}={downsample(stim_output,10), downsample(ch1_output,10), downsample(ch2_output,10)};
 
