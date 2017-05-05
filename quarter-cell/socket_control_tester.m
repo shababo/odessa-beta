@@ -86,7 +86,7 @@ instruction.type = 10; %MOVE_OBJ
 instruction.deltaX = str2double(get(handles.deltaX,'String'));
 instruction.deltaY = str2double(get(handles.deltaY,'String'));
 instruction.deltaZ = str2double(get(handles.deltaZ,'String'));
-instruction.close_socket = get(handles.close_socket_check,'Value');
+% instruction.close_socket = get(handles.close_socket_check,'Value');
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction(instruction,handles) ;
 % assignin('base','return_info',return_info)
@@ -231,7 +231,10 @@ disp('sending instruction...')
 mssend(handles.sock,instruction);
 disp('getting return info...')
 pause(.1)
-[return_info, success] = msrecv(handles.sock,15);
+return_info = [];
+while isempty(return_info)
+    [return_info, success] = msrecv(handles.sock,15);
+end
 assignin('base','return_info',return_info)
 % success = 1;
 
@@ -2649,7 +2652,7 @@ function stack_detect_Callback(hObject, eventdata, handles)
 
 disp('take stack...')
 
-
+set(handles.close_socket_check,'Value',0);
 clock_array = clock;
 stackname = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
     '_' num2str(clock_array(4)) ...
@@ -2679,4 +2682,10 @@ guidata(acq_gui,acq_gui_data)
 instruction.type = 80;
 
 guidata(hObject,handles)
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction(instruction,handles);
+
 
