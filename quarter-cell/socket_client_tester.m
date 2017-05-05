@@ -285,7 +285,7 @@ if success >= 0
 %             nuclear_locs = [1 2 3; 4 5 6; 7 8 9; 1 2 3];
             return_info.nuclear_locs = nuclear_locs;
         case DETECT_NUC_SERVE
-            instruction_out.type = DETECT_NUC_SERVE;
+            instruction_out.type = DETECT_NUC_LOCAL;
             instruction_out.stackname = instruction.stackname;
             copyfile([instruction.stackname '_C0.tif'], ['Y:\shababo\' instruction.stackname '.tif']);
             pause(1)
@@ -413,11 +413,11 @@ instruction.close_socket = 1;
 % if instruction.type == 21
 %     handles.sock
 % end
-if ~isfield(handles,'sock')
+if ~isfield(handles,'sock_out')
     disp('opening socket...')
     srvsock = mslisten(handles.client_port);
 %     handles.sock = -1;
-    handles.sock = msaccept(srvsock);
+    handles.sock_out = msaccept(srvsock);
     disp('socket open..')
     msclose(srvsock);
 end
@@ -428,15 +428,15 @@ end
 % end
 pause(.1)
 disp('sending instruction...')
-mssend(handles.sock,instruction);
+mssend(handles.sock_out,instruction);
 disp('getting return info...')
 pause(.1)
-[return_info, success] = msrecv(handles.sock,15);
+[return_info, success] = msrecv(handles.sock_out,15);
 assignin('base','return_info',return_info)
 % success = 1;
 
 if instruction.close_socket
     disp('closing socket')
-    msclose(handles.sock)
-    handles = rmfield(handles,'sock');
+    msclose(handles.sock_out)
+    handles = rmfield(handles,'sock_out');
 end
