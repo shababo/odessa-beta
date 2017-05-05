@@ -152,6 +152,7 @@ if success >= 0
     switch instruction.type
         case PRINT
             disp(instruction.string)
+            return_info.test = 1;
         case OBJ_GO_TO
             disp('moving obj...')
             vars{1} = instruction.theNewX';
@@ -431,7 +432,11 @@ disp('sending instruction...')
 mssend(handles.sock_out,instruction);
 disp('getting return info...')
 pause(.1)
-[return_info, success] = msrecv(handles.sock_out,15);
+return_info = [];
+while isempty(return_info)
+    [return_info, success] = msrecv(handles.sock_out,15);
+end
+    
 assignin('base','return_info',return_info)
 % success = 1;
 
