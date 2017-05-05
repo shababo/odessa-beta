@@ -146,6 +146,7 @@ else
     handles.data.trial_metadata(sweep_counter).relative_to_start_position = NaN;
 end
 
+
 if isfield(handles.data,'stackname')
     handles.data.trial_metadata(sweep_counter).stackname = handles.data.stackname;
 else
@@ -158,6 +159,7 @@ else
     handles.data.trial_metadata(sweep_counter).nuclear_locs = [];
 end
 
+
 %% store the analog outputs, but downsample them
 handles.data.stims{sweep_counter}={downsample(stim_output,10), downsample(ch1_output,10), downsample(ch2_output,10)};
 
@@ -167,7 +169,9 @@ handles.data.ch2sweep = thissweep(:,2);
 if get(handles.use_LED,'Value')
     handles.data.stim_sweep = stim_output;%    thissweep(:,4);
 else
+
     handles.data.stim_sweep = thissweep(:,3);
+
 end
 
 %% high pass handles.data.sweeps if checked

@@ -1241,7 +1241,9 @@ plot(handles.current_trial_axes,handles.data.timebase,handles.data.cell1sweep);
 plot(handles.Ih_axes,handles.data.ch1.holding_i,'o');
 plot(handles.Rs_axes,handles.data.ch1.series_r,'o');
 plot(handles.Whole_cell1_axes_Ir,handles.data.ch1.input_r,'o');
+
 plot(handles.current_trial_stim_axes,handles.data.timebase, handles.data.stim_output);
+
 plot(handles.CCoutput_axes,handles.data.timebase, handles.data.CCoutput1, handles.data.timebase, handles.data.CCoutput2);
 
 value3 = get(handles.record_cell2_check, 'Value');
