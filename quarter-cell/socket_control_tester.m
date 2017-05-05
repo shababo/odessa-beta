@@ -22,11 +22,9 @@ function varargout = socket_control_tester(varargin)
 
 % Edit the above text to modify the response to help socket_control_tester
 
-<<<<<<< HEAD
+
 % Last Modified by GUIDE v2.5 04-May-2017 20:37:56
-=======
-% Last Modified by GUIDE v2.5 30-Mar-2017 09:56:11
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
