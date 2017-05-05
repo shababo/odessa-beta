@@ -220,11 +220,9 @@ if ~isfield(handles,'sock')
     msclose(srvsock);
 end
 % if isfield(handles,'close_socket')
-<<<<<<< HEAD
+
 %     instruction.close_socket = get(handles.close_socket_check,'Value');
-=======
-    instruction.close_socket = get(handles.close_socket_check,'Value');
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 % else
 %     instruction.close_socket = 1;
 % end
@@ -275,11 +273,8 @@ for k = 1:length(all_powers)
 
         sequence(count) = sequence_base;
         sequence(count).power = all_powers(k);
-<<<<<<< HEAD
         sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
-=======
-        sequence(count).precomputed_target_index = i + ind_offset;
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 %             if get(handles.power,'Value')
 %                 [~, c_i] = min(abs(x_positions(i) - conversion));
 %                 [~, c_j] = min(abs(y_positions(j) - conversion));
@@ -320,11 +315,8 @@ for i = 1:length(sequence)
 end
 
 time_padding = 5; % in seconds
-<<<<<<< HEAD
 total_duration = (sequence(end).start + iti)/1000 + time_padding
-=======
-total_duration = (sequence(end).start + iti)/1000 + time_padding;
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 
 instruction.sequence = sequence;
 instruction.tf_flag = get(handles.tf_flag,'Value');
@@ -351,14 +343,13 @@ acq_gui_data.data.stim_key =  return_info.stim_key;
 acq_gui_data.data.sequence =  return_info.sequence;
 acq_gui = findobj('Tag','acq_gui');
 guidata(acq_gui,acq_gui_data)
-<<<<<<< HEAD
+
 if get(handles.set_trial_length,'Value')
     set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
     acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
 end
 guidata(acq_gui,acq_gui_data)
-=======
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 guidata(hObject,handles)
 % assignin('base','sequence_new',sequence)
 
@@ -601,11 +592,7 @@ function get_obj_pos_Callback(hObject, eventdata, handles)
 disp('getting new pos')
 instruction.type = 21;
 % if isfield(handles,'close_socket')
-<<<<<<< HEAD
-%     instruction.close_socket = get(handles.close_socket_check,'Value');
-=======
-    instruction.close_socket = get(handles.close_socket_check,'Value');
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 % else
 %     instruction.close_socket = 1;
 % end
@@ -1011,11 +998,7 @@ instruction.type = 60; %MOVE_OBJ
 instruction.theNewX = str2double(get(handles.thenewx,'String'));
 instruction.theNewY = str2double(get(handles.thenewy,'String'));
 instruction.theNewZ = str2double(get(handles.thenewz,'String'));
-<<<<<<< HEAD
-% instruction.close_socket = get(handles.close_socket_check,'Value');
-=======
-instruction.close_socket = get(handles.close_socket_check,'Value');
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction(instruction,handles) ;
 guidata(hObject,handles)
@@ -1108,12 +1091,11 @@ function close_sock_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-<<<<<<< HEAD
+
 wdlg = warndlg('Are you sure?');
 waitfor(wdlg)
 
-=======
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 if isfield(handles,'sock')
     disp('closing socket')
     msclose(handles.sock);
@@ -1834,13 +1816,10 @@ guidata(hObject,handles);
 % z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
 % z_offsets = [-50 -10 0 10 50]';
 
-<<<<<<< HEAD
+
 z_offsets = [-90 -50 -20 0 20 50 90]';
 grid_edge_size = [7 7 9 9 9 7 7]';
-=======
-z_offsets = [-60 -40 -20 -10 0 10 20 40 60]';
-grid_edge_size = [3 3 5 7 9 7 5 3 3]';
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
 
 set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
@@ -1878,11 +1857,9 @@ figure(acq_gui)
 user_confirm = msgbox('Cell-attached? Test pulse off? V_m set to 0? I_h set to 0?');
 waitfor(user_confirm)
 
-<<<<<<< HEAD
+
 power_curve = '10 25 50 75 100 150';
-=======
-power_curve = '10 25 50 100 150';
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 power_curve_num = strread(power_curve);
 % set(acq_gui.use_lut,'Value',1);
 % set(acq_gui.use_LED,'Value',0);
@@ -1895,7 +1872,7 @@ set(handles.duration,'String',num2str(.003));
 set(handles.iti,'String',num2str(0.5));
 set(handles.num_repeats,'String',num2str(5));
 set(handles.target_intensity,'String',power_curve)
-<<<<<<< HEAD
+
 set(handles.ind_mult,'String',num2str(1))
 offsets_powcurve = [-20 0 20]';
 grid_sizes_powcurve = ([3 5 3].^2)';
@@ -1908,19 +1885,7 @@ power_curve_obj_positions = bsxfun(@plus,power_curve_obj_positions,handles.data.
 power_curve_obj_positions = [handles.data.obj_position; power_curve_obj_positions];
 
 % run on cell power curve cell-attached
-=======
 
-offsets_powcurve = [-20 -10 0 10 20]';
-grid_sizes_powcurve = ([3 5 5 5 3].^2)';
-num_locs = 9;
-power_curve_inds = randsample(length(offsets_powcurve),num_locs,1);
-offsets_powcurve = offsets_powcurve(power_curve_inds);
-grid_sizes_powcurve = offsets_powcurve(grid_sizes_powcurve);
-power_curve_obj_positions = [zeros(length(offsets),1) zeros(length(offsets),1) offsets_powcurve];
-power_curve_obj_positions = bsxfun(@plus,power_curve_obj_positions,handles.data.obj_position);
-power_curve_obj_positions = [handles.data.obj_position; power_curve_obj_positions];
-
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
 % build sequence
 build_seq_Callback(hObject, eventdata, handles)
 pause(2.0)
@@ -1950,11 +1915,8 @@ try
     this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
     [trace_stack] = ...
         get_stim_stack(acq_gui_data.data,cur_trial,...
-<<<<<<< HEAD
         length(this_seq),[this_seq.start]);
-=======
-        length(this_seq));
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
     trace_grid = cell(length(power_curve_num),1);
     for i = 1:length(power_curve_num)
         trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
@@ -1965,7 +1927,7 @@ catch e
     disp('failed to plot data')
 end
 
-<<<<<<< HEAD
+
 do_cell_attach_locs = 0;
 choice = questdlg('Do more cell-attached locs?', ...
 	'Do more cell-attached locs?', ...
@@ -2302,41 +2264,7 @@ guidata(hObject,handles);
 set(acq_gui_data.trigger_seq,'Value',0)
 % move obj
 set(handles.close_socket_check,'Value',1)
-=======
-power_curve_grid_inds = zeros(size(grid_sizes_powcurve));
-for i = 1:num_locs
-    % move obj
-    set(handles.thenewx,'String',num2str(power_curve_obj_positions(i,1)))
-    set(handles.thenewy,'String',num2str(power_curve_obj_positions(i,2)))
-    set(handles.thenewz,'String',num2str(power_curve_obj_positions(i,3)))
-    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
-    handles = guidata(hObject);
-    
-
-    set(handles.num_stim,'String',num2str(1));
-    power_curve_grid_inds(i) = randsample(25,1);
-    set(handles.ind_mult,'String',num2str(power_curve_grid_inds(i)));
-    build_seq_Callback(hObject, eventdata, handles)
-    
-    handles = guidata(hObject);
-    acq_gui_data = get_acq_gui_data();
-    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-    guidata(acq_gui,acq_gui_data)
-
-    set(acq_gui_data.run,'String','Prepping...')
-
-    pause(2.5)
-    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-    waitfor(acq_gui_data.run,'String','Start')
-    guidata(acq_gui,acq_gui_data)
-end
-set(handles.ind_mult,'String',num2str(1));
-guidata(hObject,handles);
-set(acq_gui_data.trigger_seq,'Value',0)
-% move obj
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
 set(handles.thenewx,'String',num2str(start_position(1)))
 set(handles.thenewy,'String',num2str(start_position(2)))
 set(handles.thenewz,'String',num2str(start_position(3)))
@@ -2346,7 +2274,7 @@ pause(.1)
 % get_obj_pos_Callback(hObject, eventdata, handles)
 handles = guidata(hObject);
 guidata(hObject,handles);
-<<<<<<< HEAD
+
 % end
 % 
 
@@ -2543,19 +2471,17 @@ handles = update_obj_pos_Callback(hObject, eventdata, handles);
 
 user_confirm = msgbox('Take Stack. Detect Nuclei.');
 waitfor(user_confirm)
-=======
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 
 
 % tell user to break in and be in VC
 user_confirm = msgbox('Break in! Test pulse off?');
 waitfor(user_confirm)
 
-<<<<<<< HEAD
+
 acq_gui = findobj('Tag','acq_gui');
 acq_gui_data = guidata(acq_gui);
-=======
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
+
 
 % do single testpulse trial to get Rs
 % set acq params
@@ -2572,7 +2498,7 @@ acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
 waitfor(acq_gui_data.run,'String','Start')
 guidata(acq_gui,acq_gui_data)
 
-<<<<<<< HEAD
+
 do_intrinsics = 0;
 choice = questdlg('Do intrinsics?', ...
 	'Do intrinsics?', ...
@@ -2599,105 +2525,12 @@ if do_intrinsics
     set(acq_gui_data.test_pulse,'Value',0)
     set(acq_gui_data.trigger_seq,'Value',0)
     % run trial
-=======
-% tell user to switch to I=0
-user_confirm = msgbox('Please switch Multiclamp to CC with I = 0');
-waitfor(user_confirm)
 
-% run intrinsic ephys
-% set acq params
-set(acq_gui_data.run,'String','Prepping...')
-set(acq_gui_data.Cell1_type_popup,'Value',2)
-acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
-guidata(acq_gui,acq_gui_data);
-set(acq_gui_data.test_pulse,'Value',0)
-set(acq_gui_data.trigger_seq,'Value',0)
-% run trial
-acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-waitfor(acq_gui_data.run,'String','Start')
-guidata(acq_gui,acq_gui_data)
-
-% get baseline Vm
-prompt = {'Enter intrinsic Vm:'};
-dlg_title = 'Input';
-num_lines = 1;
-defaultans = {'-65'};
-Vm = str2double(inputdlg(prompt,dlg_title,num_lines,defaultans));
-
-% run power curve on cell in CC
-% set sequence paraqms
-set(handles.num_stim,'String',num2str(1));
-set(handles.duration,'String',num2str(.003));
-set(handles.iti,'String',num2str(0.5));
-set(handles.num_repeats,'String',num2str(5));
-set(handles.target_intensity,'String','10 25 50 100 150')
-% build seq
-build_seq_Callback(hObject, eventdata, handles)
-pause(2.0)
-handles = guidata(hObject);
-acq_gui_data = guidata(acq_gui);
-% set acq params
-set(acq_gui_data.run,'String','Prepping...')
-% set(acq_gui_data.Cell1_type_popup,'Value',2)
-set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-guidata(acq_gui,acq_gui_data)
-set(acq_gui_data.test_pulse,'Value',0)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-set(acq_gui_data.trigger_seq,'Value',1)
-set(acq_gui_data.loop_count,'String',num2str(1))
-% run trial
-acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-waitfor(acq_gui_data.run,'String','Start')
-guidata(acq_gui,acq_gui_data)
-
-% show data
-try
-    cur_trial = acq_gui_data.data.sweep_counter;
-    this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
-    [trace_stack] = ...
-        get_stim_stack(acq_gui_data.data,cur_trial,...
-        length(this_seq));
-    trace_grid = cell(length(power_curve_num),1);
-    for i = 1:length(power_curve_num)
-        trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
-    end
-    cc_power_curve_fig = figure;
-    plot_trace_stack_grid(trace_grid,Inf,1,0);
-catch e
-    disp('failed to plot data')
-end
-
-for i = 1:num_locs
-    % move obj
-    set(handles.thenewx,'String',num2str(power_curve_obj_positions(i,1)))
-    set(handles.thenewy,'String',num2str(power_curve_obj_positions(i,2)))
-    set(handles.thenewz,'String',num2str(power_curve_obj_positions(i,3)))
-    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-
-    handles = guidata(hObject);
-    
-
-    set(handles.num_stim,'String',num2str(1));
-    set(handles.ind_mult,'String',num2str(power_curve_grid_inds(i)));
-    build_seq_Callback(hObject, eventdata, handles)
-    
-    handles = guidata(hObject);
-    acq_gui_data = get_acq_gui_data();
-    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-    guidata(acq_gui,acq_gui_data)
-
-    set(acq_gui_data.run,'String','Prepping...')
-
-    pause(2.5)
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
     acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
     waitfor(acq_gui_data.run,'String','Start')
     guidata(acq_gui,acq_gui_data)
 end
-<<<<<<< HEAD
+
 
 user_confirm = msgbox('Please switch Multiclamp to VC with desired holding current. Rs is good?');
 waitfor(user_confirm)
@@ -2735,59 +2568,13 @@ set(acq_gui_data.loop_count,'String',num2str(1))
 
 for i = 1:num_map_locations
     
-=======
-set(handles.ind_mult,'String',num2str(1));
-% get this_cell_power
-prompt = {'Enter Target Power For Cell:'};
-dlg_title = 'Input';
-num_lines = 1;
-defaultans = {'50'};
-this_cell_power = str2double(inputdlg(prompt,dlg_title,num_lines,defaultans));
 
-% run power curve on cell in VC
-% tell user to switch to VC with Vm offset to ealier Vm
-user_confirm = msgbox(['In VC with Vm set to ' num2str(Vm)]);
-waitfor(user_confirm)
-
-% set sequence paraqms
-% set(handles.num_stim,'String',num2str(1));
-% set(handles.duration,'String',num2str(.003));
-% set(handles.iti,'String',num2str(1.0));
-set(handles.num_repeats,'String',num2str(1));
-% build seq
-% build_seq_Callback(hObject, eventdata, handles)
-% pause(2.0)
-% acq_gui_data = guidata(acq_gui);
-% handles = guidata(hObject);
-% % set acq params
-% set(acq_gui_data.run,'String','Prepping...')
-% set(acq_gui_data.test_pulse,'Value',0)
-% % run trial
-% acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-% waitfor(acq_gui_data.run,'String','Start')
-% guidata(acq_gui,acq_gui_data)
-
-
-% GO SPATIAL
-
-
-num_trials = size(obj_positions,1);
-set(acq_gui_data.test_pulse,'Value',0)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-set(acq_gui_data.trigger_seq,'Value',1)
-% set(acq_gui_data.conditions,'Value',0)
-set(acq_gui_data.loop_count,'String',num2str(1))
-set(handles.target_intensity,'String',this_cell_power)
-set(handles.num_repeats,'String',num2str(1));
-for i = 1:num_trials
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
     % move obj
     set(handles.thenewx,'String',num2str(obj_positions(i,1)))
     set(handles.thenewy,'String',num2str(obj_positions(i,2)))
     set(handles.thenewz,'String',num2str(obj_positions(i,3)))
     obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-<<<<<<< HEAD
+
     handles = guidata(hObject);
     
     build_seq_Callback(hObject, eventdata, handles)
@@ -2834,49 +2621,12 @@ for i = 1:num_trials
         title(['Power = ' num2str(power_curve_num(j)) ' mW'])
     end
     
-=======
-%     pause(.5)
-    % store/confirm new position
-%     get_obj_pos_Callback(hObject, eventdata, handles)
-    handles = guidata(hObject);
-    
-    % handles.close_socket = 1;
-%     set(handles.ind_offset,'String','0')
-    
-%     if i ~= 1
-%         instruction.type = 31; % RETRIGGER
-%         instruction.close_socket = 0;
-%         [return_info,success,handles] = do_instruction(instruction,handles);
-%         guidata(hObject,handles)
-%     end
-    set(handles.num_stim,'String',num2str(all_grid_sizes(i)));
-    build_seq_Callback(hObject, eventdata, handles)
-    
-    handles = guidata(hObject);
-    acq_gui_data = get_acq_gui_data();
-    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-%     acq_gui = findobj('Tag','acq_gui');
-    guidata(acq_gui,acq_gui_data)
 
-%     set(acq_gui_data.loop_count,'String',num2str(1))
-    set(acq_gui_data.run,'String','Prepping...')
-%     waitfig = warndlg('Is SlideBook Ready?');
-%     waitfor(waitfig)
-%     pause(3.0)
-    pause(2.5)
-    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-    waitfor(acq_gui_data.run,'String','Start')
-    guidata(acq_gui,acq_gui_data)
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
 end
 
 guidata(hObject,handles);
 set(acq_gui_data.trigger_seq,'Value',0)
-<<<<<<< HEAD
 
-=======
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
 % move obj
 set(handles.close_socket_check,'Value',1)
 set(handles.thenewx,'String',num2str(start_position(1)))
@@ -2890,7 +2640,7 @@ handles = guidata(hObject);
 guidata(hObject,handles);
 
 
-<<<<<<< HEAD
+
 % --- Executes on button press in stack_detect.
 function stack_detect_Callback(hObject, eventdata, handles)
 % hObject    handle to stack_detect (see GCBO)
@@ -2929,26 +2679,4 @@ guidata(acq_gui,acq_gui_data)
 instruction.type = 80;
 
 guidata(hObject,handles)
-=======
 
-function ind_mult_Callback(hObject, eventdata, handles)
-% hObject    handle to ind_mult (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of ind_mult as text
-%        str2double(get(hObject,'String')) returns contents of ind_mult as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function ind_mult_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to ind_mult (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
->>>>>>> 319468183c8be87927bb7228f3c76c585cd20ac0
