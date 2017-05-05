@@ -57,7 +57,7 @@ if strcmp(handles.run_type,'loop')
     AO3 = AO2;
     AO2(1:100) = 2.0;
     
-    
+
 else
 
     if (strcmp(handles.defaults.AO2,'LED')==1) && get(handles.use_LED,'Value')
@@ -71,15 +71,24 @@ else
 
     if (strcmp(handles.defaults.AO3,'2P')==1) && get(handles.use_2P,'Value')
         AO3=handles.data.stim_output;
-    elseif (get(handles.use_2P,'Value'))
-        AO3 = handles.data.shutter;
-        assignin('base','shutter',handles.data.shutter)
+
+%     elseif (get(handles.use_2P,'Value'))
+%         AO3 = handles.data.shutter;
+%         assignin('base','shutter',handles.data.shutter)
+    elseif (strcmp(handles.defaults.AO3,'SHUTTER')==1) && get(handles.use_LED,'Value')
+        disp('led out set')
+        AO3=handles.data.stim_output;
+        AO2=zeros(size(AO0));
     elseif (strcmp(handles.defaults.AO3,'LED')==1) && get(handles.use_LED,'Value')
         disp('led out set')
         AO3=handles.data.stim_output;
     else
         AO3=zeros(size(AO0));
     end
+
+        assignin('base','shutter',handles.data.shutter)
+
+
 end
 
 % disp('length')
