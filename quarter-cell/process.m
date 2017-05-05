@@ -152,6 +152,12 @@ else
     handles.data.trial_metadata(sweep_counter).stackname = [];
 end
 
+if isfield(handles.data,'stackname')
+    handles.data.trial_metadata(sweep_counter).nuclear_locs = handles.data.nuclear_locs;
+else
+    handles.data.trial_metadata(sweep_counter).nuclear_locs = [];
+end
+
 %% store the analog outputs, but downsample them
 handles.data.stims{sweep_counter}={downsample(stim_output,10), downsample(ch1_output,10), downsample(ch2_output,10)};
 
