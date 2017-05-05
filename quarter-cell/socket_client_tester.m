@@ -279,10 +279,10 @@ if success >= 0
             return_info.success = 1;
         case DETECT_NUC_LOCAL
             system(['smbclient //adesnik2.ist.berkeley.edu/inhibition adesnik110623 -c ''cd /shababo ; '...
-                'get ' instruction.stackname '.tif ' instruction.stackname '.tif''']);
+                'get ' instruction.stackname '.tif ' '/media/shababo/data/' '5_5_10_6' '.tif''']);
             pause(1)
-%             nuclear_locs = detect_nuclei([instruction.stackname '_C0.tif']);
-            nuclear_locs = [1 2 3; 4 5 6; 7 8 9; 1 2 3];
+            nuclear_locs = detect_nuclei(['/media/shababo/data/' '5_5_10_6']);
+%             nuclear_locs = [1 2 3; 4 5 6; 7 8 9; 1 2 3];
             return_info.nuclear_locs = nuclear_locs;
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_SERVE;
@@ -323,6 +323,9 @@ if success >= 0
     
     
 end
+clear return_info
+return_info.test_turing = 1;
+return_info.nuclear_locs = nuclear_locs;
 assignin('base','return_info',return_info)
 disp('sending return info')
 mssend(handles.sock,return_info);
