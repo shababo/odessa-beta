@@ -105,7 +105,7 @@ this_trans = twophoton_slm_trans_new;
 % generate individual spots
 clear target
 
-x_pos = -5:1:4;
+x_pos = -5:1:5;
 % theta = 5.82;
 % scale_vec = [-1.55 1.55 0];
 target.mode = '3D spots';
@@ -438,7 +438,7 @@ target = precomputed_target(1); target.pattern = tf_all_spots_phase(:,:,stim_id)
 isTargetPatternReady = 1;
 
 
-stim_id = find(tf_disk_key(:,1) == 60 & tf_disk_key(:,2) == -60);
+stim_id = find(tf_disk_key(:,1) == 40 & tf_disk_key(:,2) == 40);
 target = precomputed_target(1); target.pattern = tf_disk_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;
@@ -625,6 +625,7 @@ tf_disk_grid = zeros(600,792,size(tf_all_spots_phase,3));
 % [center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
 % steps_from_center = 4;
 % spacing = 20;
+
 
 order = [];
 % tf_disk_precomputed_target(size(tf_all_spots_phase,3)) = struct();
