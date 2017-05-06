@@ -2682,12 +2682,15 @@ instruction.do_target = 1;
 guidata(hObject,handles)
 
 set(handles.rand_order,'Value',1);
-set(handles.num_repeats,'String',num2str(15));
+set(handles.num_repeats,'String',num2str(3));
 set(handles.num_stim,'String',num2str(size(acq_gui_data.data.nuclear_locs,1)));
 set(handles.duration,'String',num2str(.003));
 set(handles.iti,'String',num2str(0.075));
-set(handles.target_intensity,'String','150 200 250')
+set(handles.target_intensity,'String','25 50 75 100')
 
+set(acq_gui_data.Cell1_type_popup,'Value',3)
+set(acq_gui_data.Cell2_type_popup,'Value',3)
+set(acq_gui_data.test_pulse,'Value',1)
 set(acq_gui_data.loop,'Value',1)
 set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
 set(acq_gui_data.trigger_seq,'Value',1)
@@ -2706,30 +2709,15 @@ acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,a
 
 % whole cell or cell-attached?
 % Construct a questdlg with three options
-choice = questdlg('Patch Type?', ...
-	'Patch type?', ...
-	'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
+choice = questdlg('Go whole cell?', ...
+	'Exp type?', ...
+	'Voltage Clamp','Cell Attached','Cell Attached');
 % Handle response
 switch choice
-    case 'Voltage Clamp'
-        set(acq_gui_data.Cell1_type_popup,'Value',1)
-        set(acq_gui_data.Cell2_type_popup,'Value',1)
-        set(acq_gui_data.test_pulse,'Value',1)
-        whole_cell = 1;
     case 'Current Clamp'
-        set(acq_gui_data.Cell1_type_popup,'Value',2)
-        set(acq_gui_data.Cell2_type_popup,'Value',2)
-        whole_cell = 1;
+        currentclamp = 1;
     case 'Cell Attached'
-        set(acq_gui_data.Cell1_type_popup,'Value',3)
-        set(acq_gui_data.Cell2_type_popup,'Value',3)
-        set(acq_gui_data.test_pulse,'Value',1)
-        whole_cell = 0;
-end
-
-if whole_cell
-    user_confirm = msgbox('Break in! Rs okay? Test pulse off?');
-    waitfor(user_confirm)
+        currentclamp = 0;
 end
 
 
