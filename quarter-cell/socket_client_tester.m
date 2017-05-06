@@ -279,9 +279,9 @@ if success >= 0
             return_info.success = 1;
         case DETECT_NUC_LOCAL
             system(['smbclient //adesnik2.ist.berkeley.edu/inhibition adesnik110623 -c ''cd /shababo ; '...
-                'get ' instruction.stackname '.tif ' '/media/shababo/data/' '5_5_10_6' '.tif''']);
+                'get ' instruction.stackname '.tif ' '/media/shababo/data/' instruction.stackname '.tif''']);
             pause(1)
-            nuclear_locs = detect_nuclei(['/media/shababo/data/' '5_5_10_6']);
+            nuclear_locs = detect_nuclei(['/media/shababo/data/' instruction.stackname]);
 %             nuclear_locs = [1 2 3; 4 5 6; 7 8 9; 1 2 3];
             return_info.nuclear_locs = nuclear_locs;
         case DETECT_NUC_SERVE
