@@ -291,7 +291,8 @@ if success >= 0
             copyfile([instruction.stackname '_C0.tif'], ['Y:\shababo\' instruction.stackname '.tif']);
             pause(1)
             [return_info,success,handles] = do_instruction(instruction_out,handles) ;
-            
+%             locs_test = evalin('base','nuclear_locs_example');
+%             return_info.nuclear_locs = locs_test(1:200,:); 
         case PRECOMPUTE_PHASE
             tf_flag = instruction.tf_flag;
             if tf_flag
@@ -301,32 +302,45 @@ if success >= 0
                 spots_phase = evalin('base','notf_all_spots_phase');
 %                 pockels_ratio_refs = evalin('base','pockels_ratio_refs_notf');                
             end
-            diskRadii = evalin('base','diskRadii');
-            diskPhase = evalin('base','diskPhase');
-        case PRECOMPUTE_PHASE_NUCLEAR
+%             diskRadii = evalin('base','diskRadii');
+%             diskPhase = evalin('base','diskPhase');
             
-            disk_grid = evalin('base','tf_disk_grid');
+        case PRECOMPUTE_PHASE_NUCLEAR
+            pockels_ratio_refs_tf_full_map = evalin('base','pockels_ratio_refs_tf_full_map');
+            coarse_disks = evalin('base','tf_disk_grid');
             disk_key = evalin('base','tf_disk_key');
-            fine_spot_grid = evalin('base','tf_fine_spots_phase');
-            fine_spot_key = evalin('base','tf_fine_spots_key');
-            do_target = 0;
-            phase_masks_target = ...
-                build_single_loc_phases(locations,coarse_disks,disk_key,...
-                fine_spots,spot_key,do_target);
+            fine_spot_grid = evalin('base','tf_fine_grid_spots_phase');
+            fine_spot_key = evalin('base','tf_fine_grid_spots_key');
+            do_target = instruction.do_target;
+            [phase_masks_target, dec_ind] = ...
+                build_single_loc_phases(instruction.nuclear_locs,coarse_disks,disk_key,...
+                fine_spot_grid,fine_spot_key,do_target);
+            pockels_ratio_refs_tf = pockels_ratio_refs_tf_full_map(dec_ind);
+            vars{1} = pockels_ratio_refs_tf;
+            names{1} = 'pockels_ratio_refs_tf';
+            vars{2} = instruction.nuclear_locs;
+            names{2} = 'tf_stim_key';
             if do_target
-                vars{1} = phase_masks_target;
-                names{1} = 'precomputed_target';
+                vars{3} = phase_masks_target;
+                names{3} = 'precomputed_target';
+                assignin_base(names,vars);
                 evalin('base','set_precomp_target_ready')
+            else
+                vars{3} = phase_masks_target;
+                names{3} = 'phase_masks_target';
+                assignin_base(names,vars);
             end
                 
-            assignin_base(names,vars);
     end
     
     
 end
-clear return_info
-return_info.test_turing = 1;
-return_info.nuclear_locs = nuclear_locs;
+% return_info.test_turing = 1;
+if instruction.type == DETECT_NUC_LOCAL
+    clear return_info
+    % return_info.test_turing = 1;
+    return_info.nuclear_locs = nuclear_locs;
+    end
 assignin('base','return_info',return_info)
 disp('sending return info')
 mssend(handles.sock,return_info);
@@ -401,6 +415,16 @@ if isfield(handles,'sock') && handles.sock > 0
     disp('closing socket')
     msclose(handles.sock)
     handles = rmfield(handles,'sock');
+    guidata(hObject,handles)
+else
+    disp('no socket')
+end
+
+
+if isfield(handles,'sock_out') && handles.sock_out > 0
+    disp('closing socket put')
+    msclose(handles.sock_out)
+    handles = rmfield(handles,'sock_out');
     guidata(hObject,handles)
 else
     disp('no socket')
