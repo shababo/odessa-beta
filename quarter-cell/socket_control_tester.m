@@ -2679,13 +2679,75 @@ instruction.stackname = stackname;
 acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
 guidata(acq_gui,acq_gui_data)
 
-instruction.type = 80;
-
+instruction.type = 81;
+instruction.nuclear_locs = acq_gui_data.data.nuclear_locs;
+instruction.do_target = 1;
+[return_info,success,handles] = do_instruction(instruction,handles);
 guidata(hObject,handles)
+
+set(handles.rand_order,'Value',1);
+set(handles.num_repeats,'String',num2str(3));
+set(handles.num_stim,'String',num2str(size(acq_gui_data.data.nuclear_locs,1)));
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(0.075));
+set(handles.target_intensity,'String','25 50 75 100')
+
+set(acq_gui_data.Cell1_type_popup,'Value',3)
+set(acq_gui_data.Cell2_type_popup,'Value',3)
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+
+% user_confirm = msgbox('Targets loaded?');
+% waitfor(user_confirm)
+
+build_seq_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
+acq_gui_data = get_acq_gui_data();
+set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+%     acq_gui = findobj('Tag','acq_gui');
+guidata(acq_gui,acq_gui_data)
+
+%     set(acq_gui_data.loop_count,'String',num2str(1))
+% set(acq_gui_data.run,'String','Prepping...')
+%     waitfig = warndlg('Is SlideBook Ready?');
+%     waitfor(waitfig)
+%     pause(3.0)
+% pause(10.0)
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+% plot map
+cur_trial = acq_gui_data.data.sweep_counter;
+this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+this_stim_key = acq_gui_data.data.trial_metadata(cur_trial).stim_key;
+power_curve_num = unique([this_seq.target_power]);
+
+for i = 1:length(power_curve_num)
+    [traces_ch1,traces_ch2] = ...
+    get_stim_stack(acq_gui_data.data,cur_trial,...
+        length(this_seq),[this_seq.start]);
+    
+    traces_pow{1} = traces_ch1([this_seq.target_power] == power_curve_num(i),:);
+    traces_pow{2} = traces_ch2([this_seq.target_power] == power_curve_num(i),:);
+    this_seq_power = this_seq([this_seq.target_power] == power_curve_num(i));
+    see_grid_multi(traces_pow,this_seq_power,this_stim_key,5,1);
+    title(['Power = ' num2str(power_curve_num(i)) ' mW'])
+end
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
 [return_info,success,handles] = do_instruction(instruction,handles);
+guidata(hObject,handles)
 
+
+    
+    
+
+    
 
