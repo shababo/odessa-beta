@@ -646,3 +646,16 @@ end
 
 toc
 clear tf_phase
+%%
+
+clear precomputed_target
+num_disks = size(tf_disk_grid,3);
+precomputed_target(num_disks).mode = 'Phase';
+precomputed_target(num_disks).pattern = tf_disk_grid(:,:,num_disks);
+
+for i = 1:num_disks-1
+    precomputed_target(i).mode = 'Phase';
+    precomputed_target(i).pattern = tf_disk_grid(:,:,i);
+end
+
+
