@@ -283,7 +283,6 @@ if success >= 0
                 'get ' instruction.stackname '.tif ' '/media/shababo/data/' instruction.stackname '.tif''']);
             pause(1)
             nuclear_locs = detect_nuclei(['/media/shababo/data/' instruction.stackname]);
-%             nuclear_locs = [1 2 3; 4 5 6; 7 8 9; 1 2 3];
             return_info.nuclear_locs = nuclear_locs;
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_LOCAL;
