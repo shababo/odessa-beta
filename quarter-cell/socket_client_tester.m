@@ -261,10 +261,8 @@ if success >= 0
             return_info.success = 1;
             if tf_flag
                 return_info.stim_key = evalin('base','tf_stim_key');
-                pockels_ratio_refs = evalin('base','pockels_ratio_refs_tf');
             else
                 return_info.stim_key = evalin('base','notf_stim_key');
-                pockels_ratio_refs = evalin('base','pockels_ratio_refs_notf');                
             end
             return_info.sequence = sequence;
             
