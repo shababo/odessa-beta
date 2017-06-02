@@ -6,7 +6,7 @@ pulse_duration = 1.0;
 interpulse_duration = 2.0;
 
 
-pulse_amps = [-200 -100 50:50:350];
+pulse_amps = [-200 -100 50:50:200 300 400];
 
 
 trial_length = 2*baseline_duration + (pulse_duration + interpulse_duration)*length(pulse_amps);

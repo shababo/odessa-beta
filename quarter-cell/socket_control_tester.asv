@@ -23,7 +23,7 @@ function varargout = socket_control_tester(varargin)
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 06-May-2017 09:52:37
+% Last Modified by GUIDE v2.5 01-Jun-2017 22:25:27
 
 
 % Begin initialization code - DO NOT EDIT
@@ -256,7 +256,7 @@ function build_seq_Callback(hObject, eventdata, handles)
 num_stim = str2double(get(handles.num_stim,'String'));
 
 sequence_base.start = 0;
-sequence_base.duration = str2double(get(handles.duration,'String'))*1000
+sequence_base.duration = str2double(get(handles.duration,'String'))*1000;
 all_powers = strread(get(handles.target_intensity,'String'));
 sequence_base.power = all_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
@@ -264,48 +264,56 @@ sequence_base.precomputed_target_index = 1;
 
 sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
-iti = str2double(get(handles.iti,'String'))*1000
+iti = str2double(get(handles.iti,'String'))*1000;
 
 target_power = str2double(get(handles.target_intensity,'String'));
 ind_mult = str2double(get(handles.ind_mult,'String'));
 count = 1;
 ind_offset = str2double(get(handles.ind_offset,'String'));
+repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
+num_repeats = str2double(get(handles.num_repeats,'String'));
 for k = 1:length(all_powers)
     for i = 1:num_stim
 
+        if i >= repeat_start_ind
+            this_repeat = num_repeats;
+        else
+            this_repeat = 1;
+        end
+        for j = 1:this_repeat
+            sequence(count) = sequence_base;
+            sequence(count).power = all_powers(k);
+            sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
 
-        sequence(count) = sequence_base;
-        sequence(count).power = all_powers(k);
-        sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
+    %             if get(handles.power,'Value')
+    %                 [~, c_i] = min(abs(x_positions(i) - conversion));
+    %                 [~, c_j] = min(abs(y_positions(j) - conversion));
+    %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
+    % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
+    %                 voltage = get_voltage(handles.lut,scaled_power);
+    %                 image_test(i,j) = voltage;
+    %                 sequence(count).power = voltage*100;
+    %             end
+    %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
+    %             sequence(count).power = powers(k)*100;
 
-%             if get(handles.power,'Value')
-%                 [~, c_i] = min(abs(x_positions(i) - conversion));
-%                 [~, c_j] = min(abs(y_positions(j) - conversion));
-%                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
-% %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
-%                 voltage = get_voltage(handles.lut,scaled_power);
-%                 image_test(i,j) = voltage;
-%                 sequence(count).power = voltage*100;
-%             end
-%                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
-%             sequence(count).power = powers(k)*100;
-
-        count = count + 1;
+            count = count + 1;
+        end
+        
     end
 end
 num_stim = length(sequence);
 
-num_repeats = str2double(get(handles.num_repeats,'String'));
-
 if num_stim > 1 && get(handles.rand_order,'Value')
     
-    order = zeros(num_stim*num_repeats,1);
-    for i = 1:num_repeats
-        order((i-1)*num_stim+1:i*num_stim) = randperm(num_stim);
-    end
+%     order = zeros((num_stim*num_repeats,1);
+%     for i = 1:num_repeats
+%         order((i-1)*num_stim+1:i*num_stim) = randperm(num_stim);
+%     end
+    order = randperm(num_stim);
     
 else
-    order = repmat(1:num_stim,1,num_repeats);
+    order = 1:num_stim;%repmat(1:num_stim,1,num_repeats);
     
 end
 
@@ -318,7 +326,7 @@ for i = 1:length(sequence)
 end
 
 time_padding = 5; % in seconds
-total_duration = (sequence(end).start + iti)/1000 + time_padding
+total_duration = (sequence(end).start + iti)/1000 + time_padding;
 
 
 instruction.sequence = sequence;
@@ -339,6 +347,7 @@ instruction.type = 30; %SEND SEQ
 handles.sequence = sequence;
 handles.total_duration = total_duration;
 instruction.waittime = total_duration + 120;
+instruction.set_trigger = get(handles.set_seq_trigger,'Value');
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction(instruction,handles);
 acq_gui_data = get_acq_gui_data();
@@ -2682,15 +2691,12 @@ instruction.do_target = 1;
 guidata(hObject,handles)
 
 set(handles.rand_order,'Value',1);
-set(handles.num_repeats,'String',num2str(3));
+set(handles.num_repeats,'String',num2str(15));
 set(handles.num_stim,'String',num2str(size(acq_gui_data.data.nuclear_locs,1)));
 set(handles.duration,'String',num2str(.003));
 set(handles.iti,'String',num2str(0.075));
-set(handles.target_intensity,'String','25 50 75 100')
+set(handles.target_intensity,'String','150 200 250')
 
-set(acq_gui_data.Cell1_type_popup,'Value',3)
-set(acq_gui_data.Cell2_type_popup,'Value',3)
-set(acq_gui_data.test_pulse,'Value',1)
 set(acq_gui_data.loop,'Value',1)
 set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
 set(acq_gui_data.trigger_seq,'Value',1)
@@ -2709,15 +2715,30 @@ acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,a
 
 % whole cell or cell-attached?
 % Construct a questdlg with three options
-choice = questdlg('Go whole cell?', ...
-	'Exp type?', ...
-	'Voltage Clamp','Cell Attached','Cell Attached');
+choice = questdlg('Patch Type?', ...
+	'Patch type?', ...
+	'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
 % Handle response
 switch choice
+    case 'Voltage Clamp'
+        set(acq_gui_data.Cell1_type_popup,'Value',1)
+        set(acq_gui_data.Cell2_type_popup,'Value',1)
+        set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 1;
     case 'Current Clamp'
-        currentclamp = 1;
+        set(acq_gui_data.Cell1_type_popup,'Value',2)
+        set(acq_gui_data.Cell2_type_popup,'Value',2)
+        whole_cell = 1;
     case 'Cell Attached'
-        currentclamp = 0;
+        set(acq_gui_data.Cell1_type_popup,'Value',3)
+        set(acq_gui_data.Cell2_type_popup,'Value',3)
+        set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 0;
+end
+
+if whole_cell
+    user_confirm = msgbox('Break in! Rs okay? Test pulse off?');
+    waitfor(user_confirm)
 end
 
 
@@ -2789,11 +2810,33 @@ end
 
 if set_cell_pos
     % confirm everything ready
-    user_confirm = msgbox('SLM Zero-order over patched cell in 2P image?');
+    user_confirm = msgbox('Z-plane aligned with patched cell 1?');
     waitfor(user_confirm)
+% 
+%     set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
+    disp('click targets...')
+    instruction.type = 73;
+    instruction.num_targs = 1;
+    [return_info,success,handles] = do_instruction(instruction,handles);
+    acq_gui = findobj('Tag','acq_gui');
+    acq_gui_data = guidata(acq_gui);
+    handles.data.click_targ = return_info.nuclear_locs;
+    handles = update_obj_pos_Callback(handles.update_obj_pos, eventdata, handles);
+    acq_gui_data.data.snap_image = return_info.snap_image;
+    
+    cell_pos = [handles.data.click_targ 
+    handles.data.cell1_pos = handles.data.obj_position;
+    acq_gui_data.data.cell_pos = handles.data.obj_position;
+    
+    set(acq_gui_data.cell_x,'String',num2str(handles.data.obj_position(1)));
+    set(acq_gui_data.cell_y,'String',num2str(handles.data.obj_position(2)));
+    set(acq_gui_data.cell_z,'String',num2str(handles.data.obj_position(3)));
+    
+    
+    
+    guidata(acq_gui, acq_gui_data);
+    guidata(hObject,handles)
 
-    set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
-    handles = guidata(hObject);
 end
 
 user_confirm = msgbox('SLM Zero-order over desired mapping start location at top of slice?');
@@ -2801,7 +2844,8 @@ waitfor(user_confirm)
 handles = update_obj_pos_Callback(hObject, eventdata, handles);
 
 % make obj locations
-z_offsets = [20 60 100]';
+z_offsets = [30 70 110]';
+% z_offsets = [20]';
 obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
 start_position = handles.data.obj_position;
 obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
@@ -2821,7 +2865,7 @@ instruction.string = stackname;
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction(instruction,handles);
 
-user_confirm = msgbox(sprintf('140 Stack Taken with 2um spacing?\nUse name: %s',...
+user_confirm = msgbox(sprintf('160 um Stack Taken with 2um spacing?\nUse name: %s',...
     stackname));
 waitfor(user_confirm)
 
@@ -2835,67 +2879,1187 @@ instruction.type = 72;
 instruction.stackname = stackname;
 [return_info,success,handles] = do_instruction(instruction,handles);
 acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
+handles.data.nuclear_locs = return_info.nuclear_locs;
 guidata(acq_gui,acq_gui_data)
-
-instruction.type = 81;
-instruction.nuclear_locs = acq_gui_data.data.nuclear_locs;
-instruction.do_target = 1;
-[return_info,success,handles] = do_instruction(instruction,handles);
 guidata(hObject,handles)
 
+%expand stim set
+nearby_locations = [];%return_info.nuclear_locs;
+% nearby_targets = 2;
+offsets = [-5 5];
+% for i = 1:nearby_targets
+nearby_stim = return_info.nuclear_locs + ...
+    [randsample(offsets,size(return_info.nuclear_locs,1),1)' ...
+     randsample(offsets,size(return_info.nuclear_locs,1),1)' ...
+     zeros(size(return_info.nuclear_locs,1),1)];
+nearby_locations = [nearby_locations; nearby_stim];
+% nearby_stim = return_info.nuclear_locs + ...
+%     [randsample(offsets,size(return_info.nuclear_locs,1),1)' ...
+%      zeros(size(return_info.nuclear_locs,1),1) ...
+%      zeros(size(return_info.nuclear_locs,1),1)];
+% nearby_locations = [nearby_locations; nearby_stim];
+% end
+nearby_locations(nearby_locations(:,1) < - 150 | nearby_locations(:,1) > 150,:) = [];
+nearby_locations(nearby_locations(:,2) < - 150 | nearby_locations(:,2) > 150,:) = [];
+num_nuc = size(handles.data.nuclear_locs,1);
+additional_locs = ceil(.25*num_nuc);
+xmax = round(max(handles.data.nuclear_locs(:,1)) - min(handles.data.nuclear_locs(:,1)));
+ymax = round(max(handles.data.nuclear_locs(:,2)) - min(handles.data.nuclear_locs(:,2)));
+zmax = round(max(handles.data.nuclear_locs(:,3)) - min(handles.data.nuclear_locs(:,3)));
+rand_locs(additional_locs,:) = [0 0 0];
+for i = 1:additional_locs
+    rand_locs(i,:) = [randi(xmax) randi(ymax) randi(zmax)] +...
+                                    round([min(handles.data.nuclear_locs(:,1)) min(handles.data.nuclear_locs(:,2)) min(handles.data.nuclear_locs(:,3))]);
+end
+handles.data.nearby_locations = nearby_locations;
+handles.data.rand_locs = rand_locs;
+acq_gui = findobj('Tag','acq_gui');
+acq_gui_data = get_acq_gui_data();
+acq_gui_data.data.nearby_locations = nearby_locations;
+acq_gui_data.data.rand_locs = rand_locs;
+guidata(acq_gui,acq_gui_data);
+
+
+% whole cell or cell-attached?
+% Construct a questdlg with three options
+clamp_choice = questdlg('Patch Type?', ...
+	'Patch type?', ...
+	'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
+% Handle response
+switch clamp_choice
+    case 'Voltage Clamp'
+%         set(acq_gui_data.Cell1_type_popup,'Value',1)
+%         set(acq_gui_data.Cell2_type_popup,'Value',1)
+%         set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 1;
+    case 'Current Clamp'
+%         set(acq_gui_data.Cell1_type_popup,'Value',2)
+%         set(acq_gui_data.Cell2_type_popup,'Value',2)
+        whole_cell = 1;
+    case 'Cell Attached'
+        set(acq_gui_data.Cell1_type_popup,'Value',3)
+        set(acq_gui_data.Cell2_type_popup,'Value',3)
+        set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 0;
+end
+
+if whole_cell
+    user_confirm = msgbox('Break in! Rs okay? Test pulse off? In v-clamp?');
+    waitfor(user_confirm)
+
+
+
+    guidata(acq_gui,acq_gui_data)
+
+
+    acq_gui = findobj('Tag','acq_gui');
+    acq_gui_data = guidata(acq_gui);
+
+
+    % do single testpulse trial to get Rs
+    % set acq params
+    set(acq_gui_data.run,'String','Prepping...')
+    set(acq_gui_data.Cell1_type_popup,'Value',1)
+    set(acq_gui_data.trial_length,'String',1.0)
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    set(acq_gui_data.trigger_seq,'Value',0)
+    % run trial
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+
+
+    do_intrinsics = 0;
+    choice = questdlg('Do intrinsics?', ...
+        'Do intrinsics?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            do_intrinsics = 1;
+        case 'No'
+            do_intrinsics = 0;
+    end
+
+    if do_intrinsics
+        % tell user to switch to I=0
+        user_confirm = msgbox('Please switch Multiclamp to CC with I = 0');
+        waitfor(user_confirm)
+
+        % run intrinsic ephys
+        % set acq params
+        set(acq_gui_data.run,'String','Prepping...')
+        set(acq_gui_data.Cell1_type_popup,'Value',2)
+        acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+        guidata(acq_gui,acq_gui_data);
+        set(acq_gui_data.test_pulse,'Value',0)
+        set(acq_gui_data.trigger_seq,'Value',0)
+        % run trial
+
+        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        waitfor(acq_gui_data.run,'String','Start')
+        guidata(acq_gui,acq_gui_data)
+    end
+
+
+    user_confirm = msgbox('Please switch Multiclamp to VC with desired holding current. Rs is good?');
+    waitfor(user_confirm)
+end
+
+% Handle response
+switch clamp_choice
+    case 'Voltage Clamp'
+        set(acq_gui_data.Cell1_type_popup,'Value',1)
+        set(acq_gui_data.Cell2_type_popup,'Value',1)
+        set(acq_gui_data.test_pulse,'Value',1)
+%         whole_cell = 1;
+    case 'Current Clamp'
+        set(acq_gui_data.Cell1_type_popup,'Value',2)
+        set(acq_gui_data.Cell2_type_popup,'Value',2)
+%         whole_cell = 1;
+    case 'Cell Attached'
+        set(acq_gui_data.Cell1_type_popup,'Value',3)
+        set(acq_gui_data.Cell2_type_popup,'Value',3)
+%         set(acq_gui_data.test_pulse,'Value',1)
+%         whole_cell = 0;
+end
+
+guidata(hObject,handles);
+
+% shift focus
+figure(acq_gui)
+
 set(handles.rand_order,'Value',1);
-set(handles.num_repeats,'String',num2str(3));
-set(handles.num_stim,'String',num2str(size(acq_gui_data.data.nuclear_locs,1)));
+set(handles.num_repeats,'String',num2str(5));
 set(handles.duration,'String',num2str(.003));
 set(handles.iti,'String',num2str(0.075));
-set(handles.target_intensity,'String','25 50 75 100')
+% POWERS HERE*****************************
+set(handles.target_intensity,'String','50 100 150')
 
-set(acq_gui_data.Cell1_type_popup,'Value',3)
-set(acq_gui_data.Cell2_type_popup,'Value',3)
+
 set(acq_gui_data.test_pulse,'Value',1)
 set(acq_gui_data.loop,'Value',1)
 set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
 set(acq_gui_data.trigger_seq,'Value',1)
 set(acq_gui_data.loop_count,'String',num2str(1))
+num_map_locations = size(obj_positions,1);
 
-% user_confirm = msgbox('Targets loaded?');
-% waitfor(user_confirm)
+for i = 1:num_map_locations
+    
 
-build_seq_Callback(hObject, eventdata, handles)
+    % move obj
+    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
+    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
+    handles = guidata(hObject);
+    
+    % get this z-depth spots
+    
+    thresh_dist = 31;
+    nuclear_locs = handles.data.nuclear_locs;
+    nuclear_locs = ...
+        nuclear_locs(nuclear_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
+                       nuclear_locs(:,3) < (z_offsets(i) + thresh_dist),:);
+    nearby_locs = [handles.data.nearby_locations];
+    nearby_locs = ...
+        nearby_locs(nearby_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
+                       nearby_locs(:,3) < (z_offsets(i) + thresh_dist),:);
+% 	nearby_trunc = ceil(size(nearby_locs,1)/2);
+%     nearby_choice = randsample(size(nearby_locs,1),nearby_trunc);
+%     nearby_locs = nearby_locs(nearby_choice,:);
+%     rand_locs = handles.data.rand_locs;
+%     rand_locs = ...
+%         rand_locs(rand_locs(:,3) > (z_offsets(i) - 21) & ...
+%                        rand_locs(:,3) < (z_offsets(i) + 21),:);               
+    
+    instruction.type = 82;
+    instruction.multitarg_locs = [nuclear_locs; nearby_locs];
+    instruction.single_spot_locs = [nuclear_locs];%nuclear_locs];
+%     instruction.nearby_locs = nearby_locs;
+    instruction.targs_per_stim = 3;
+    instruction.repeat_target = 5;
+    instruction.num_stim = size(instruction.multitarg_locs,1)*(ceil(instruction.repeat_target/instruction.targs_per_stim));
+    instruction.do_target = 1;
+    [return_info,success,handles] = do_instruction(instruction,handles);
+    guidata(hObject,handles)
+    set(handles.num_stim,'String',num2str(return_info.num_stim));
+    set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
+    set(handles.tf_flag,'Value',1)
+    set(handles.set_seq_trigger,'Value',0)
+    build_seq_Callback(hObject, eventdata, handles)
+    handles = guidata(hObject);
+    acq_gui_data = get_acq_gui_data();
+    max_seq_length = str2double(get(handles.max_seq_length,'String'));
+    this_seq = acq_gui_data.data.sequence;
+    num_runs = ceil(length(this_seq)/max_seq_length);
+    start_trial = acq_gui_data.data.sweep_counter + 1;
+    for j = 1:num_runs
+        this_subseq = this_seq((j-1)*max_seq_length+1:min(j*max_seq_length,length(this_seq)));
+        time_offset = this_subseq(1).start - 1000;
+        for k = 1:length(this_subseq)
+            this_subseq(k).start = this_subseq(k).start - time_offset;
+        end
+        total_duration = (this_subseq(end).start)/1000 + 5;
+        
+        set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+        acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+        instruction.type = 32; %SEND SEQ
+        handles.sequence = this_subseq;
+        instruction.sequence = this_subseq;
+        handles.total_duration = total_duration;
+        instruction.waittime = total_duration + 120;
+        disp('sending instruction...')
+        [return_info,success,handles] = do_instruction(instruction,handles);
+%         acq_gui_data = get_acq_gui_data();
+%         acq_gui_data.data.stim_key =  return_info.stim_key;
+        acq_gui_data.data.sequence =  this_subseq;
+        acq_gui = findobj('Tag','acq_gui');
+        guidata(acq_gui,acq_gui_data)
+
+        set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+        acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+
+        guidata(hObject,handles)
+        guidata(acq_gui,acq_gui_data)
+
+        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        waitfor(acq_gui_data.run,'String','Start')
+        guidata(acq_gui,acq_gui_data)
+
+        % plot map
+        cur_trial = acq_gui_data.data.sweep_counter;
+        this_seq_plot = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+        this_stim_key = acq_gui_data.data.trial_metadata(cur_trial).stim_key;
+        power_curve_num = unique([this_seq_plot.target_power]);
+
+        for j = 1:length(power_curve_num)
+            [traces_ch1,traces_ch2] = ...
+            get_stim_stack(acq_gui_data.data,cur_trial,...
+                length(this_seq_plot),[this_seq_plot.start]);
+
+            traces_pow{1} = traces_ch1([this_seq_plot.target_power] == power_curve_num(j),:);
+            traces_pow{2} = traces_ch2([this_seq_plot.target_power] == power_curve_num(j),:);
+            this_seq_power = this_seq_plot([this_seq_plot.target_power] == power_curve_num(j));
+            see_grid_multi(traces_pow,this_seq_power,this_stim_key,5,1);
+            title(['Power = ' num2str(power_curve_num(j)) ' mW'])
+        end
+    end
+    
+    
+
+end
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction(instruction,handles);
+guidata(hObject,handles)
+
+
+
+function repeat_start_ind_Callback(hObject, eventdata, handles)
+% hObject    handle to repeat_start_ind (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of repeat_start_ind as text
+%        str2double(get(hObject,'String')) returns contents of repeat_start_ind as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function repeat_start_ind_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to repeat_start_ind (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in test_temp.
+function test_temp_Callback(hObject, eventdata, handles)
+% hObject    handle to test_temp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% fields_to_get = {'z_start','z_stop','z_spacing'};
+set(handles.close_socket_check,'Value',0)
+set(handles.rand_order,'Value',1)
+guidata(hObject,handles);
+% z_start = str2double(get(handles.z_start,'String'));
+% z_stop = str2double(get(handles.z_stop,'String'));
+% z_spacing = str2double(get(handles.z_spacing,'String'));
+% z_offsets = z_start:z_spacing:z_stop;
+% z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
+% z_offsets = [-50 -10 0 10 50]';
+
+set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
 handles = guidata(hObject);
+
+% pause(.1)
+% get_obj_pos_Callback(hObject, eventdata, handles)
+% handles = guidata(hObject);
+% handles.data.obj_pos
+num_repeats = 5;
+set(handles.num_repeats,'String',num2str(5));
+start_position = handles.data.obj_position;
+% build obj_positions
+
+
+guidata(hObject,handles);
+% pause(.1)
+
+
+% get Acq handles
+acq_gui = findobj('Tag','acq_gui');
 acq_gui_data = get_acq_gui_data();
+% shift focus
+figure(acq_gui)
+
+% confirm everything ready
+user_confirm = msgbox('Cell-attached? Test pulse off? V_m set to 0? I_h set to 0?');
+waitfor(user_confirm)
+
+
+power_curve = '100 150 200 250';
+
+power_curve_num = strread(power_curve);
+% set(acq_gui.use_lut,'Value',1);
+% set(acq_gui.use_LED,'Value',0);
+% set(acq_gui.use_2P,'Value',1);
+
+% run power curve in cell-attached
+% set sequence paraqms
+set(handles.num_stim,'String',num2str(1));
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(0.5));
+set(handles.num_repeats,'String',num2str(5));
+set(handles.target_intensity,'String',power_curve)
+
+set(handles.ind_mult,'String',num2str(1))
+
+
+
+% run on cell power curve cell-attached
+
+% build sequence
+build_seq_Callback(hObject, eventdata, handles)
+pause(2.0)
+handles = guidata(hObject);
+acq_gui_data = guidata(acq_gui);
+% set acq params
+set(acq_gui_data.run,'String','Prepping...')
+set(acq_gui_data.Cell1_type_popup,'Value',3)
 set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
 acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-%     acq_gui = findobj('Tag','acq_gui');
 guidata(acq_gui,acq_gui_data)
-
-%     set(acq_gui_data.loop_count,'String',num2str(1))
-% set(acq_gui_data.run,'String','Prepping...')
-%     waitfig = warndlg('Is SlideBook Ready?');
-%     waitfor(waitfig)
-%     pause(3.0)
-% pause(10.0)
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+set(acq_gui_data.Highpass_cell1_check, 'Value',0)
+% run trial
 acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
 waitfor(acq_gui_data.run,'String','Start')
 guidata(acq_gui,acq_gui_data)
+% cleanup
 
-% plot map
-cur_trial = acq_gui_data.data.sweep_counter;
-this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
-this_stim_key = acq_gui_data.data.trial_metadata(cur_trial).stim_key;
-power_curve_num = unique([this_seq.target_power]);
-
-for i = 1:length(power_curve_num)
-    [traces_ch1,traces_ch2] = ...
-    get_stim_stack(acq_gui_data.data,cur_trial,...
+% show data
+try
+    cur_trial = acq_gui_data.data.sweep_counter;
+    this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+    [trace_stack] = ...
+        get_stim_stack(acq_gui_data.data,cur_trial,...
         length(this_seq),[this_seq.start]);
-    
-    traces_pow{1} = traces_ch1([this_seq.target_power] == power_curve_num(i),:);
-    traces_pow{2} = traces_ch2([this_seq.target_power] == power_curve_num(i),:);
-    this_seq_power = this_seq([this_seq.target_power] == power_curve_num(i));
-    see_grid_multi(traces_pow,this_seq_power,this_stim_key,5,1);
-    title(['Power = ' num2str(power_curve_num(i)) ' mW'])
+
+    trace_grid = cell(length(power_curve_num),1);
+    for i = 1:length(power_curve_num)
+        trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
+    end
+    cell_attached_spikes_fig = figure;
+    plot_trace_stack_grid(trace_grid,Inf,1,0);
+catch e
+    disp('failed to plot data')
 end
+
+
+% get_obj_pos_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
+guidata(hObject,handles);
+
+do_whole_cell = 0;
+choice = questdlg('Go Whole Cell?', ...
+	'Go Whole Cell?', ...
+	'Yes','No','No');
+% Handle response
+switch choice
+    case 'Yes'
+        do_whole_cell = 1;
+    case 'No'
+        do_whole_cell = 0;
+end
+
+if do_whole_cell
+    % tell user to break in and be in VC
+    user_confirm = msgbox('Break in! Test pulse off?');
+    waitfor(user_confirm)
+
+
+    % do single testpulse trial to get Rs
+    % set acq params
+    set(acq_gui_data.run,'String','Prepping...')
+    set(acq_gui_data.Cell1_type_popup,'Value',1)
+    set(acq_gui_data.trial_length,'String',1.0)
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    set(acq_gui_data.trigger_seq,'Value',0)
+    % run trial
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+
+    % tell user to switch to I=0
+    user_confirm = msgbox('Please switch Multiclamp to CC with I = 0');
+    waitfor(user_confirm)
+
+    % run intrinsic ephys
+    % set acq params
+    set(acq_gui_data.run,'String','Prepping...')
+    set(acq_gui_data.Cell1_type_popup,'Value',2)
+    acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+    guidata(acq_gui,acq_gui_data);
+    set(acq_gui_data.test_pulse,'Value',0)
+    set(acq_gui_data.trigger_seq,'Value',0)
+    % run trial
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+
+    run_cc = 1;
+    
+%     messages = {'At body temp?','At room temp?'};
+    if run_cc
+        run_again = 1;
+        while run_again
+        
+
+            % run power curve on cell in CC
+            % set sequence paraqms
+            set(handles.num_stim,'String',num2str(1));
+            set(handles.duration,'String',num2str(.003));
+            set(handles.iti,'String',num2str(0.5));
+            set(handles.num_repeats,'String',num2str(5));
+            set(handles.target_intensity,'String',power_curve)
+            % build seq
+            build_seq_Callback(hObject, eventdata, handles)
+            pause(2.0)
+            handles = guidata(hObject);
+            acq_gui_data = guidata(acq_gui);
+            % set acq params
+            set(acq_gui_data.run,'String','Prepping...')
+            % set(acq_gui_data.Cell1_type_popup,'Value',2)
+            set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+            acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+            guidata(acq_gui,acq_gui_data)
+            set(acq_gui_data.test_pulse,'Value',0)
+            set(acq_gui_data.loop,'Value',1)
+            set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+            set(acq_gui_data.trigger_seq,'Value',1)
+            set(acq_gui_data.loop_count,'String',num2str(1))
+            % run trial
+            acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+            waitfor(acq_gui_data.run,'String','Start')
+            guidata(acq_gui,acq_gui_data)
+
+            % show data
+            try
+                cur_trial = acq_gui_data.data.sweep_counter;
+                this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+                [trace_stack] = ...
+                    get_stim_stack(acq_gui_data.data,cur_trial,...
+                    length(this_seq),[this_seq.start]);
+                trace_grid = cell(length(power_curve_num),1);
+                for i = 1:length(power_curve_num)
+                    trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
+                end
+                cc_power_curve_fig = figure;
+                plot_trace_stack_grid(trace_grid,Inf,1,0);
+            catch e
+                disp('failed to plot data')
+            end
+
+
+            guidata(hObject,handles);
+            set(acq_gui_data.trigger_seq,'Value',0)
+            guidata(acq_gui,acq_gui_data)
+            choice = questdlg('Run power curve again?', ...
+                'Run power curve?', ...
+                'Yes','No','No');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    run_again = 1;
+                case 'No'
+                    run_again = 0;
+            end
+        end
+    end
+
+
+     % run intrinsic ephys
+    % set acq params
+%     set(acq_gui_data.run,'String','Prepping...')
+%     set(acq_gui_data.Cell1_type_popup,'Value',2)
+%     acq_gui_data = Acq('cell1_chrome_input_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+%     guidata(acq_gui,acq_gui_data);
+%     set(acq_gui_data.test_pulse,'Value',0)
+%     set(acq_gui_data.trigger_seq,'Value',0)
+%     % run trial
+%     acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+%     waitfor(acq_gui_data.run,'String','Start')
+%     guidata(acq_gui,acq_gui_data)
+
+    % run power curve on cell in VC
+    % tell user to switch to VC with Vm offset to ealier Vm
+    user_confirm = msgbox(['In VC with Vm set to baseline?']);
+    waitfor(user_confirm)
+    set(acq_gui_data.Cell1_type_popup,'Value',1)
+    % vc on cell power curve
+    % set sequence params
+    set(handles.num_stim,'String',num2str(1));
+    set(handles.duration,'String',num2str(.003));
+    % set(handles.iti,'String',num2str(1.0));
+
+    % build seq
+    build_seq_Callback(hObject, eventdata, handles)
+    pause(2.0)
+    acq_gui_data = guidata(acq_gui);
+    handles = guidata(hObject);
+    % set acq params
+    set(acq_gui_data.run,'String','Prepping...')
+    set(acq_gui_data.test_pulse,'Value',1)
+    % run trial
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+    
+end
+guidata(hObject,handles);
+set(acq_gui_data.trigger_seq,'Value',0)
+% move obj
+set(handles.close_socket_check,'Value',1)
+guidata(acq_gui,acq_gui_data)
+% get_obj_pos_Callback(hObject, eventdata, handles)
+handles = guidata(hObject);
+guidata(hObject,handles);
+
+
+% --- Executes on button press in map_clicks.
+function map_clicks_Callback(hObject, eventdata, handles)
+% hObject    handle to map_clicks (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+set(handles.close_socket_check,'Value',0)
+guidata(hObject,handles);
+
+set_cell_pos = 0;
+choice = questdlg('Set Ref Pos?', ...
+	'Set Ref Pos?', ...
+	'Yes','No','Yes');
+% Handle response
+switch choice
+    case 'Yes'
+        set_cell_pos = 1;
+    case 'No'
+        set_cell_pos = 0;
+end
+
+if set_cell_pos
+    % confirm everything ready
+    user_confirm = msgbox('SLM Zero-order over ref point?');
+    waitfor(user_confirm)
+
+    set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
+    handles = guidata(hObject);
+end
+
+user_confirm = msgbox('SLM Zero-order over desired mapping location?');
+waitfor(user_confirm)
+handles = update_obj_pos_Callback(hObject, eventdata, handles);
+
+% make obj locations
+z_offsets = [0]';
+% z_offsets = [20]';
+obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+start_position = handles.data.obj_position;
+obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
+
+guidata(hObject,handles);
+
+disp('take image...')
+
+% 
+% instruction.type = 91;
+% % instruction.string = stackname;
+% disp('sending instruction...')
+% [return_info,success,handles] = do_instruction(instruction,handles);
+
+% user_confirm = msgbox(sprintf('Take snap',...
+%     stackname));
+% waitfor(user_confirm)
+
+% acq_gui = findobj('Tag','acq_gui');
+% acq_gui_data = get_acq_gui_data();
+% acq_gui_data.data.stackname = stackname;
+% guidata(acq_gui,acq_gui_data)
+
+disp('click targets...')
+instruction.type = 73;
+instruction.num_targs = 0;
+[return_info,success,handles] = do_instruction(instruction,handles);
+acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
+handles.data.nuclear_locs = return_info.nuclear_locs;
+acq_gui_data.data.snap_image = return_info.snap_image;
+guidata(acq_gui,acq_gui_data)
+guidata(hObject,handles)
+% 
+% %expand stim set
+% nearby_locations = [];%return_info.nuclear_locs;
+% % nearby_targets = 2;
+% offsets = [-10 10];
+% % for i = 1:nearby_targets
+% nearby_stim = return_info.nuclear_locs + ...
+%     [randsample(offsets,size(return_info.nuclear_locs,1),1)' ...
+%      randsample(offsets,size(return_info.nuclear_locs,1),1)' ...
+%      zeros(size(return_info.nuclear_locs,1),1)];
+% nearby_locations = [nearby_locations; nearby_stim];
+% % nearby_stim = return_info.nuclear_locs + ...
+% %     [randsample(offsets,size(return_info.nuclear_locs,1),1)' ...
+% %      zeros(size(return_info.nuclear_locs,1),1) ...
+% %      zeros(size(return_info.nuclear_locs,1),1)];
+% % nearby_locations = [nearby_locations; nearby_stim];
+% % end
+% nearby_locations(nearby_locations(:,1) < - 150 | nearby_locations(:,1) > 150,:) = [];
+% nearby_locations(nearby_locations(:,2) < - 150 | nearby_locations(:,2) > 150,:) = [];
+% num_nuc = size(handles.data.nuclear_locs,1);
+% additional_locs = ceil(.25*num_nuc);
+% xmax = round(max(handles.data.nuclear_locs(:,1)) - min(handles.data.nuclear_locs(:,1)));
+% ymax = round(max(handles.data.nuclear_locs(:,2)) - min(handles.data.nuclear_locs(:,2)));
+% zmax = round(max(handles.data.nuclear_locs(:,3)) - min(handles.data.nuclear_locs(:,3)));
+% rand_locs(additional_locs,:) = [0 0 0];
+% for i = 1:additional_locs
+%     rand_locs(i,:) = [randi(xmax) randi(ymax) randi(zmax)] +...
+%                                     round([min(handles.data.nuclear_locs(:,1)) min(handles.data.nuclear_locs(:,2)) min(handles.data.nuclear_locs(:,3))]);
+% end
+% handles.data.nearby_locations = nearby_locations;
+% handles.data.rand_locs = rand_locs;
+% acq_gui = findobj('Tag','acq_gui');
+% acq_gui_data = get_acq_gui_data();
+% acq_gui_data.data.nearby_locations = nearby_locations;
+% acq_gui_data.data.rand_locs = rand_locs;
+% guidata(acq_gui,acq_gui_data);
+
+
+% whole cell or cell-attached?
+% Construct a questdlg with three options
+clamp_choice = questdlg('Patch Type?', ...
+	'Patch type?', ...
+	'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
+% Handle response
+switch clamp_choice
+    case 'Voltage Clamp'
+%         set(acq_gui_data.Cell1_type_popup,'Value',1)
+%         set(acq_gui_data.Cell2_type_popup,'Value',1)
+%         set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 1;
+    case 'Current Clamp'
+%         set(acq_gui_data.Cell1_type_popup,'Value',2)
+%         set(acq_gui_data.Cell2_type_popup,'Value',2)
+        whole_cell = 1;
+    case 'Cell Attached'
+        set(acq_gui_data.Cell1_type_popup,'Value',3)
+        set(acq_gui_data.Cell2_type_popup,'Value',3)
+        set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 0;
+end
+
+if whole_cell
+    user_confirm = msgbox('Break in! Rs okay? Test pulse off? In v-clamp?');
+    waitfor(user_confirm)
+
+
+
+    guidata(acq_gui,acq_gui_data)
+
+
+    acq_gui = findobj('Tag','acq_gui');
+    acq_gui_data = guidata(acq_gui);
+
+
+    % do single testpulse trial to get Rs
+    % set acq params
+    set(acq_gui_data.run,'String','Prepping...')
+    set(acq_gui_data.Cell1_type_popup,'Value',1)
+    set(acq_gui_data.trial_length,'String',1.0)
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    set(acq_gui_data.trigger_seq,'Value',0)
+    % run trial
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+
+
+    do_intrinsics = 0;
+    choice = questdlg('Do intrinsics?', ...
+        'Do intrinsics?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            do_intrinsics = 1;
+        case 'No'
+            do_intrinsics = 0;
+    end
+
+    if do_intrinsics
+        % tell user to switch to I=0
+        user_confirm = msgbox('Please switch Multiclamp to CC with I = 0');
+        waitfor(user_confirm)
+
+        % run intrinsic ephys
+        % set acq params
+        set(acq_gui_data.run,'String','Prepping...')
+        set(acq_gui_data.Cell1_type_popup,'Value',2)
+        acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+        guidata(acq_gui,acq_gui_data);
+        set(acq_gui_data.test_pulse,'Value',0)
+        set(acq_gui_data.trigger_seq,'Value',0)
+        % run trial
+
+        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        waitfor(acq_gui_data.run,'String','Start')
+        guidata(acq_gui,acq_gui_data)
+    end
+
+
+    user_confirm = msgbox('Please switch Multiclamp to VC with desired holding current. Rs is good?');
+    waitfor(user_confirm)
+end
+
+% Handle response
+switch clamp_choice
+    case 'Voltage Clamp'
+        set(acq_gui_data.Cell1_type_popup,'Value',1)
+        set(acq_gui_data.Cell2_type_popup,'Value',1)
+        set(acq_gui_data.test_pulse,'Value',1)
+%         whole_cell = 1;
+    case 'Current Clamp'
+        set(acq_gui_data.Cell1_type_popup,'Value',2)
+        set(acq_gui_data.Cell2_type_popup,'Value',2)
+%         whole_cell = 1;
+    case 'Cell Attached'
+        set(acq_gui_data.Cell1_type_popup,'Value',3)
+        set(acq_gui_data.Cell2_type_popup,'Value',3)
+        set(acq_gui_data.test_pulse,'Value',1)
+%         set(acq_gui_data.test_pulse,'Value',1)
+%         whole_cell = 0;
+end
+
+guidata(hObject,handles);
+
+% shift focus
+figure(acq_gui)
+
+set(handles.rand_order,'Value',1);
+set(handles.num_repeats,'String',num2str(5));
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(5.0));
+% POWERS HERE*****************************
+set(handles.target_intensity,'String','50 150 250')
+
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+num_map_locations = size(obj_positions,1);
+
+for i = 1:num_map_locations
+    
+
+    % move obj
+    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
+    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
+    handles = guidata(hObject);
+    
+    % get this z-depth spots
+    
+    nuclear_locs = handles.data.nuclear_locs;
+%     nuclear_locs = ...
+%         nuclear_locs(nuclear_locs(:,3) > (z_offsets(i) - 21) & ...
+%                        nuclear_locs(:,3) < (z_offsets(i) + 21),:);
+%     nearby_locs = [handles.data.nearby_locations];
+%     nearby_locs = ...
+%         nearby_locs(nearby_locs(:,3) > (z_offsets(i) - 21) & ...
+%                        nearby_locs(:,3) < (z_offsets(i) + 21),:);
+% 	nearby_trunc = ceil(size(nearby_locs,1)/2);
+%     nearby_choice = randsample(size(nearby_locs,1),nearby_trunc);
+%     nearby_locs = nearby_locs(nearby_choice,:);
+%     rand_locs = handles.data.rand_locs;
+%     rand_locs = ...
+%         rand_locs(rand_locs(:,3) > (z_offsets(i) - 21) & ...
+%                        rand_locs(:,3) < (z_offsets(i) + 21),:);               
+    
+%     instruction.type = 82;
+%     instruction.multitarg_locs = [nuclear_locs];
+%     instruction.single_spot_locs = [nuclear_locs];
+% %     instruction.nearby_locs = nearby_locs;
+%     instruction.targs_per_stim = 1;
+%     instruction.repeat_target = 5;
+%     instruction.num_stim = size(instruction.multitarg_locs,1)*(ceil(instruction.repeat_target/instruction.targs_per_stim));
+%     instruction.do_target = 1;
+%     [return_info,success,handles] = do_instruction(instruction,handles);
+    instruction.type = 81;
+    instruction.target_locs = nuclear_locs;
+    instruction.do_target = 1;
+    [return_info,success,handles] = do_instruction(instruction,handles);
+    guidata(hObject,handles)
+        set(handles.rand_order,'Value',1);
+    set(handles.num_repeats,'String',num2str(10));
+    set(handles.num_stim,'String',num2str(size(nuclear_locs,1)));
+    set(handles.duration,'String',num2str(.003));
+    set(handles.iti,'String',num2str(.500));
+    set(handles.target_intensity,'String','75 150 250')
+
+    guidata(hObject,handles)
+%     set(handles.num_stim,'String',num2str(return_info.num_stim));
+%     set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
+    build_seq_Callback(hObject, eventdata, handles)
+    handles = guidata(hObject);
+    acq_gui_data = get_acq_gui_data();
+    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+
+    guidata(acq_gui,acq_gui_data)
+
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+    
+    % plot map
+    cur_trial = acq_gui_data.data.sweep_counter;
+    this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+    this_stim_key = acq_gui_data.data.trial_metadata(cur_trial).stim_key;
+    power_curve_num = unique([this_seq.target_power]);
+
+    for j = 1:length(power_curve_num)
+        [traces_ch1,traces_ch2] = ...
+        get_stim_stack(acq_gui_data.data,cur_trial,...
+            length(this_seq),[this_seq.start]);
+
+        traces_pow{1} = traces_ch1([this_seq.target_power] == power_curve_num(j),:);
+        traces_pow{2} = traces_ch2([this_seq.target_power] == power_curve_num(j),:);
+        this_seq_power = this_seq([this_seq.target_power] == power_curve_num(j));
+        see_grid_multi(traces_pow,this_seq_power,this_stim_key,5,1);
+        title(['Power = ' num2str(power_curve_num(j)) ' mW'])
+    end
+    
+
+end
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction(instruction,handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in set_seq_trigger.
+function set_seq_trigger_Callback(hObject, eventdata, handles)
+% hObject    handle to set_seq_trigger (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of set_seq_trigger
+
+
+
+function max_seq_length_Callback(hObject, eventdata, handles)
+% hObject    handle to max_seq_length (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of max_seq_length as text
+%        str2double(get(hObject,'String')) returns contents of max_seq_length as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function max_seq_length_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to max_seq_length (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in nrp_z_power.
+function nrp_z_power_Callback(hObject, eventdata, handles)
+% hObject    handle to nrp_z_power (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% fields_to_get = {'z_start','z_stop','z_spacing'};
+set(handles.close_socket_check,'Value',0)
+set(handles.rand_order,'Value',1)
+guidata(hObject,handles);
+
+user_confirm = msgbox('Take stack around patched cell(s)?');
+waitfor(user_confirm)
+
+user_confirm = msgbox('SLM Zero-order over desired mapping location?');
+waitfor(user_confirm)
+handles = update_obj_pos_Callback(hObject, eventdata, handles);
+
+z_offsets = [-30 -20 -10 0 10 20 30]';
+obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+start_position = handles.data.obj_position;
+obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
+
+
+num_repeats = 5;
+set(handles.num_repeats,'String',num2str(num_repeats));
+
+
+disp('click targets...')
+instruction.type = 73;
+instruction.num_targs = 1;
+[return_info,success,handles] = do_instruction(instruction,handles);
+acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
+handles.data.nuclear_locs = return_info.nuclear_locs;
+acq_gui_data.data.snap_image = return_info.snap_image;
+guidata(acq_gui,acq_gui_data)
+guidata(hObject,handles)
+
+% whole cell or cell-attached?
+% Construct a questdlg with three options
+clamp_choice = questdlg('Patch Type?', ...
+	'Patch type?', ...
+	'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
+% Handle response
+switch clamp_choice
+    case 'Voltage Clamp'
+%         set(acq_gui_data.Cell1_type_popup,'Value',1)
+%         set(acq_gui_data.Cell2_type_popup,'Value',1)
+%         set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 1;
+    case 'Current Clamp'
+%         set(acq_gui_data.Cell1_type_popup,'Value',2)
+%         set(acq_gui_data.Cell2_type_popup,'Value',2)
+        whole_cell = 1;
+    case 'Cell Attached'
+        set(acq_gui_data.Cell1_type_popup,'Value',3)
+        set(acq_gui_data.Cell2_type_popup,'Value',3)
+        set(acq_gui_data.test_pulse,'Value',1)
+        whole_cell = 0;
+end
+
+if whole_cell
+    user_confirm = msgbox('Break in! Rs okay? Test pulse off? In v-clamp?');
+    waitfor(user_confirm)
+
+
+
+    guidata(acq_gui,acq_gui_data)
+
+
+    acq_gui = findobj('Tag','acq_gui');
+    acq_gui_data = guidata(acq_gui);
+
+
+    % do single testpulse trial to get Rs
+    % set acq params
+    set(acq_gui_data.run,'String','Prepping...')
+    set(acq_gui_data.Cell1_type_popup,'Value',1)
+    set(acq_gui_data.trial_length,'String',1.0)
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    set(acq_gui_data.trigger_seq,'Value',0)
+    % run trial
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+
+
+    do_intrinsics = 0;
+    choice = questdlg('Do intrinsics?', ...
+        'Do intrinsics?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            do_intrinsics = 1;
+        case 'No'
+            do_intrinsics = 0;
+    end
+
+    if do_intrinsics
+        % tell user to switch to I=0
+        user_confirm = msgbox('Please switch Multiclamp to CC with I = 0');
+        waitfor(user_confirm)
+
+        % run intrinsic ephys
+        % set acq params
+        set(acq_gui_data.run,'String','Prepping...')
+        set(acq_gui_data.Cell1_type_popup,'Value',2)
+        acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+        guidata(acq_gui,acq_gui_data);
+        set(acq_gui_data.test_pulse,'Value',0)
+        set(acq_gui_data.trigger_seq,'Value',0)
+        % run trial
+
+        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        waitfor(acq_gui_data.run,'String','Start')
+        guidata(acq_gui,acq_gui_data)
+    end
+
+
+    user_confirm = msgbox('Please switch Multiclamp to VC with desired holding current. Rs is good?');
+    waitfor(user_confirm)
+end
+
+
+% Handle response
+switch clamp_choice
+    case 'Voltage Clamp'
+        user_confirm = msgbox('In VC? Rs good? Vm set to V_rest?');
+        set(acq_gui_data.Cell1_type_popup,'Value',1)
+        set(acq_gui_data.Cell2_type_popup,'Value',1)
+        set(acq_gui_data.test_pulse,'Value',1)
+%         whole_cell = 1;
+    case 'Current Clamp'
+        user_confirm = msgbox('Rs good? In Current Clamp? I_h set to 0?');
+        set(acq_gui_data.Cell1_type_popup,'Value',2)
+        set(acq_gui_data.Cell2_type_popup,'Value',2)
+%         whole_cell = 1;
+    case 'Cell Attached'
+        % confirm everything ready
+        user_confirm = msgbox('Cell-attached? Test pulse off? I_h set to 0?');
+        
+        set(acq_gui_data.Cell1_type_popup,'Value',3)
+        set(acq_gui_data.Cell2_type_popup,'Value',3)
+        set(acq_gui_data.test_pulse,'Value',1)
+%         set(acq_gui_data.test_pulse,'Value',1)
+%         whole_cell = 0;
+end
+waitfor(user_confirm)
+guidata(hObject,handles);
+
+
+% shift focus
+figure(acq_gui)
+
+set(handles.rand_order,'Value',1);
+set(handles.num_repeats,'String',num2str(10));
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(.500));
+% POWERS HERE*****************************
+set(handles.target_intensity,'String','50 75 100 150 250')
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+num_map_locations = size(obj_positions,1);
+
+
+for i = 1:num_map_locations
+    
+
+    % move obj
+    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
+    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
+    handles = guidata(hObject);
+    
+    % get this z-depth spots
+    
+    nuclear_locs = handles.data.nuclear_locs;
+
+    instruction.type = 81;
+    instruction.target_locs = nuclear_locs;
+    instruction.do_target = 1;
+    [return_info,success,handles] = do_instruction(instruction,handles);
+    guidata(hObject,handles)
+        set(handles.rand_order,'Value',1);
+    set(handles.num_stim,'String',num2str(size(nuclear_locs,1)));
+
+    guidata(hObject,handles)
+%     set(handles.num_stim,'String',num2str(return_info.num_stim));
+%     set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
+    build_seq_Callback(hObject, eventdata, handles)
+    handles = guidata(hObject);
+    acq_gui_data = get_acq_gui_data();
+    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+
+    guidata(acq_gui,acq_gui_data)
+
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+    
+    % plot map
+    cur_trial = acq_gui_data.data.sweep_counter;
+    this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
+    this_stim_key = acq_gui_data.data.trial_metadata(cur_trial).stim_key;
+    power_curve_num = unique([this_seq.target_power]);
+
+    for j = 1:length(power_curve_num)
+        [traces_ch1,traces_ch2] = ...
+        get_stim_stack(acq_gui_data.data,cur_trial,...
+            length(this_seq),[this_seq.start]);
+
+        traces_pow{1} = traces_ch1([this_seq.target_power] == power_curve_num(j),:);
+        traces_pow{2} = traces_ch2([this_seq.target_power] == power_curve_num(j),:);
+        this_seq_power = this_seq([this_seq.target_power] == power_curve_num(j));
+        see_grid_multi(traces_pow,this_seq_power,this_stim_key,5,1);
+        title(['Power = ' num2str(power_curve_num(j)) ' mW, z = ' num2str(obj_positions(i,3))])
+    end
+    
+
+end
+
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;

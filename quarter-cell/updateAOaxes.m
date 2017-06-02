@@ -6,9 +6,18 @@ function handles = updateAOaxes(handles)
 % xlabel(handles.stim_axes, 'seconds')
 % ylabel(handles.stim_axes, 'V')
 
-ch1_output=handles.data.ch1_output*handles.defaults.CCexternalcommandsensitivity;
-if isempty(handles.data.ch2_output)~=1
-    ch2_output=handles.data.ch2_output*handles.defaults.CCexternalcommandsensitivity; % reverse scale just for plotting
+all_outs = conform_output_length(handles);
+        
+ch1_output = all_outs{3};
+ch2_output = all_outs{4};
+
+size(handles.data.timebase)
+size(ch1_output)
+size(ch2_output)
+
+ch1_output=ch1_output*handles.defaults.CCexternalcommandsensitivity;
+if isempty(ch2_output)~=1
+    ch2_output=ch2_output*handles.defaults.CCexternalcommandsensitivity; % reverse scale just for plotting
     plot(handles.CCoutput_axes,handles.data.timebase,ch1_output,handles.data.timebase,ch2_output);
 elseif isempty(handles.data.CCoutput1)~=1
     plot(handles.CCoutput_axes,handles.data.timebase,ch1_output);

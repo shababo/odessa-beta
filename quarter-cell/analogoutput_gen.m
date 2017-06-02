@@ -1,8 +1,15 @@
 function [ AO0, AO1, AO2, AO3 ] = analogoutput_gen(handles)
 
 % assign local values
-testpulse=handles.data.testpulse; stim_output=handles.data.stim_output; 
-ch1_output=handles.data.ch1_output; ch2_output=handles.data.ch2_output;
+% testpulse=handles.data.testpulse; stim_output=handles.data.stim_output; 
+% ch1_output=handles.data.ch1_output; ch2_output=handles.data.ch2_output;
+
+all_outs = conform_output_length(handles);
+        
+testpulse = all_outs{1};
+stim_output = all_outs{2};
+ch1_output = all_outs{3};
+ch2_output = all_outs{4};
 
 % check for voltage clamp, current clamp, or LFP recording for each analog
 % input channel from GUI
@@ -54,46 +61,46 @@ if strcmp(handles.run_type,'loop')
         AO2(1:20) = 5;
 %         AO2(end-19:end) = 5;
     end
-    AO3 = AO2;
+    AO3 = zeros(size(AO2));
     AO2(1:100) = 2.0;
     
 
 else
 
     if (strcmp(handles.defaults.AO2,'LED')==1) && get(handles.use_LED,'Value')
-        AO2=handles.data.stim_output;
+        AO2=stim_output;
     elseif (strcmp(handles.defaults.AO2,'2P')==1) && get(handles.use_2P,'Value')
-        AO2=handles.data.stim_output;
+        AO2=stim_output;
     else
         AO2=zeros(size(AO0));
     end
 
 
     if (strcmp(handles.defaults.AO3,'2P')==1) && get(handles.use_2P,'Value')
-        AO3=handles.data.stim_output;
+        AO3=stim_output;
 
 %     elseif (get(handles.use_2P,'Value'))
 %         AO3 = handles.data.shutter;
 %         assignin('base','shutter',handles.data.shutter)
     elseif (strcmp(handles.defaults.AO3,'SHUTTER')==1) && get(handles.use_LED,'Value')
         disp('led out set')
-        AO3=handles.data.stim_output;
+        AO3=stim_output;
         AO2=zeros(size(AO0));
     elseif (strcmp(handles.defaults.AO3,'LED')==1) && get(handles.use_LED,'Value')
         disp('led out set')
-        AO3=handles.data.stim_output;
+        AO3=stim_output;
     else
         AO3=zeros(size(AO0));
     end
 
-        assignin('base','shutter',handles.data.shutter)
+%         assignin('base','shutter',handles.data.shutter)
 
 
 end
 
-% disp('length')
-% length(AO0)
-% length(AO1)
-% length(AO2)
-% length(AO3)
+disp('length')
+length(AO0)
+length(AO1)
+length(AO2)
+length(AO3)
 
