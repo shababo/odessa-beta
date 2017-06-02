@@ -115,8 +115,9 @@ disp('waiting for instruction...')
 %     handles.waittime = 120;
 % end
 instruction = [];
+disp('check for instruction...')
 while isempty(instruction)
-    disp('check for instruction...')
+    
     [instruction, success] = msrecv(handles.sock,5);
 end
 
@@ -136,13 +137,17 @@ GET_OBJ_POS_STEP0 = 20;
 GET_OBJ_POS_STEP1 = 21;
 GET_SEQ = 30;
 RETRIGGER_SEQ = 31;
+SET_TRIGGER_SEQ = 32;
 GET_VAR = 40;
 PRECOMPUTE_PHASE = 50;
 OBJ_GO_TO = 60;
 DETECT_NUC = 70;
 DETECT_NUC_LOCAL = 71;
 DETECT_NUC_SERVE = 72;
+CLICK_LOCS = 73;
 PRECOMPUTE_PHASE_NUCLEAR = 81;
+PRECOMPUTE_PHASE_MULTI = 82;
+TAKE_SNAP = 91;
 PRINT = 00;
 instruction.type
 return_info = struct();
@@ -251,12 +256,14 @@ if success >= 0
                 end
             end
             %sequence(i).precomputed_target_index
-            vars{1} = sequence;
-            names{1} = 'sequence';
-%             vars{2} = 1;
-%             names{2} = 'isTriggeredSequenceReady';
-            assignin_base(names,vars);
-            evalin('base','set_seq_trigger')
+            if instruction.set_trigger
+                vars{1} = sequence;
+                names{1} = 'sequence';
+    %             vars{2} = 1;
+    %             names{2} = 'isTriggeredSequenceReady';
+                assignin_base(names,vars);
+                evalin('base','set_seq_trigger')
+            end
 %             pause(1)
             return_info.success = 1;
             if tf_flag
@@ -273,6 +280,16 @@ if success >= 0
 %             pause(1)
             evalin('base','set_seq_trigger')
             return_info.success = 1;
+        case SET_TRIGGER_SEQ
+%             vars{1} = 1;
+%             names{1} = 'isTriggeredSequenceReady';
+%             assignin_base(names,vars);
+%             pause(1)
+            vars{1} = instruction.sequence;
+            names{1} = 'sequence';
+            assignin_base(names,vars);
+            evalin('base','set_seq_trigger')
+            return_info.success = 1;
         case GET_VAR
             assignin_base({instruction.name},{instruction.value})
             return_info.success = 1;
@@ -286,11 +303,34 @@ if success >= 0
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_LOCAL;
             instruction_out.stackname = instruction.stackname;
+            instruction.image_zero_order_coord = evalin('base','image_zero_order_coord');
+            instruction.image_um_per_px = evalin('base','image_um_per_px');
+            instructin.stack_um_per_slice = evalin('base','stack_um_per_slice');
             copyfile([instruction.stackname '_C0.tif'], ['Y:\shababo\' instruction.stackname '.tif']);
             pause(1)
             [return_info,success,handles] = do_instruction(instruction_out,handles) ;
-%             locs_test = evalin('base','nuclear_locs_example');
-%             return_info.nuclear_locs = locs_test(1:200,:); 
+            figure
+            imagesc(return_info.detect_img)
+% %             locs_test = evalin('base','locs_test');
+% %             return_info.nuclear_locs = locs_test(1:200,:);
+             
+%              return_info = evalin('base','locs_return_info');
+        case CLICK_LOCS
+             evalin('base','take_snap')
+             handles.snap_image = evalin('base','temp');
+             return_info.snap_image = evalin('base','temp');
+             this_image = evalin('base','temp');
+             figure; imagesc(this_image)
+             if instruction.num_targs
+                 num_targs = instruction.num_targs;
+             else
+                 num_targs = input('How many targets?');
+             end
+             
+             [y,x] = ginput(num_targs);
+             zero_order_pos = evalin('base','image_zero_order_coord')';
+             image_px_per_um = evalin('base','image_um_per_px');
+             return_info.nuclear_locs = [([x y] - zero_order_pos)*image_px_per_um zeros(size(x))];
         case PRECOMPUTE_PHASE
             tf_flag = instruction.tf_flag;
             if tf_flag
@@ -311,12 +351,12 @@ if success >= 0
             fine_spot_key = evalin('base','tf_fine_grid_spots_key');
             do_target = instruction.do_target;
             [phase_masks_target, dec_ind] = ...
-                build_single_loc_phases(instruction.nuclear_locs,coarse_disks,disk_key,...
+                build_single_loc_phases(instruction.target_locs,coarse_disks,disk_key,...
                 fine_spot_grid,fine_spot_key,do_target);
             pockels_ratio_refs_tf = pockels_ratio_refs_tf_full_map(dec_ind);
             vars{1} = pockels_ratio_refs_tf;
             names{1} = 'pockels_ratio_refs_tf';
-            vars{2} = instruction.nuclear_locs;
+            vars{2} = instruction.target_locs;
             names{2} = 'tf_stim_key';
             if do_target
                 vars{3} = phase_masks_target;
@@ -328,7 +368,43 @@ if success >= 0
                 names{3} = 'phase_masks_target';
                 assignin_base(names,vars);
             end
-                
+%             clear phase_masks_target
+        case PRECOMPUTE_PHASE_MULTI
+            ratio_map = evalin('base','pockels_ratio_refs_tf_full_map');
+            coarse_disks = evalin('base','tf_disk_grid');
+            disk_key = evalin('base','tf_disk_key');
+            fine_spot_grid = evalin('base','tf_fine_grid_spots_phase');
+            fine_spot_key = evalin('base','tf_fine_grid_spots_key');
+            do_target = instruction.do_target;
+%             [phase_masks_target, dec_ind] = ...
+%                 build_single_loc_phases(instruction.target_locs,coarse_disks,disk_key,...
+%                 fine_spot_grid,fine_spot_key,do_target);
+            [phase_masks_target,stim_key,pockels_ratio_refs_multi] = ...
+                build_multi_loc_phases(instruction.multitarg_locs,instruction.num_stim,instruction.single_spot_locs,...
+                instruction.targs_per_stim,instruction.repeat_target,coarse_disks,disk_key,ratio_map,...
+                fine_spot_grid,fine_spot_key,do_target,1);
+            pockels_ratio_refs_tf = pockels_ratio_refs_multi;
+            vars{1} = pockels_ratio_refs_tf;
+            names{1} = 'pockels_ratio_refs_tf';
+            vars{2} = stim_key;
+            names{2} = 'tf_stim_key';
+            if do_target
+                vars{3} = phase_masks_target;
+                names{3} = 'precomputed_target';
+                assignin_base(names,vars);
+                evalin('base','set_precomp_target_ready')
+            else
+                vars{3} = phase_masks_target;
+                names{3} = 'phase_masks_target';
+                assignin_base(names,vars);
+            end
+            return_info.num_stim = size(stim_key,1);
+            clear phase_masks_target
+        case TAKE_SNAP
+            evalin('base','take_snap')
+            handles.snap_image = evalin('base','temp');
+            return_info.snap_image = evalin('base','temp');
+            return_info.success = 1;
     end
     
     
@@ -338,7 +414,7 @@ if instruction.type == DETECT_NUC_LOCAL
     clear return_info
     % return_info.test_turing = 1;
     return_info.nuclear_locs = nuclear_locs;
-    end
+end
 assignin('base','return_info',return_info)
 disp('sending return info')
 mssend(handles.sock,return_info);
@@ -384,9 +460,9 @@ for i = 1:length(names)
     assignin('base',names{i},vars{i});
 end
 
-function vname_string = vname(var)
-
-vname_string = inputname(1);
+% function vname_string = vname(var)
+% 
+% vname_string = inputname(1);
             
             
             

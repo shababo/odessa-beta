@@ -22,12 +22,16 @@ target.wavelength = 1040;
 %           -175 -105;
 %           25 50]';
 points = [0 0;
+          280 175;
           130 135;
           50 35;
+          260 -155
           135 -140;
           80 -65;
+          -280 -175;
           -130 -125;
           -50 -65;
+          -260 155;
           -130 135;
           -75 55]';
 % points = [130 135;
@@ -63,7 +67,7 @@ safety_point = [-500 -500 -500];
 % target.relative_power_density = ones(1,num_points);
 
 num_points = size(points,2);
-for i = 1:num_points
+for i = 11:num_points
 %     this_spot = [x_pos(i) x_pos(j)]';
 %     this_spot_slm = (this_trans*this_spot)';
     target.spotLocations = repmat([points(:,i)' 0],3,1);
@@ -71,10 +75,13 @@ for i = 1:num_points
 %     pause(3)
 %     isSnapImage = 1;
 %     pause(1)
-    wrndlg = warndlg('Image Taken?');
+    wrndlg = warndlg('Hole made?');
     waitfor(wrndlg)
+    isSnapImage = 1
+    pause(1)
 end
 
+%%
 target.spotLocations = repmat([0 0 0],3,1);
 isTargetPatternReady = 1;
 pause(1)

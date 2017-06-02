@@ -88,8 +88,10 @@ tf_spots_key = zeros(length(x_pos)^2,3);
 count = 1;
 for i = 1:length(x_pos)
     for j = 1:length(x_pos)
+        
         this_spot = [x_pos(i) x_pos(j)]';
         this_spot_slm = (this_trans*this_spot)';
+        this_spot_img_coord = (this_spot - 130)*1.82
         target.spotLocations = repmat([this_spot_slm 0],3,1);
         isTargetPatternReady = 1;
         pause(5)
@@ -98,6 +100,21 @@ for i = 1:length(x_pos)
         count = count + 1;
     end
 end
+
+bad_phase = all(tf_all_spots_phase == 0,3);
+find(bad_phase)
+
+%% test spots
+
+i = find(x_pos == 0);
+j = find(x_pos == 0);
+ind = sub2ind([length(x_pos) length(x_pos)],i,j)
+this_spot = [x_pos(i) x_pos(j)]'
+this_spot_slm = (this_trans*this_spot)';
+this_spot_img_coord = this_spot/image_px_per_um + image_zero_order_coord'
+target.mode = 'Phase';
+target.pattern = tf_all_spots_phase(:,:,ind);
+isTargetPatternReady = 1;
 
 %% 10um shift
 
@@ -430,7 +447,7 @@ isPrecomputedTargetArrayReady = 1
 
 %%
 
-stim_id = find(tf_stim_key(:,1) == 150 & tf_stim_key(:,2) == 40);
+stim_id = find(tf_stim_key(:,1) == 50 & tf_stim_key(:,2) == 50);
 target = precomputed_target(stim_id);
 
 stim_id = find(tf_spots_key(:,1) == 100 & tf_spots_key(:,2) == 100);
@@ -438,8 +455,8 @@ target = precomputed_target(1); target.pattern = tf_all_spots_phase(:,:,stim_id)
 isTargetPatternReady = 1;
 
 
-stim_id = find(tf_disk_key(:,1) == 40 & tf_disk_key(:,2) == 40);
-target = precomputed_target(1); target.pattern = tf_disk_grid(:,:,stim_id);
+stim_id = find(tf_disk_key(:,1) == 50 & tf_disk_key(:,2) == 50)
+target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;
 
@@ -502,11 +519,11 @@ clear tf_disk_grid
 clear notf_precomputed_target
 clear tf_stim_key
 tf_disk_grid = zeros(600,792,size(tf_all_spots_phase,3));
-center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
-steps_from_center = center-1;
-% linear_ind = find(tf_spots_key(:,1) == 60 & tf_spots_key(:,2) == 60);
-% [center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
-% steps_from_center = 4;
+% center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
+% steps_from_center = center-1;
+linear_ind = find(tf_spots_key(:,1) == 60 & tf_spots_key(:,2) == 60);
+[center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
+steps_from_center = 4;
 % spacing = 20;
 avail = 1:num_spots;
 count = 1;
@@ -658,4 +675,82 @@ for i = 1:num_disks-1
     precomputed_target(i).pattern = tf_disk_grid(:,:,i);
 end
 
+%% build lif-glm precomputd target set
 
+good_locs = 10:10:90;
+
+lif_glm_precomp = struct();
+lif_glm_precomp(81).mode = 'Phase';
+lif_glm_precomp(81).pattern = 1;
+lif_glm_stim_key = zeros(81,3);
+count = 1;
+for i = 1:size(tf_disk_grid,3)
+    if any(tf_disk_key(i,1) == good_locs) &&  any(tf_disk_key(i,2) == good_locs)
+        
+        lif_glm_precomp(count).mode = 'Phase';
+        lif_glm_precomp(count).pattern = tf_disk_grid(:,:,i);
+        lif_glm_stim_key(count,:) = tf_disk_key(i,:);
+        count = count + 1;
+    end
+end
+
+%% spiral out
+
+% tf_phase = tf_all_spots_phase;
+% notf_phase = notf_all_spots_phase;
+% diskPhaseLocal = diskPhase(:,:,2);
+tic
+target_base_fast.mode = 'Phase';
+target_base_fast.pattern = 1040;
+num_spots = 961;
+
+% tf_disk_grid = zeros(600,792,size(tf_all_spots_phase,3));
+% center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
+% steps_from_center = center-1;
+linear_ind = find(tf_disk_key(:,1) == 50 & tf_disk_key(:,2) == 50);
+[center(1), center(2)] = ind2sub([sqrt(size(tf_disk_key,1)) sqrt(size(tf_disk_key,1))],linear_ind);
+steps_from_center = 4;
+% spacing = 20;
+avail = 1:num_spots;
+count = 1;
+order = [];
+lif_glm_precomp(81) = struct();
+for i = 0:steps_from_center
+    
+    for j = -i:i
+        for k = -i:i
+            this_ind = center +[j k];
+            linear_ind = sub2ind([sqrt(num_spots) sqrt(num_spots)],...
+                    this_ind(1),this_ind(2));
+            if any(avail == linear_ind)
+                order(count) = linear_ind;
+%                 tf_precomputed_target(count) = target_base_fast;
+%                 fullF = zeros(600,792);
+                this_spot = linear_ind;
+
+%                 fullF = fullF + exp(1i*tf_phase(:,:,this_spot));
+%                 convP = angle(fullF) + diskPhaseLocal;
+                
+                lif_glm_precomp(count).mode = 'Phase';
+                lif_glm_precomp(count).pattern = tf_disk_grid(:,:,linear_ind);
+                lif_glm_stim_key(count,:) = tf_disk_key(linear_ind,:);
+%                 notf_precomputed_target(count) = target_base_fast;
+%                 fullF = zeros(600,792);
+%                 fullF = fullF + exp(1i*notf_phase(:,:,this_spot));
+%                 convP = angle(fullF) + diskPhaseLocal;
+%                 convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+%                 convP(convP > pi) = convP(convP > pi) - 2*pi;
+%                 notf_precomputed_target(count).pattern = convP;
+%                 notf_stim_key(count,:) = notf_spots_key(linear_ind,:);
+                
+                avail = setdiff(avail,linear_ind);
+                count = count + 1;
+            end
+        end
+    end
+
+end
+
+% tf_disk_grid(:,:,count:end) = [];
+% tf_precomputed_target(count:end) = [];
+toc

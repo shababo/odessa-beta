@@ -7,17 +7,25 @@ obj_image = imread([pathname '\' filename]);
 % slm_image = imread([pathname '\' filename]);
 slm_image = obj_image;
 %%
+
+obj_image = temp;
+%%
 % figure; imagesc(calib_image);
 % axis image
-obj_image_adj = obj_image*10;%adapthisteq(obj_image,'Distribution','rayleigh','numtiles',[32 32]);
-slm_image_adj = slm_image*10;%adapthisteq(slm_image,'Distribution','rayleigh','numtiles',[32 32]);
+% obj_image_adj = obj_image - min(obj_image(:));
+% slm_image_adj = slm_image - min(slm_image(:));
+% obj_image_adj = obj_image_adj/max(obj_image_adj(:))*10000;%adapthisteq(obj_image,'Distribution','rayleigh','numtiles',[32 32]);
+% slm_image_adj = slm_image_adj/max(slm_image_adj(:))*10000;%adapthisteq(slm_image,'Distribution','rayleigh','numtiles',[32 32]);
 % calib_image_adj = calib_image/max(calib_image(:))*5000;
-[objPoints,slmPoints] = cpselect(obj_image_adj,slm_image_adj,'wait',true);
-objPointsFlip = objPoints(:,[2 1]);
+% [objPoints,slmPoints] = cpselect(obj_image_adj,slm_image_adj,'wait',true);
+figure; imagesc(obj_image)
+[x, y] = ginput(size(points,2));
+slmPoints = [x y];
 slmPointsPointsFlip = slmPoints(:,[2 1]);
+% slmPointsPointsFlip = slmPoints(:,[2 1]);
 
-objPointsFlipCenter = bsxfun(@minus,objPointsFlip,objPointsFlip(1,:))
 slmPointsPointsFlipCenter = bsxfun(@minus,slmPointsPointsFlip,slmPointsPointsFlip(1,:))
+% slmPointsPointsFlipCenter = bsxfun(@minus,slmPointsPointsFlip,slmPointsPointsFlip(1,:))
 % 
 %%
 
@@ -36,16 +44,16 @@ inv(obj_to_slm_tform)
 % points(:,end) = [];
 points_vec = points(:);
 slm_cam_points = [];
-obj_cam_points = [];
+% obj_cam_points = [];
 for i = 1:num_points
     slm_cam_points = [slm_cam_points;
                       slmPointsPointsFlipCenter(i,1) slmPointsPointsFlipCenter(i,2) 0 0;
                       0 0 slmPointsPointsFlipCenter(i,1) slmPointsPointsFlipCenter(i,2)];
 
 
-    obj_cam_points = [obj_cam_points;
-                      objPointsFlipCenter(i,1) objPointsFlipCenter(i,2) 0 0;
-                      0 0 objPointsFlipCenter(i,1) objPointsFlipCenter(i,2)];
+%     obj_cam_points = [obj_cam_points;
+%                       objPointsFlipCenter(i,1) objPointsFlipCenter(i,2) 0 0;
+%                       0 0 objPointsFlipCenter(i,1) objPointsFlipCenter(i,2)];
               
 end
           
@@ -53,9 +61,9 @@ slm_cam_trans = pinv(slm_cam_points*1.82) * points_vec;
 slm_cam_trans_sq = reshape(slm_cam_trans,2,2)';
 slm_cam_trans = inv(slm_cam_trans_sq);
 
-obj_cam_trans = pinv(obj_cam_points) * points_vec;
-obj_cam_trans_sq = reshape(obj_cam_trans,2,2)';
-obj_cam_trans = inv(obj_cam_trans_sq);
+% obj_cam_trans = pinv(obj_cam_points) * points_vec;
+% obj_cam_trans_sq = reshape(obj_cam_trans,2,2)';
+% obj_cam_trans = inv(obj_cam_trans_sq);
 
 
 
@@ -64,10 +72,10 @@ slmPointsPointsFlipCenter*1.82
 
 inv(slm_cam_trans)*slm_cam_points(:,1:2)'
 
-objPointsFlipCenter
-(obj_cam_trans * points)'
-
-inv(obj_cam_trans)*obj_cam_points(:,1:2)'
+% objPointsFlipCenter
+% (obj_cam_trans * points)'
+% 
+% inv(obj_cam_trans)*obj_cam_points(:,1:2)'
 
 
 full_trans = inv(slm_cam_trans)
