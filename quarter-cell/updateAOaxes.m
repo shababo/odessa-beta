@@ -21,8 +21,6 @@ if isempty(ch2_output)~=1
     plot(handles.CCoutput_axes,handles.data.timebase,ch1_output,handles.data.timebase,ch2_output);
 elseif isempty(handles.data.CCoutput1)~=1
     plot(handles.CCoutput_axes,handles.data.timebase,ch1_output);
-
-    
 end
 
     

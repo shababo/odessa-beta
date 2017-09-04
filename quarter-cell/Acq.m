@@ -56,8 +56,14 @@ function Acq_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for Acq
 handles.output = hObject; 
 
+if ~isempty(varargin) && ~isempty(varargin{1})
+    Fs = varargin{1};
+else
+    Fs = 0;
+end
+
 % create experiment structs
-[handles.defaults, handles.s, handles.data] = load_defaults;
+[handles.defaults, handles.s, handles.data] = load_defaults(Fs);
 
 % generate analog outputs
 handles.data = setup_input_output(handles.data, handles.defaults);
@@ -751,8 +757,10 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in update_cc_cell1_button.
-function update_cc_cell1_button_Callback(hObject, eventdata, handles)
-
+function handles = update_cc_cell1_button_Callback(hObject, eventdata, handles)
+% handles
+handles.data.ch1.pulsenumber = str2double(get(handles.ccnumpulses1,'String'));
+handles.data.ch1.pulsenumber
 handles.data.ch1_output=makepulseoutputs(handles.data.ch1.pulse_starttime,handles.data.ch1.pulsenumber, handles.data.ch1.pulseduration, handles.data.ch1.pulseamp, handles.data.ch1.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
 handles.data.ch1_output=handles.data.ch1_output/handles.defaults.CCexternalcommandsensitivity; % scale by external command sensititvity under Current Clamp
 handles = updateAOaxes(handles);
@@ -761,7 +769,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in update_cc_cell2_button.
-function update_cc_cell2_button_Callback(hObject, eventdata, handles)
+function handles = update_cc_cell2_button_Callback(hObject, eventdata, handles)
 
 handles.data.ch2_output=makepulseoutputs(handles.data.ch2.pulse_starttime,handles.data.ch2.pulsenumber, handles.data.ch2.pulseduration, handles.data.ch2.pulseamp, handles.data.ch2.pulsefrequency, handles.defaults.Fs, handles.defaults.trial_length);
 handles.data.ch2_output=handles.data.ch2_output/handles.defaults.CCexternalcommandsensitivity;
@@ -769,7 +777,7 @@ handles = updateAOaxes(handles);
 
 guidata(hObject,handles)
 
-function ccpulseamp2_Callback(hObject, eventdata, handles)
+function handles = ccpulseamp2_Callback(hObject, eventdata, handles)
 
 
 handles.data.ch2.pulseamp=str2double(get(hObject,'String'))
@@ -849,7 +857,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function ccpulseamp1_Callback(hObject, eventdata, handles)
+function handles = ccpulseamp1_Callback(hObject, eventdata, handles)
 
 handles.data.ch1.pulseamp=str2double(get(hObject,'String'));
 % Hints: get(hObject,'String') returns contents of ccpulseamp1 as text
@@ -889,7 +897,7 @@ end
 
 function ccnumpulses1_Callback(hObject, eventdata, handles)
 
-handles.data.ch1.pulsenumber=str2double(get(hObject,'String'));
+handles.data.ch1.pulsenumber=str2double(get(hObject,'String'))
 % Hints: get(hObject,'String') returns contents of ccnumpulses1 as text
 %        str2double(get(hObject,'String')) returns contents of ccnumpulses1 as a double
 
@@ -3460,7 +3468,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in cell2_intrinsics.
-function cell2_intrinsics_Callback(hObject, eventdata, handles)
+function handles = cell2_intrinsics_Callback(hObject, eventdata, handles)
 % hObject    handle to cell2_intrinsics (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
