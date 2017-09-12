@@ -2954,8 +2954,8 @@ disp('detecting nuclei...')
 instruction.type = 72;
 instruction.stackname = stackname;
 [return_info,success,handles] = do_instruction(instruction,handles);
-acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
-handles.data.nuclear_locs = return_info.nuclear_locs;
+acq_gui_data.data.nuclear_locs = return_info.nuclear_locs(:,1:3);
+handles.data.nuclear_locs = return_info.nuclear_locs(:,1:3);
 
 % handles.data.nuclear_locs = evalin('base','data.trial_metadata(end).nuclear_locs');
 % acq_gui_data.data.nuclear_locs = handles.data.nuclear_locs;
