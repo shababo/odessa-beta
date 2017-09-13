@@ -1,3 +1,4 @@
+
 function varargout = socket_client_tester(varargin)
 % SOCKET_CLIENT_TESTER MATLAB code for socket_client_tester.fig
 %      SOCKET_CLIENT_TESTER, by itself, creates a new SOCKET_CLIENT_TESTER or raises the existing
@@ -30,7 +31,7 @@ gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
                    'gui_OpeningFcn', @socket_client_tester_OpeningFcn, ...
                    'gui_OutputFcn',  @socket_client_tester_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
+                   'gui_LayoutFcn',  [] , ...c
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
@@ -277,11 +278,24 @@ if success >= 0
             assignin_base({instruction.name},{instruction.value})
             return_info.success = 1;
         case DETECT_NUC_LOCAL
-            system(['smbclient //adesnik2.ist.berkeley.edu/inhibition adesnik110623 -c ''cd /shababo ; '...
+%             return_info = evalin('base','return_info');
+%             detect_img = evalin('base','detect_img');
+%             nuclear_locs = evalin('base','nuclear_locs');
+            system(['smbclient //adesnik2.ist.berkeley.edu/excitation adesnik110623 -c ''cd /shababo ; '...
                 'get ' instruction.stackname '.tif ' '/media/shababo/data/' instruction.stackname '.tif''']);
             pause(1)
-            nuclear_locs = detect_nuclei(['/media/shababo/data/' instruction.stackname]);
+            if ~instruction.dummy_targs
+                [nuclear_locs, detect_img] = ...
+                    detect_nuclei(['/media/shababo/data/' instruction.stackname],...
+                    instruction.image_um_per_px,instruction.image_zero_order_coord,...
+                    instruction.stack_um_per_slice);
+            end
+            if instruction.dummy_targs || isempty(nuclear_locs) || any(isnan(nuclear_locs(:)))
+                nuclear_locs = [randi([-150 150],[100 1]) randi([-150 150],[100 1]) randi([0 100],[100 1])];
+                detect_img = zeros(256,256);
+            end
             return_info.nuclear_locs = nuclear_locs;
+            return_info.detect_img = detect_img;
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_LOCAL;
             instruction_out.stackname = instruction.stackname;
@@ -337,7 +351,8 @@ if instruction.type == DETECT_NUC_LOCAL
     clear return_info
     % return_info.test_turing = 1;
     return_info.nuclear_locs = nuclear_locs;
-    end
+    return_info.detect_img = detect_img;
+end
 assignin('base','return_info',return_info)
 disp('sending return info')
 mssend(handles.sock,return_info);
