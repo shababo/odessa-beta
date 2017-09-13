@@ -42,14 +42,15 @@ for i = 1:num_singles
 %         for j = 1:num_singles_repeats
             phase_masks(i+num_stim).mode = 'Phase';
             phase_masks(i+num_stim).pattern = convP;
-            pockels_ratio_refs_multi(i+num_stim) = ratio_map(dec_ind);
+            
 %         end
     else 
 %         for j = 1:num_singles_repeats
             phase_masks(:,:,i+num_stim) = convP;
-            pockels_ratio_refs_multi(i+num_stim) = ratio_map(dec_ind);
 %         end
     end  
+    pockels_ratio_refs_multi(i+num_stim) = ratio_map(round(single_spot_locs(i,1))+ceil(size(ratio_map,1)/2),...
+                                                             round(single_spot_locs(i,2))+ceil(size(ratio_map,2)/2));
     stim_key(i+num_stim,:,1) = round(this_loc);
     for k = 2:targs_per_stim
 %         for j = 1:num_singles_repeats
@@ -116,9 +117,13 @@ for i = 1:num_stim
     
     for k = 1:targs_per_stim
         this_loc = multitarg_locs(these_spots(k),:);
-
-        precomp_ind = find(this_loc(1) == computed_locs(:,1) & ...
-                          this_loc(2) == computed_locs(:,2));
+        if ~isempty(computed_locs)
+            precomp_ind = find(this_loc(1) == computed_locs(:,1) & ...
+                              this_loc(2) == computed_locs(:,2));
+        else
+            precomp_ind = [];
+        end
+            
         if ~isempty(precomp_ind)
             fullF = fullF + sqrt(spot_power_ratios(k))*exp(1i*singles_phases(:,:,precomp_ind));
         else

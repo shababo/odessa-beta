@@ -145,6 +145,7 @@ DETECT_NUC = 70;
 DETECT_NUC_LOCAL = 71;
 DETECT_NUC_SERVE = 72;
 CLICK_LOCS = 73;
+DETECT_NUC_SERVE_W_STACK = 74;
 PRECOMPUTE_PHASE_NUCLEAR = 81;
 PRECOMPUTE_PHASE_MULTI = 82;
 TAKE_SNAP = 91;
@@ -303,18 +304,31 @@ if success >= 0
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_LOCAL;
             instruction_out.stackname = instruction.stackname;
-            instruction.image_zero_order_coord = evalin('base','image_zero_order_coord');
-            instruction.image_um_per_px = evalin('base','image_um_per_px');
-            instructin.stack_um_per_slice = evalin('base','stack_um_per_slice');
+            instruction_out.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
+            instruction_out.image_um_per_px = evalin('base','image_um_per_px');
+            instruction_out.stack_um_per_slice = evalin('base','stack_um_per_slice');
+            instruction_out.dummy_targs = 0;
             copyfile([instruction.stackname '_C0.tif'], ['Y:\shababo\' instruction.stackname '.tif']);
             pause(1)
             [return_info,success,handles] = do_instruction(instruction_out,handles) ;
             figure
             imagesc(return_info.detect_img)
-% %             locs_test = evalin('base','locs_test');
-% %             return_info.nuclear_locs = locs_test(1:200,:);
-             
-%              return_info = evalin('base','locs_return_info');
+%              locs_test = evalin('base','locs_test');
+%              return_info.nuclear_locs = locs_test(1:200,:);
+%              return_info.detect_img = zeros(256,256);
+        case DETECT_NUC_SERVE_W_STACK
+            evalin('base','take_stack')
+            instruction_out.type = DETECT_NUC_LOCAL;
+            instruction_out.stackname = instruction.stackname;
+            instruction_out.image = evalin('base','acquiredImage');
+            instruction_out.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
+            instruction_out.image_um_per_px = evalin('base','image_um_per_px');
+            instruction_out.stack_um_per_slice = evalin('base','stack_um_per_slice');
+            instruction_out.dummy_targs = 0;
+            instruction_out.get_return = 1;
+            [return_info,success,handles] = do_instruction(instruction_out,handles) ;
+            figure
+            imagesc(return_info.detect_img)
         case CLICK_LOCS
              evalin('base','take_snap')
              handles.snap_image = evalin('base','temp');
@@ -327,10 +341,11 @@ if success >= 0
                  num_targs = input('How many targets?');
              end
              
-             [y,x] = ginput(num_targs);
+             [y, x] = ginput(num_targs);
              zero_order_pos = evalin('base','image_zero_order_coord')';
              image_px_per_um = evalin('base','image_um_per_px');
-             return_info.nuclear_locs = [([x y] - zero_order_pos)*image_px_per_um zeros(size(x))];
+             click_locs = [(bsxfun(@minus,[x y],zero_order_pos))*image_px_per_um zeros(size(x))];
+             return_info.nuclear_locs = click_locs;
         case PRECOMPUTE_PHASE
             tf_flag = instruction.tf_flag;
             if tf_flag
@@ -370,7 +385,7 @@ if success >= 0
             end
 %             clear phase_masks_target
         case PRECOMPUTE_PHASE_MULTI
-            ratio_map = evalin('base','pockels_ratio_refs_tf_full_map');
+            ratio_map = evalin('base','power_map_upres');
             coarse_disks = evalin('base','tf_disk_grid');
             disk_key = evalin('base','tf_disk_key');
             fine_spot_grid = evalin('base','tf_fine_grid_spots_phase');
@@ -525,17 +540,25 @@ end
 % else
 %     instruction.close_socket = 1;
 % end
+if isfield(instruction,'get_return')
+    get_return = instruction.get_return;
+else
+    get_return = 1;
+end
 pause(.1)
 disp('sending instruction...')
 mssend(handles.sock_out,instruction);
-disp('getting return info...')
-pause(.1)
-return_info = [];
-while isempty(return_info)
-    [return_info, success] = msrecv(handles.sock_out,15);
+if get_return
+    disp('getting return info...')
+    pause(.1)
+    return_info = [];
+    while isempty(return_info)
+        [return_info, success] = msrecv(handles.sock_out,15);
+    end
+    assignin('base','return_info',return_info)
+else
+    return_info = [];
 end
-    
-assignin('base','return_info',return_info)
 % success = 1;
 
 if instruction.close_socket

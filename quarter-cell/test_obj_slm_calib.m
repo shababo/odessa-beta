@@ -2,13 +2,13 @@
 % scale_vec = [1 1];
 
 % slm_obj_notf_tform = tform.T(1:2,1:2)';
-this_trans = twophoton_slm_trans;
+this_trans = full_trans;
 grid_max = 100
 
 % obj_pos = grid_max*[-1 -1 1 1 -.5 -.5 .5 .5; 1 -1 1 -1 .5 -.5 .5 -.5];
 obj_pos = grid_max*[-1 -1 1 1; 1 -1 1 -1];
 % slm_pos = rot_scale_mat = bsxfun(@times,rot_mat',scale_vec);(scale_vec,theta,obj_pos);
-slm_pos = this_trans*obj_pos;
+slm_pos = this_trans*obj_pos
 % base hologram
 % target.mode = 'Disks';
 % target.wavelength = 1040;

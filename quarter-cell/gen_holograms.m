@@ -12,9 +12,9 @@ end
 %%
 
 precomputed_target = struct();
-for i = 1:length(all_targets)
+for i = 1:size(tf_disk_key,1)
     precomputed_target(i).mode = 'Phase';
-    precomputed_target(i).pattern = all_phase_masks(:,:,i);
+    precomputed_target(i).pattern = tf_disk_grid(:,:,i);
 end
 
 %%
@@ -70,7 +70,7 @@ isPrecomputedTargetArrayReady = 1
 % disks_time = toc 
 
 %%
-this_trans = twophoton_slm_trans_new;
+this_trans = full_trans;
 % generate individual spots
 clear target
 end_point = 150;
@@ -89,9 +89,9 @@ count = 1;
 for i = 1:length(x_pos)
     for j = 1:length(x_pos)
         
-        this_spot = [x_pos(i) x_pos(j)]';
-        this_spot_slm = (this_trans*this_spot)';
-        this_spot_img_coord = (this_spot - 130)*1.82
+        this_spot = [x_pos(i)/image_um_per_px+128 x_pos(j)/image_um_per_px+128 1]'
+        this_spot_slm = (this_trans*this_spot)'
+%         this_spot_img_coord = (this_spot - 130)*1.82
         target.spotLocations = repmat([this_spot_slm 0],3,1);
         isTargetPatternReady = 1;
         pause(5)
@@ -118,7 +118,7 @@ isTargetPatternReady = 1;
 
 %% 10um shift
 
-this_trans = twophoton_slm_trans_new;
+this_trans = full_trans;
 % generate individual spots
 clear target
 
@@ -133,10 +133,11 @@ target.spotLocations = [];
 tf_fine_grid_spots_phase = zeros(600,792,length(x_pos)^2);
 tf_fine_grid_spots_key = zeros(length(x_pos)^2,3);
 count = 1;
+
 for i = 1:length(x_pos)
     for j = 1:length(x_pos)
-        this_spot = [x_pos(i) x_pos(j)]';
-        this_spot_slm = (this_trans*this_spot)';
+        this_spot = [x_pos(i)/image_um_per_px+image_zero_order_coord(1) x_pos(j)/image_um_per_px+image_zero_order_coord(2) 1]'
+        this_spot_slm = (this_trans*this_spot)'
         target.spotLocations = repmat([this_spot_slm 0],3,1);
         isTargetPatternReady = 1;
         pause(5)
@@ -454,8 +455,8 @@ stim_id = find(tf_spots_key(:,1) == 100 & tf_spots_key(:,2) == 100);
 target = precomputed_target(1); target.pattern = tf_all_spots_phase(:,:,stim_id);
 isTargetPatternReady = 1;
 
-
-stim_id = find(tf_disk_key(:,1) == 50 & tf_disk_key(:,2) == 50)
+%%
+stim_id = find(tf_disk_key(:,1) == 0 & tf_disk_key(:,2) == -150)
 target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;
@@ -626,7 +627,7 @@ isTargetPatternReady = 1
 
 tf_phase = tf_all_spots_phase;
 % notf_phase = notf_all_spots_phase;
-diskPhaseLocal = diskPhase(:,:,2);
+diskPhaseLocal = diskPhase(:,:,1);
 tic
 target_base_fast.mode = 'Phase';
 target_base_fast.pattern = 1040;
