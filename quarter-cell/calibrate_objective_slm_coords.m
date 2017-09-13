@@ -21,13 +21,17 @@ target.wavelength = 1040;
 %           150 130;
 %           -175 -105;
 %           25 50]';
-points = [0 0;
+points = [
+          280 175;
           130 135;
           50 35;
+          200 -155
           135 -140;
           80 -65;
+          -200 -175;
           -130 -125;
           -50 -65;
+          -260 155;
           -130 135;
           -75 55]';
 % points = [130 135;
@@ -66,15 +70,21 @@ num_points = size(points,2);
 for i = 1:num_points
 %     this_spot = [x_pos(i) x_pos(j)]';
 %     this_spot_slm = (this_trans*this_spot)';
+%     points(:,i) = [20 20];
     target.spotLocations = repmat([points(:,i)' 0],3,1);
     isTargetPatternReady = 1;
 %     pause(3)
 %     isSnapImage = 1;
 %     pause(1)
-    wrndlg = warndlg('Image Taken?');
+    wrndlg = warndlg('Hole made?');
+    pos = get(wrndlg,'position');
+    set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
     waitfor(wrndlg)
+    isSnapImage = 1
+    pause(1)
 end
 
+%%
 target.spotLocations = repmat([0 0 0],3,1);
 isTargetPatternReady = 1;
 pause(1)

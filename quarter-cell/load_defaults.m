@@ -1,4 +1,4 @@
-function [defaults, s, data] = load_defaults()
+function [defaults, s, data] = load_defaults(Fs)
 
 
 %%--set Rig Defaults Values here----%%
@@ -13,7 +13,9 @@ save_name = [save_path experiment_name];
 amplifier = 'Axon CNS'; % or Multiclamp
 
 % set sampling frequency in Hz
-Fs = 20000;  
+if ~Fs
+    Fs = 20000;  
+end
 
 % set default inter-stimulus-interval; this is the total time between
 % successive trigers from the timer fcn, not the time between trials

@@ -122,20 +122,27 @@ handles.data.trial_metadata(sweep_counter).cell2_highpass = get(handles.Highpass
 
 handles.data.trial_metadata(sweep_counter).obj_position = handles.data.obj_position;
 
+if isfield(handles.data,'ref_obj_position')
+    handles.data.trial_metadata(sweep_counter).ref_obj_position = handles.data.ref_obj_position;
+    handles.data.trial_metadata(sweep_counter).relative_position = handles.data.obj_position - handles.data.ref_obj_position;
+else
+    handles.data.trial_metadata(sweep_counter).ref_obj_position = [];
+    handles.data.trial_metadata(sweep_counter).relative_position = NaN;
+end
+
 if isfield(handles.data,'cell_pos')
     handles.data.trial_metadata(sweep_counter).cell_position = handles.data.cell_pos;
-    handles.data.trial_metadata(sweep_counter).relative_position = handles.data.obj_position - handles.data.cell_pos;
 else
     handles.data.trial_metadata(sweep_counter).cell_position = NaN;
-    handles.data.trial_metadata(sweep_counter).relative_position = NaN;
+    
 end
 
 if isfield(handles.data,'cell2_pos')
     handles.data.trial_metadata(sweep_counter).cell2_position = handles.data.cell2_pos;
-    handles.data.trial_metadata(sweep_counter).relative_position_cell2 = handles.data.obj_position - handles.data.cell2_pos;
+%     handles.data.trial_metadata(sweep_counter).relative_position_cell2 = handles.data.obj_position - handles.data.cell2_pos;
 else
     handles.data.trial_metadata(sweep_counter).cell2_position = NaN;
-    handles.data.trial_metadata(sweep_counter).relative_position_cell2 = NaN;
+%     handles.data.trial_metadata(sweep_counter).relative_position_cell2 = NaN;
 end
 
 if isfield(handles.data,'start_pos')
@@ -158,6 +165,29 @@ if isfield(handles.data,'stackname')
 else
     handles.data.trial_metadata(sweep_counter).nuclear_locs = [];
 end
+
+if isfield(handles.data,'rand_locs')
+    handles.data.trial_metadata(sweep_counter).rand_locs = handles.data.rand_locs;
+else
+    handles.data.trial_metadata(sweep_counter).rand_locs = [];
+end
+
+if isfield(handles.data,'nearby_locations')
+    handles.data.trial_metadata(sweep_counter).nearby_locations = handles.data.nearby_locations;
+else
+    handles.data.trial_metadata(sweep_counter).nearby_locations = [];
+end
+
+if isfield(handles.data,'nuclear_locs')
+    handles.data.trial_metadata(sweep_counter).nuclear_locs = handles.data.nuclear_locs;
+else
+    handles.data.trial_metadata(sweep_counter).nuclear_locs = [];
+end
+
+
+
+
+
 
 
 %% store the analog outputs, but downsample them
