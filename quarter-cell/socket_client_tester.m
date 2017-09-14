@@ -57,20 +57,33 @@ function socket_client_tester_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 if ~isempty(varargin) && ~isempty(varargin{1})
-    location = varargin{1};
+    server_location = varargin{1};
 else
-    location = 'slidebook';
+    server_location = 'ephys';
 end
 
-switch location
-    case 'slidebook'
-        handles.server_ipaddress = '128.32.177.239';
-        handles.port_num = 3000;
-        handles.client_port = 3001;
-    case 'turing'
-        handles.server_ipaddress = '128.32.177.238';
-        handles.port_num = 3001;
+if length(varargin) > 1 && ~isempty(varargin{2})
+    client_location = varargin{2};
+else
+    client_location = 'slidebook';
 end
+
+switch server_location
+    case 'ephys'
+        handles.server_ipaddress = '128.32.177.239';
+    case 'slidebook'
+        handles.server_ipaddress = '128.32.177.238';
+end
+
+switch client_location
+    case 'slidebook'
+        handles.port_num = 3000;
+        handles.data = struct();
+    case 'analysis'
+        handles.port_num = 3001;
+        handles.data = init_oed();
+end
+
 
 
 % Update handles structure
@@ -147,9 +160,12 @@ DETECT_NUC_LOCAL = 71;
 DETECT_NUC_SERVE = 72;
 CLICK_LOCS = 73;
 DETECT_NUC_SERVE_W_STACK = 74;
+DETECT_NUC_FROM_MAT = 75;
+COMPUTE_GROUPS_AND_OPTIM_LOCS = 76;
 PRECOMPUTE_PHASE_NUCLEAR = 81;
 PRECOMPUTE_PHASE_MULTI = 82;
 TAKE_SNAP = 91;
+TAKE_STACK = 92;
 PRINT = 00;
 instruction.type
 return_info = struct();
@@ -187,6 +203,9 @@ if success >= 0
             return_info.currX = evalin('base','currentStageX');
             return_info.currY = evalin('base','currentStageY');
             return_info.currZ = evalin('base','currentStageZ');
+            handles.data.currX = return_info.currX;
+            handles.data.currY = return_info.currY;
+            handles.data.currZ = return_info.currZ;
             return_info.success = 1;
         case MOVE_OBJ
             disp('moving obj...')
@@ -214,6 +233,9 @@ if success >= 0
             return_info.currX = evalin('base','currentStageX');
             return_info.currY = evalin('base','currentStageY');
             return_info.currZ = evalin('base','currentStageZ');
+            handles.data.currX = return_info.currX;
+            handles.data.currY = return_info.currY;
+            handles.data.currZ = return_info.currZ;
             return_info.success = 1;
             
         case GET_OBJ_POS_STEP0
@@ -226,6 +248,9 @@ if success >= 0
             return_info.currX = evalin('base','currentStageX');
             return_info.currY = evalin('base','currentStageY');
             return_info.currZ = evalin('base','currentStageZ');
+            handles.data.currX = return_info.currX;
+            handles.data.currY = return_info.currY;
+            handles.data.currZ = return_info.currZ;
             return_info.success = 1;
 
         case GET_OBJ_POS_STEP1
@@ -233,18 +258,21 @@ if success >= 0
             return_info.currX = evalin('base','currentStageX');
             return_info.currY = evalin('base','currentStageY');
             return_info.currZ = evalin('base','currentStageZ');
+            handles.data.currX = return_info.currX;
+            handles.data.currY = return_info.currY;
+            handles.data.currZ = return_info.currZ;
             return_info.success = 1;
         case GET_SEQ
             disp('setting seq')
             sequence = instruction.sequence;
-            tf_flag = instruction.tf_flag;
-            if sequence(1).power > 2
-                if tf_flag
-                    lut = evalin('base','lut_tf');
-                    pockels_ratio_refs = evalin('base','pockels_ratio_refs_tf');
+            handles.data.tf_flag = instruction.tf_flag;
+            if handles.data.sequence(1).power > 2
+                if handles.data.tf_flag
+                    handles.data.lut = evalin('base','lut_tf');
+                    handles.data.pockels_ratio_refs = evalin('base','pockels_ratio_refs_tf');
                 else
-                    lut = evalin('base','lut_notf');
-                    pockels_ratio_refs = evalin('base','pockels_ratio_refs_notf');                
+                    handles.data.lut = evalin('base','lut_notf');
+                    handles.data.pockels_ratio_refs = evalin('base','pockels_ratio_refs_notf');                
                 end
             end
 %             pockels_ratio_refs = [pockels_ratio_refs pockels_ratio_refs];
@@ -252,7 +280,8 @@ if success >= 0
                 if sequence(i).power > 2
                     ind = sequence(i).precomputed_target_index;
                     sequence(i).target_power = sequence(i).power;
-                    sequence(i).power = 100*get_voltage(lut,pockels_ratio_refs(ind)*sequence(i).power);
+                    sequence(i).power = 100*get_voltage(handles.data.lut,...
+                        handles.data.pockels_ratio_refs(ind)*sequence(i).power);
                 else
                     sequence(i).power = sequence(i).power*100;
                 end
@@ -268,13 +297,14 @@ if success >= 0
             end
 %             pause(1)
             return_info.success = 1;
-            if tf_flag
+            if handles.data.tf_flag
                 return_info.stim_key = evalin('base','tf_stim_key');
             else
                 return_info.stim_key = evalin('base','notf_stim_key');
             end
             return_info.sequence = sequence;
-            
+            handles.data.sequence= sequence;
+            handles.data.stim_key = return_info.stim_key;
         case RETRIGGER_SEQ
 %             vars{1} = 1;
 %             names{1} = 'isTriggeredSequenceReady';
@@ -292,6 +322,7 @@ if success >= 0
             assignin_base(names,vars);
             evalin('base','set_seq_trigger')
             return_info.success = 1;
+            handles.data.set_sequence = instruction.sequence;
         case GET_VAR
             assignin_base({instruction.name},{instruction.value})
             return_info.success = 1;
@@ -303,7 +334,7 @@ if success >= 0
                 'get ' instruction.stackname '.tif ' '/media/shababo/data/' instruction.stackname '.tif''']);
             pause(1)
             if ~instruction.dummy_targs
-                [nuclear_locs, detect_img] = ...
+                [nuclear_locs,] = ...
                     detect_nuclei(['/media/shababo/data/' instruction.stackname],...
                     instruction.image_um_per_px,instruction.image_zero_order_coord,...
                     instruction.stack_um_per_slice);
@@ -313,7 +344,26 @@ if success >= 0
                 detect_img = zeros(256,256);
             end
             return_info.nuclear_locs = nuclear_locs;
-            return_info.detect_img = detect_img;
+            return_info.detect_img = zeros(256,256);
+        case DETECT_NUC_FROM_MAT
+            filename = ['media/shababo/data/' instruction.filename '.tif'];
+            write_tiff_stack(filename,instruction.stackmat)
+            if ~isfield(instruction,'dummy_targs')
+                instruction.dummy_target = 0;
+            end
+            if ~instruction.dummy_targs
+                [nuclear_locs, fluor_vals] = ...
+                    detect_nuclei(filename,...
+                    instruction.image_um_per_px,instruction.image_zero_order_coord,...
+                    instruction.stack_um_per_slice);
+            end
+            if instruction.dummy_targs || isempty(nuclear_locs) || any(isnan(nuclear_locs(:)))
+                nuclear_locs = [randi([-150 150],[50 1]) randi([-150 150],[50 1]) randi([0 100],[50 1])];
+                fluor_vals = zeros(50,1);
+            end
+            return_info.nuclear_locs = nuclear_locs;
+            return_info.fluor_vals = fluor_vals;
+%             return_info.detect_img = detect_img;
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_LOCAL;
             instruction_out.stackname = instruction.stackname;
@@ -339,9 +389,14 @@ if success >= 0
             instruction_out.stack_um_per_slice = evalin('base','stack_um_per_slice');
             instruction_out.dummy_targs = 0;
             instruction_out.get_return = 1;
-            [return_info,success,handles] = do_instruction(instruction_out,handles) ;
+            [return_info,success,handles] = do_instruction(instruction_out,handles);
             figure
             imagesc(return_info.detect_img)
+        case COMPUTE_GROUPS_AND_OPTIM_LOCS
+            handles.data.cells_targets = get_groups_and_stim_locs(...
+                instruction.cell_locations, handles.data.params,...
+                instruction.z_locs, instruction.z_slice_width);
+            return_info.cells_targets = handles.data.cells_targets;
         case CLICK_LOCS
              evalin('base','take_snap')
              handles.snap_image = evalin('base','temp');
@@ -433,6 +488,12 @@ if success >= 0
             handles.snap_image = evalin('base','temp');
             return_info.snap_image = evalin('base','temp');
             return_info.success = 1;
+        case TAKE_STACK
+            evalin('base','take_stack')
+            return_info.image = evalin('base','acquiredImage');
+            return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
+            return_info.image_um_per_px = evalin('base','image_um_per_px');
+            return_info.stack_um_per_slice = evalin('base','stack_um_per_slice');
     end
     
     
@@ -528,7 +589,7 @@ end
 
 
 if isfield(handles,'sock_out') && handles.sock_out > 0
-    disp('closing socket put')
+    disp('closing socket out')
     msclose(handles.sock_out)
     handles = rmfield(handles,'sock_out');
     guidata(hObject,handles)
@@ -570,7 +631,7 @@ if get_return
     pause(.1)
     return_info = [];
     while isempty(return_info)
-        [return_info, success] = msrecv(handles.sock_out,15);
+        [return_info, success] = msrecv(handles.sock_out,5);
     end
     assignin('base','return_info',return_info)
 else

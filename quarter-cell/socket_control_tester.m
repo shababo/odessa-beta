@@ -88,7 +88,7 @@ instruction.deltaY = str2double(get(handles.deltaY,'String'));
 instruction.deltaZ = str2double(get(handles.deltaZ,'String'));
 % instruction.close_socket = get(handles.close_socket_check,'Value');
 disp('sending instruction...')
-[return_info,success,handles] = do_instruction(instruction,handles) ;
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles) ;
 % assignin('base','return_info',return_info)
 guidata(hObject,handles)
 
@@ -185,7 +185,7 @@ disp('Getting current obj pos...')
 instruction.type = 20; %GET_OBJ_POS
 % instruction.reset = 1;
 instruction.close_socket = get(handles.close_socket_check,'Value');
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
 guidata(hObject,handles)
 
@@ -204,11 +204,15 @@ guidata(hObject,handles)
 
 
 
-function [return_info, success, handles] = do_instruction(instruction, handles)
+function [return_info, success, handles] = do_instruction_slidebook(instruction, handles)
 
 instruction.close_socket = get(handles.close_socket_check,'Value');
 % if instruction.type == 21
 %     handles.sock
+% end
+
+% if ~isfield(instruction,'portnum')
+%     instruction.portnum = 3000;
 % end
 if ~isfield(handles,'sock')
     disp('opening socket...')
@@ -238,7 +242,7 @@ else
 end
 if get_return
     while isempty(return_info)
-        [return_info, success] = msrecv(handles.sock,5);
+        [return_info, success] = msrecv(handles.sock,1);
     end
     assignin('base','return_info',return_info)
 end
@@ -250,6 +254,49 @@ if instruction.close_socket
     handles = rmfield(handles,'sock');
 end
 
+function [return_info, success, handles] = ...
+    do_instruction_analysis(instruction, handles)
+
+instruction.close_socket = 1;%get(handles.close_socket_check,'Value');
+
+if ~isfield(handles,'sock_analysis')
+    disp('opening socket...')
+    srvsock = mslisten(3001);
+    handles.sock_analysis = msaccept(srvsock);
+    disp('socket open..')
+    msclose(srvsock);
+end
+% if isfield(handles,'close_socket')
+
+%     instruction.close_socket = get(handles.close_socket_check,'Value');
+
+% else
+%     instruction.close_socket = 1;
+% end
+pause(.1)
+disp('sending instruction...')
+mssend(handles.sock_analysis,instruction);
+disp('getting return info...')
+pause(.1)
+return_info = [];
+if isfield(instruction,'get_return')
+    get_return = instruction.get_return;
+else
+    get_return = 1;
+end
+if get_return
+    while isempty(return_info)
+        [return_info, success] = msrecv(handles.sock_analysis,1);
+    end
+    assignin('base','return_info',return_info)
+end
+% success = 1;
+
+if instruction.close_socket
+    disp('closing socket')
+    msclose(handles.sock_analysis)
+    handles = rmfield(handles,'sock_analysis');
+end
 
 
 % --- Executes on button press in build_seq.
@@ -355,7 +402,7 @@ handles.total_duration = total_duration;
 instruction.waittime = total_duration + 120;
 instruction.set_trigger = get(handles.set_seq_trigger,'Value');
 disp('sending instruction...')
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 [acq_gui,acq_gui_data] = get_acq_gui_data();
 acq_gui_data.data.stim_key =  return_info.stim_key;
 acq_gui_data.data.sequence =  return_info.sequence;
@@ -544,7 +591,7 @@ instruction.name = varname;
 instruction.value = evalin('base',varname);
 
 disp('sending instruction...')
-[return_info,success,handles] = do_instruction(instruction,handles) 
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles) 
 guidata(hObject,handles)
 
 
@@ -616,7 +663,7 @@ instruction.type = 21;
 % end
 % 
 % handles.sock
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 disp('operation done, setting fields...')
@@ -870,7 +917,7 @@ for i = 1:num_trials
 %     if i ~= 1
 %         instruction.type = 31; % RETRIGGER
 %         instruction.close_socket = 0;
-%         [return_info,success,handles] = do_instruction(instruction,handles);
+%         [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 %         guidata(hObject,handles)
 %     end
     build_seq_Callback(hObject, eventdata, handles)
@@ -1018,7 +1065,7 @@ instruction.theNewY = str2double(get(handles.thenewy,'String'));
 instruction.theNewZ = str2double(get(handles.thenewz,'String'));
 
 disp('sending instruction...')
-[return_info,success,handles] = do_instruction(instruction,handles) ;
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles) ;
 guidata(hObject,handles)
 
 disp('operation done, setting fields...')
@@ -1719,7 +1766,7 @@ for i = 1:num_trials
 %     if i ~= 1
 %         instruction.type = 31; % RETRIGGER
 %         instruction.close_socket = 0;
-%         [return_info,success,handles] = do_instruction(instruction,handles);
+%         [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 %         guidata(hObject,handles)
 %     end
     set(handles.num_stim,'String',num2str(all_grid_sizes(i)));
@@ -2256,7 +2303,7 @@ if do_whole_cell
         %     if i ~= 1
         %         instruction.type = 31; % RETRIGGER
         %         instruction.close_socket = 0;
-        %         [return_info,success,handles] = do_instruction(instruction,handles);
+        %         [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
         %         guidata(hObject,handles)
         %     end
             set(handles.num_stim,'String',num2str(all_grid_sizes(i)));
@@ -2675,7 +2722,7 @@ stackname = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
 instruction.type = 00;
 instruction.string = stackname;
 disp('sending instruction...')
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
 user_confirm = msgbox(sprintf('Stack Taken with 2um spacing?\nUse name: %s',...
     stackname));
@@ -2689,14 +2736,14 @@ guidata(acq_gui,acq_gui_data)
 disp('detecting nuclei...')
 instruction.type = 72;
 instruction.stackname = stackname;
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
 guidata(acq_gui,acq_gui_data)
 
 instruction.type = 81;
 instruction.nuclear_locs = acq_gui_data.data.nuclear_locs;
 instruction.do_target = 1;
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 set(handles.rand_order,'Value',1);
@@ -2784,7 +2831,7 @@ end
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 
@@ -2834,7 +2881,7 @@ if set_cell_pos
     disp('click targets...')
     instruction.type = 73;
     instruction.num_targs = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     [acq_gui, acq_gui_data] = get_acq_gui_data();
     handles.data.click_targ = return_info.nuclear_locs(1:2);
     acq_gui_data.data.snap_image = return_info.snap_image;
@@ -2878,7 +2925,7 @@ if set_cell2_pos
     disp('click targets...')
     instruction.type = 73;
     instruction.num_targs = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     [acq_gui, acq_gui_data] = get_acq_gui_data();
     handles.data.click_targ = return_info.nuclear_locs(1:2);
     acq_gui_data.data.snap_image2 = return_info.snap_image;
@@ -2938,7 +2985,7 @@ stackname = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
 instruction.type = 00;
 instruction.string = stackname;
 disp('sending instruction...')
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
 user_confirm = msgbox(sprintf('Stack Taken with 2um spacing?\nUse name: %s',...
     stackname));
@@ -2953,7 +3000,7 @@ guidata(acq_gui,acq_gui_data)
 disp('detecting nuclei...')
 instruction.type = 72;
 instruction.stackname = stackname;
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 acq_gui_data.data.nuclear_locs = return_info.nuclear_locs(:,1:3);
 handles.data.nuclear_locs = return_info.nuclear_locs(:,1:3);
 
@@ -3303,7 +3350,7 @@ for ii = 1:num_map_locations*num_design_iters
 %     end
     instruction.do_target = 1;
     assignin('base','instruction',instruction)
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     guidata(hObject,handles)
     
     set(handles.num_stim,'String',num2str(return_info.num_stim));
@@ -3334,7 +3381,7 @@ for ii = 1:num_map_locations*num_design_iters
         handles.total_duration = total_duration;
         instruction.waittime = total_duration + 120;
         disp('sending instruction...')
-        [return_info,success,handles] = do_instruction(instruction,handles);
+        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 %         acq_gui_data = get_acq_gui_data();
 %         acq_gui_data.data.stim_key =  return_info.stim_key;
         acq_gui_data.data.sequence =  this_subseq;
@@ -3402,7 +3449,7 @@ end
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 
@@ -3761,7 +3808,7 @@ disp('take image...')
 % instruction.type = 91;
 % % instruction.string = stackname;
 % disp('sending instruction...')
-% [return_info,success,handles] = do_instruction(instruction,handles);
+% [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
 % user_confirm = msgbox(sprintf('Take snap',...
 %     stackname));
@@ -3775,7 +3822,7 @@ disp('take image...')
 disp('click targets...')
 instruction.type = 73;
 instruction.num_targs = 0;
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
 handles.data.nuclear_locs = return_info.nuclear_locs;
 acq_gui_data.data.snap_image = return_info.snap_image;
@@ -3984,11 +4031,11 @@ for i = 1:num_map_locations
 %     instruction.repeat_target = 5;
 %     instruction.num_stim = size(instruction.multitarg_locs,1)*(ceil(instruction.repeat_target/instruction.targs_per_stim));
 %     instruction.do_target = 1;
-%     [return_info,success,handles] = do_instruction(instruction,handles);
+%     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     instruction.type = 81;
     instruction.target_locs = nuclear_locs;
     instruction.do_target = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     guidata(hObject,handles)
         set(handles.rand_order,'Value',1);
     set(handles.num_repeats,'String',num2str(10));
@@ -4036,7 +4083,7 @@ end
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 
@@ -4113,7 +4160,7 @@ set(handles.num_repeats,'String',num2str(num_repeats));
 disp('click targets...')
 instruction.type = 73;
 instruction.num_targs = 10;
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 acq_gui = findobj('Tag','acq_gui');
 acq_gui_data = guidata(acq_gui);
 acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
@@ -4276,7 +4323,7 @@ for i = 1:num_map_locations
     instruction.type = 81;
     instruction.target_locs = nuclear_locs;
     instruction.do_target = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     guidata(hObject,handles)
         set(handles.rand_order,'Value',1);
     set(handles.num_stim,'String',num2str(size(nuclear_locs,1)));
@@ -4342,7 +4389,7 @@ guidata(acq_gui,acq_gui_data)
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 
@@ -4386,7 +4433,7 @@ if set_cell_pos
     disp('click targets...')
     instruction.type = 73;
     instruction.num_targs = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     [acq_gui, acq_gui_data] = get_acq_gui_data();
     handles.data.click_targ = return_info.nuclear_locs(1:2);
     acq_gui_data.data.snap_image = return_info.snap_image;
@@ -4435,7 +4482,7 @@ stackname = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
 instruction.type = 00;
 instruction.string = stackname;
 disp('sending instruction...')
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
 user_confirm = msgbox(sprintf('120 um Stack Taken with 2um spacing?\nUse name: %s',...
     stackname));
@@ -4450,7 +4497,7 @@ guidata(acq_gui,acq_gui_data)
 disp('detecting nuclei...')
 % instruction.type = 72;
 % instruction.stackname = stackname;
-% [return_info,success,handles] = do_instruction(instruction,handles);
+% [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 % acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
 % handles.data.detect_img = return_info.detect_img;
 % acq_gui_data.data.detect_img = return_info.detect_img;
@@ -4718,7 +4765,7 @@ instruction.repeat_target = 10;
 %         instruction.num_stim = 0;
 %     end
 instruction.do_target = 1;
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 set(handles.num_stim,'String',num2str(return_info.num_stim));
@@ -4749,7 +4796,7 @@ for run_i = 1:num_runs
     handles.total_duration = total_duration;
     instruction.waittime = total_duration + 120;
     disp('sending instruction...')
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 %         acq_gui_data = get_acq_gui_data();
 %         acq_gui_data.data.stim_key =  return_info.stim_key;
     acq_gui_data.data.sequence =  this_subseq;
@@ -4861,7 +4908,7 @@ while ~got_connected_cell
         disp('click targets...')
         instruction.type = 73;
         instruction.num_targs = 1;
-        [return_info,success,handles] = do_instruction(instruction,handles);
+        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
         [acq_gui, acq_gui_data] = get_acq_gui_data();
         handles.data.click_targ = return_info.nuclear_locs(1:2);
         acq_gui_data.data.snap_image2 = return_info.snap_image;
@@ -5032,7 +5079,7 @@ while ~got_connected_cell
     instruction.type = 81;
     instruction.target_locs = nuclear_locs;
     instruction.do_target = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     guidata(hObject,handles)
         set(handles.rand_order,'Value',1);
     set(handles.num_repeats,'String',num2str(5));
@@ -5183,7 +5230,7 @@ for ii = 1:num_map_locations*num_design_iters
 %     end
     instruction.do_target = 1;
     assignin('base','instruction_targets',instruction)
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     guidata(hObject,handles)
     
     set(handles.num_stim,'String',num2str(return_info.num_stim));
@@ -5214,7 +5261,7 @@ for ii = 1:num_map_locations*num_design_iters
         handles.total_duration = total_duration;
         instruction.waittime = total_duration + 120;
         disp('sending instruction...')
-        [return_info,success,handles] = do_instruction(instruction,handles);
+        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 %         acq_gui_data = get_acq_gui_data();
 %         acq_gui_data.data.stim_key =  return_info.stim_key;
         acq_gui_data.data.sequence =  this_subseq;
@@ -5282,7 +5329,7 @@ end
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
 
@@ -5327,15 +5374,15 @@ if set_cell_pos
     disp('click targets...')
     instruction.type = 73;
     instruction.num_targs = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     [acq_gui, acq_gui_data] = get_acq_gui_data();
     handles.data.click_targ = return_info.nuclear_locs(1:2);
     acq_gui_data.data.cell1_snap_image = return_info.snap_image;
     guidata(acq_gui,acq_gui_data)
     
-%     [acq_gui, acq_gui_data] = get_acq_gui_data();
-    
     handles = update_obj_pos_Callback(handles.update_obj_pos, eventdata, handles);
+    
+    [acq_gui, acq_gui_data] = get_acq_gui_data();
     handles.data.cell1_pos = [handles.data.click_targ handles.data.obj_position(3)] - ...
         [0 0 handles.data.ref_obj_position(3)];
     acq_gui_data.data.cell_pos = handles.data.obj_position + [handles.data.click_targ 0];
@@ -5372,18 +5419,19 @@ if set_cell2_pos
     disp('click targets...')
     instruction.type = 73;
     instruction.num_targs = 1;
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     [acq_gui, acq_gui_data] = get_acq_gui_data();
     handles.data.click_targ = return_info.nuclear_locs(1:2);
     acq_gui_data.data.cell2_snap_image = return_info.snap_image;
     guidata(acq_gui,acq_gui_data)
     
     handles = update_obj_pos_Callback(handles.update_obj_pos, eventdata, handles);
+    [acq_gui, acq_gui_data] = get_acq_gui_data();
     
     handles.data.cell2_pos = [handles.data.click_targ handles.data.obj_position(3)] - ...
         [0 0 handles.data.ref_obj_position(3)];
     
-    [acq_gui, acq_gui_data] = get_acq_gui_data();
+    
     acq_gui_data.data.cell2_pos = handles.data.obj_position + [handles.data.click_targ 0];
     set(acq_gui_data.cell2_x,'String',num2str(acq_gui_data.data.cell2_pos(1)));
     set(acq_gui_data.cell2_y,'String',num2str(acq_gui_data.data.cell2_pos(2)));
@@ -5408,7 +5456,7 @@ set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 % make obj locations
 % z_offsets = [30]';
 % z_offsets = handles.data.cell2_pos(3) handles.data.cell1_pos(3)];\
-if ~set_cell2_pos
+if ~isfield(handles.data,'cell2_pos')
     z_offsets = inputdlg('Z Locations?',...
              'Z Locations?',1,{[num2str(handles.data.cell1_pos(3))]});
 else
@@ -5425,14 +5473,12 @@ guidata(hObject,handles);
 % 
 % set(handles.close_socket_check,'Value',0);
 % clock_array = clock;
-% stackname = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
-%     '_' num2str(clock_array(4)) ...
-%     '_' num2str(clock_array(5))];
+
 % 
 % instruction.type = 00;
 % instruction.string = stackname;
 % disp('sending instruction...')
-% [return_info,success,handles] = do_instruction(instruction,handles);
+% [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
 % user_confirm = msgbox(sprintf('Stack Taken with 2um spacing?\nUse name: %s',...
 %     stackname));
@@ -5443,24 +5489,64 @@ guidata(hObject,handles);
 % acq_gui_data.data.stackname = stackname;
 % guidata(acq_gui,acq_gui_data)
 
+disp('take stack')
+instruction.type = 92;
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+acq_gui_data.data.stack = return_info.image;
+acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
+acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
+acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
+handles.data.image_zero_order_coord = return_info.image_zero_order_coord;
+handles.data.image_um_per_px = return_info.image_um_per_px;
+handles.data.stack_um_per_slice = return_info.stack_um_per_slice;     
+handles.data.stack = return_info.image;
 
 disp('detecting nuclei...')
-instruction.type = 74;
-instruction.stackname = stackname;
-[return_info,success,handles] = do_instruction(instruction,handles);
-acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
-handles.data.nuclear_locs = return_info.nuclear_locs;
+instruction.type = 75;
 
-acq_gui_data.data.nuclear_locs = handles.data.nuclear_locs;
+instruction.filename = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5)) '_stack'];
+
+instruction.stackmat = handles.data.stack;
+
+instruction.image_zero_order_coord = handles.data.image_zero_order_coord;
+instruction.image_um_per_px = handles.data.image_um_per_px;
+instruction.stack_um_per_slice = handles.data.stack_um_per_slice;
+
+[return_info,success,handles] = do_instruction_analysis(instruction,handles);
+
+acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
+acq_gui_data.data.fluor_vals = return_info.fluor_vals;
+handles.data.nuclear_locs = return_info.nuclear_locs;
+handles.data.fluor_vals = return_info.fluor_vals;
+
 guidata(acq_gui,acq_gui_data)
 guidata(hObject,handles)
+
 assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 
+disp('computing optimal locations and cell groups...')
+instruction.type = 76;
+instruction.nuclear_locs = handles.data.nuclear_locs;
+instruction.z_locs = z_offsets;
+instruction.z_slice_width = 30;
+
+[return_info,success,handles] = do_instruction_analysis(instruction,handles);
+
+handles.data.cells_targets = return_info.cells_targets;
+acq_gui_data.data.cells_targets = return_info.cells_targets;
+
+guidata(acq_gui,acq_gui_data)
+guidata(hObject,handles)
+
+% move objective to ref position as a safety
 set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
 set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
 set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 
 [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
 
 
 % whole cell or cell-attached?
@@ -5637,7 +5723,7 @@ switch clamp_choice2
 %         set(acq_gui_data.Cell1_type_popup,'Value',1)
         set(acq_gui_data.Cell2_type_popup,'Value',1)
         set(acq_gui_data.test_pulse,'Value',1)
-%         whole_cell = 1;
+%         whole_cell = 1;msaccept
     case 'Current Clamp'
 %         set(acq_gui_data.Cell1_type_popup,'Value',2)
         set(acq_gui_data.Cell2_type_popup,'Value',2)
@@ -5673,89 +5759,619 @@ set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
 set(acq_gui_data.trigger_seq,'Value',1)
 set(acq_gui_data.loop_count,'String',num2str(1))
 num_map_locations = size(obj_positions,1);
-num_design_iters = 1;
-design_iter_std_thresh = [0 .75];%percentile cutoff
 
-i = 0;
-for ii = 1:num_map_locations*num_design_iters
-    ii
-    new_i = ceil(ii/num_design_iters)
-    rep_ind = mod(ii-1,num_design_iters)+1
-    if num_design_iters > 1 && new_i == i
-        reduce_map_by_std = 1;
-    else
-        i = new_i
-        % move obj
-        set(handles.thenewx,'String',num2str(obj_positions(i,1)))
-        set(handles.thenewy,'String',num2str(obj_positions(i,2)))
-        set(handles.thenewz,'String',num2str(obj_positions(i,3)))
-        [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-        reduce_map_by_std = 0;
-    end
-%     handles = guidata(hObject);
+
+
+for i = 1:num_map_locations
+    
+    % move obj
+    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
+    [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+    reduce_map_by_std = 0;
+    
+    
+    % SETUP FOR ONLINE DESIGN!!!
+
+    % Initialize the five cell groups
+    undefined_cells= cell(0); undefined_cells{1}=ones(n_cell_this_plane,1);%A
+    potentially_disconnected_cells= cell(0); potentially_disconnected_cells{1}=zeros(n_cell_this_plane,1);%B
+    dead_cells= cell(0); dead_cells{1}=zeros(n_cell_this_plane,1);%D
+    potentially_connected_cells= cell(0); potentially_connected_cells{1}=zeros(n_cell_this_plane,1);%C
+    alive_cells= cell(0);
+    alive_cells{1}=zeros(n_cell_this_plane,1);
+    
+    iter=1;
+    mpp_undefined=cell(0);
+    trials_locations_undefined=cell(0);
+    trials_powers_undefined=cell(0);
+
+    mpp_disconnected=cell(0);
+    trials_locations_disconnected=cell(0);
+    trials_powers_disconnected=cell(0);
+
+    mpp_connected=cell(0);
+    trials_locations_connected=cell(0);
+    trials_powers_connected=cell(0);
+
+    designs_undefined=[];designs_connected=[];designs_disconnected=[];
+    outputs_undefined=[];outputs_connected=[];outputs_disconnected=[];
+    
+    % get info for this group of cells
+    cell_group_list = handles.data.cells_targets.cell_group_list{i};
+    n_cell_this_plane = length(cell_group_list);
+    
+    pi_target_selected = handles.data.cells_targets.pi_target_selected{i};
+    inner_normalized_products = handles.data.cells_targets.inner_normalized_products{i};
+    target_locations_selected = handles.data.cells_targets.target_locations_selected{i};
+    power_selected = handles.data.cells_targets.power_selected{i};
+    target_locations_all = handles.data.cells_targets.target_locations_all{i};
+    cell_neighbours = handles.data.cells_targets.cell_neighbours{i};
+    target_locations_nuclei = handles.data.cells_targets.target_locations_nuclei{i};
+    power_nuclei = handles.data.cells_targets.power_nuclei{i};
+    pi_target_nuclei = handles.data.cells_targets.pi_target_nuclei{i};
+    loc_to_cell_nuclei = handles.data.cells_targets.loc_to_cell_nuclei{i};
+    
+    variational_params_path.pi=var_pi_ini*ones(n_cell_this_plane,1);
+    variational_params_path.alpha=var_alpha_initial*ones(n_cell_this_plane,1);
+    variational_params_path.beta=var_beta_initial*ones(n_cell_this_plane,1);
+    variational_params_path.alpha_gain=var_alpha_gain_initial*ones(n_cell_this_plane,1);
+    variational_params_path.beta_gain=var_beta_gain_initial*ones(n_cell_this_plane,1);
+    
+    mean_gamma_current=zeros(n_cell_this_plane,1);
+    mean_gain_current=gain_template*ones(n_cell_this_plane,1);
+    gamma_path=zeros(n_cell_this_plane,1);var_gamma_path=zeros(n_cell_this_plane,1);
+    
+    n_trials=0;
+    id_continue=1;% an indicator
     
     % get this z-depth spots
     
-    thresh_dist = 15;
-    nuclear_locs = handles.data.nuclear_locs;
-    % cut by z
-    nuclear_locs = ...
-        nuclear_locs(nuclear_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
-                       nuclear_locs(:,3) < (z_offsets(i) + thresh_dist),:);
-    % cut by std dev  
-    if reduce_map_by_std
-        disp('DOING ONLINE DESIGN')      
-        this_std_map = stddev_maps{i}{end}{1}; % this map location, highest pow, ch 1
-        [sorted_stds,sort_order] = sort(this_std_map(:),1,'descend');
-        sort_order = sort_order(~isnan(sorted_stds));
-        [x_inds, y_inds] = ind2sub(size(this_std_map),sort_order);
-        num_spots = ceil(length(sort_order)*(1 - design_iter_std_thresh(rep_ind)));
-        good_locations = [x_inds(1:num_spots) y_inds(1:num_spots)]*1 - 151;
-        dist_mat = squareform(pdist([nuclear_locs(:,[1 2]); good_locations]));
-        dist_mat = dist_mat(1:size(nuclear_locs,1),size(nuclear_locs,1)+1:end);
-        response_locs = any(dist_mat < 5*sqrt(2),2);
-        nuclear_locs = nuclear_locs(response_locs,:);
-        assignin('base','nuclear_locs',nuclear_locs)
-        assignin('base','response_locs',response_locs)
-        assignin('base','this_std_map',this_std_map)
+    loc_to_cell = 1:size( target_locations_selected,1);
+    
+    % Online design:
+    while ((n_trials < trial_max) & (id_continue>0))
+        % while not exceeding the set threshold of total trials
+        % and there are new cells being excluded
+
+
+        % Conduct random trials
+
+        % On the undefined cells
+        mpp_undefined{iter}=[];
+        trials_locations_undefined{iter}=[];
+        trials_powers_undefined{iter}=[];
+
+        if sum(undefined_cells{iter})>0
+
+            cell_list= find(undefined_cells{iter});
+            gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
+
+            [trials_locations, trials_powers] = random_design(...
+                target_locations_selected,power_selected,...
+                inner_normalized_products,single_spot_threshold,...
+                gamma_estimates,prob_weight,...
+                id_notconnected, loc_to_cell,... 
+                cell_list,n_spots_per_trial,K_undefined,n_replicates);
+            [cells_probabilities_undefined, ~] = get_prob_and_size(...
+                pi_target_selected,trials_locations,trials_powers,...
+                stim_unique,prob_trace);
+
+            % Generate mpp given the trials
+            [mpp_temp] = draw_samples(...
+                trials_locations, trials_powers, pi_target_selected, background_rate,...
+                v_th_known, v_reset_known, g_truth, gain_truth,gamma_truth,...
+                current_template, funcs, delay_params,stim_threshold,time_max);
+            mpp_undefined{iter}=mpp_temp;
+            trials_locations_undefined{iter}=trials_locations;
+            trials_powers_undefined{iter}=trials_powers;
+        end
+        %-------
+        % Conduct trials on group B, the potentially disconnected cells
+        mpp_disconnected{iter}=[];
+        trials_locations_disconnected{iter}=[];
+        trials_powers_disconnected{iter}=[];
+        if sum(potentially_disconnected_cells{iter})>0
+            % Find cells with close to zero gammas
+            cell_list= find(potentially_disconnected_cells{iter});
+            gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
+            [trials_locations,  trials_powers] = random_design(...
+                target_locations_selected,power_selected,...
+                inner_normalized_products,single_spot_threshold,...
+                gamma_estimates_confirm,0,...
+                 id_notconnected, loc_to_cell,... 
+                cell_list,n_spots_per_trial,K_disconnected,n_replicates);
+            [cells_probabilities_disconnected, ~] = get_prob_and_size(...
+                pi_target_selected,trials_locations,trials_powers,...
+                stim_unique,prob_trace);
+
+            % Conduct trials
+            [mpp_temp] = draw_samples(...
+                trials_locations, trials_powers, pi_target_selected, background_rate,...
+                v_th_known, v_reset_known, g_truth, gain_truth,gamma_truth,...
+                current_template,  funcs,    delay_params,stim_threshold,time_max);
+            mpp_disconnected{iter}=mpp_temp;
+            trials_locations_disconnected{iter}=trials_locations;
+            trials_powers_disconnected{iter}=trials_powers;
+        end
+
+        %-------
+        % Conduct trials on group C, the potentially connected cells
+        mpp_connected{iter}=[];
+        trials_locations_connected{iter}=[];
+        trials_powers_connected{iter}=[];
+        if sum(potentially_connected_cells{iter})>0
+            % Find cells with close to zero gammas
+            cell_list= find(potentially_connected_cells{iter});
+            gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
+            [trials_locations,  trials_powers] = random_design(...
+                target_locations_nuclei,power_nuclei,...
+                inner_normalized_products,single_spot_threshold,...
+                gamma_estimates_confirm,0,...
+                connected,  loc_to_cell_nuclei,... 
+                cell_list,1,K_connected,n_replicates);
+            %[cells_probabilities_connected, ~] = get_prob_and_size(...
+            %    pi_target_nuclei,trials_locations,trials_powers,...
+            %    stim_unique,prob_trace);
+            [~, stim_size_connected] = get_prob_and_size(...
+                pi_target_nuclei,trials_locations,trials_powers,...
+                stim_unique,prob_trace);
+
+            % Conduct trials
+            [mpp_temp] = draw_samples(...
+                trials_locations, trials_powers, pi_target_nuclei, background_rate,...
+                v_th_known, v_reset_known, g_truth, gain_truth,gamma_truth,...
+                current_template,  funcs,    delay_params,stim_threshold,time_max);
+            mpp_connected{iter}=mpp_temp;
+            trials_locations_connected{iter}=trials_locations;
+            trials_powers_connected{iter}=trials_powers;
+        end
+
+
+        %------------------------------------------%
+        % Transform the data
+        % no need to record the probabilities all the time..
+
+        %cells_probabilities_undefined;
+        if sum(undefined_cells{iter})>0
+            for i_trial = 1:size(cells_probabilities_undefined,1)
+                outputs_undefined(i_trial,1)=length(mpp_undefined{iter}(i_trial).times);
+            end
+            n_trials=n_trials+i_trial;
+        end
+        if  sum(potentially_disconnected_cells{iter})>0
+            %cells_probabilities_disconnected;
+            for i_trial = 1:size(cells_probabilities_disconnected,1)
+                outputs_disconnected(i_trial,1)=length(mpp_disconnected{iter}(i_trial).times);
+            end
+            n_trials=n_trials+i_trial;
+        end
+        if  sum(potentially_connected_cells{iter})>0
+            %cells_probabilities_disconnected;
+    %         for i_trial = 1:size(stim_size_connected,1)
+    %             outputs_connected(i_trial,1)=length(mpp_connected{iter}(i_trial).times);
+    %         end
+            n_trials=n_trials+size(stim_size_connected,1);
+        end
+
+        %------------------------------------------%
+        % Analysis:
+
+         variational_params_path.pi(:,iter+1)=var_pi_ini*ones(n_cell_this_plane,1);
+        variational_params_path.alpha(:,iter+1)=variational_params_path.alpha(:,iter);
+        variational_params_path.beta(:,iter+1)=variational_params_path.beta(:,iter);
+        variational_params_path.alpha_gain(:,iter+1)=variational_params_path.alpha_gain(:,iter);
+        variational_params_path.beta_gain(:,iter+1)=variational_params_path.beta_gain(:,iter);
+
+
+        %------------------------------------------------------%
+        % Fit VI on Group A: the undefined cells
+        mean_gamma_undefined=zeros(n_cell_this_plane,1);
+
+        if sum(undefined_cells{iter})>0
+            cell_list= find(undefined_cells{iter});
+            % Update variational and prior distribution
+           variational_params=struct([]);
+            for i_cell_idx = 1:length(cell_list)
+                i_cell=cell_list(i_cell_idx);
+                variational_params(i_cell_idx).pi = variational_params_path.pi(i_cell,iter);
+                variational_params(i_cell_idx).p_logit = log(variational_params(i_cell_idx).pi/(1-variational_params(i_cell_idx).pi));
+                variational_params(i_cell_idx).alpha = variational_params_path.alpha(i_cell,iter);
+                variational_params(i_cell_idx).beta = variational_params_path.beta(i_cell,iter);
+            end
+            prior_params.pi0= [variational_params(:).pi]';
+            prior_params.alpha0= [variational_params(:).alpha]';
+            prior_params.beta0 = [variational_params(:).beta]';
+
+
+
+            designs_remained=cells_probabilities_undefined(:,cell_list);
+            active_trials=find(sum(designs_remained,2)>1e-3);
+            designs_remained=designs_remained(active_trials,:);
+            outputs_remained=outputs_undefined(active_trials,:);
+
+            % find neighbours that are not in cell_list:
+            neighbour_list=find(sum(cell_neighbours(cell_list,:),1)>0)';
+            neighbour_list=setdiff(neighbour_list,cell_list);
+            designs_neighbours=cells_probabilities_undefined(active_trials,neighbour_list);
+            gamma_neighbours=mean_gamma_current(neighbour_list);
+
+            lklh_func=@calculate_likelihood_bernoulli;
+            % calculate_likelihood_bernoulli for multiple events 
+            [parameter_history,~] = fit_working_model_vi(...
+                designs_remained,outputs_remained,background_rt, ...
+                variational_params,prior_params,C_threshold,...
+                designs_neighbours,gamma_neighbours,...
+                S,epsilon,eta_logit,eta_beta,maxit,lklh_func);
+
+            % Record the variational parameters
+           variational_params_path.pi(cell_list,iter+1) = parameter_history.pi(:,end);
+            variational_params_path.alpha(cell_list,iter+1) = parameter_history.alpha(:,end);
+            variational_params_path.beta(cell_list,iter+1) = parameter_history.beta(:,end);
+
+            [mean_gamma_temp, ~] = calculate_posterior_mean(parameter_history.alpha(:,end),parameter_history.beta(:,end),0,1);
+
+            mean_gamma_undefined(cell_list,1)=mean_gamma_temp;
+            mean_gamma_current(cell_list)=mean_gamma_temp;
+            gamma_path(cell_list,iter+1)=mean_gamma_temp;
+
+        end
+        %-------------------------------------------------------------%
+
+        %----------------------------------------------------------------%
+        % Fit the VI on Group B: potentially disconnected cells
+        mean_gamma_disconnected=ones(n_cell_this_plane,1);
+        if sum(potentially_disconnected_cells{iter})>0
+            cell_list= find(potentially_disconnected_cells{iter});
+           variational_params=struct([]);
+            for i_cell_idx = 1:length(cell_list)
+                i_cell=cell_list(i_cell_idx);
+                variational_params(i_cell_idx).pi = variational_params_path.pi(i_cell,iter);
+                variational_params(i_cell_idx).p_logit = log(variational_params(i_cell_idx).pi/(1-variational_params(i_cell_idx).pi));
+                variational_params(i_cell_idx).alpha = variational_params_path.alpha(i_cell,iter);
+                variational_params(i_cell_idx).beta = variational_params_path.beta(i_cell,iter);
+            end
+
+            prior_params.pi0= [variational_params(:).pi]';
+            prior_params.alpha0= [variational_params(:).alpha]';
+            prior_params.beta0 = [variational_params(:).beta]';
+            % Include only the remaining cells
+
+            designs_remained=cells_probabilities_disconnected(:,cell_list);
+            active_trials=find(sum(designs_remained,2)>1e-3);
+            designs_remained=designs_remained(active_trials,:);
+            outputs_remained=outputs_disconnected(active_trials,:);
+
+             % find neighbours that are not in cell_list:
+            neighbour_list=find(sum(cell_neighbours(cell_list,:),1)>0)';
+            neighbour_list=setdiff(neighbour_list,cell_list);
+            designs_neighbours=cells_probabilities_disconnected(active_trials,neighbour_list);
+            gamma_neighbours=mean_gamma_current(neighbour_list);
+
+            lklh_func=@calculate_likelihood_bernoulli;
+            [parameter_history,~] = fit_working_model_vi(...
+                designs_remained,outputs_remained,background_rt, ...
+                variational_params,prior_params,C_threshold,...
+                designs_neighbours,gamma_neighbours,...
+                S,epsilon,eta_logit,eta_beta,maxit,lklh_func);
+
+            % Record the variational parameters
+            variational_params_path.pi(cell_list,iter+1) = parameter_history.pi(:,end);
+            variational_params_path.alpha(cell_list,iter+1) = parameter_history.alpha(:,end);
+            variational_params_path.beta(cell_list,iter+1) = parameter_history.beta(:,end);
+
+            [mean_gamma_temp, ~] = calculate_posterior_mean(parameter_history.alpha(:,end),parameter_history.beta(:,end),0,1);
+
+            mean_gamma_disconnected(cell_list,1)=mean_gamma_temp;
+            mean_gamma_current(cell_list)=mean_gamma_temp;
+            gamma_path(cell_list,iter+1)=mean_gamma_temp;
+        end
+        %---------------------------------------------%
+
+        %----------------------------------------------%
+        % Fit the VI on group C: potentially connected cells
+        % This step is different, we shoul fit each neuron seperately if possible
+        mean_gamma_connected=zeros(n_cell_this_plane,1);
+        variance_gamma_connected=ones(n_cell_this_plane,1);
+
+        if sum(potentially_connected_cells{iter})>0
+            cell_list= find(potentially_connected_cells{iter});
+            designs_remained=stim_size_connected(:,cell_list);
+
+            % Break the trials into unrelated clusters
+            if sum(potentially_connected_cells{iter})>1
+                % Use inner product:
+                adj_corr= abs( designs_remained'*designs_remained)./size(designs_remained,1);
+                adj_corr=1*(adj_corr> (eff_stim_threshold/gain_template/2)^2);
+
+                cc_corr=expm(adj_corr);
+                cell_cluster_ind=zeros(length(cell_list),1);
+                cell_numbers = find(cell_list);
+                cluster_id=1;
+                for i_cell_idx = 1:length(cell_list)
+
+                    if cell_cluster_ind(i_cell_idx)==0
+                        this_id=cluster_id;
+                        cluster_id=cluster_id+1;
+                    else
+                        this_id = cell_cluster_ind(i_cell_idx);
+                    end
+                    cell_cluster_ind( find(cc_corr(:,i_cell_idx)))=this_id;
+                end
+                % Now turn the cell_cluster_ind into list of cells
+                n_cluster=max(cell_cluster_ind);
+                cluster_of_cells= cell([n_cluster 1]);
+                for i_cluster = 1:n_cluster
+                    cluster_of_cells{i_cluster}=find(cell_cluster_ind==i_cluster);
+                end
+
+            else
+                n_cluster=1;
+                cluster_of_cells= cell([n_cluster 1]);
+                cluster_of_cells{1}=1;
+            end
+
+
+            % Now fit the vi model for each of the cluster:
+            for i_cluster= 1:n_cluster
+
+                neighbour_list=find(sum(cell_neighbours(cell_list(cluster_of_cells{i_cluster}),:),1)>0)';
+
+                variational_params=struct([]);
+                for i_cell_idx = 1:length(neighbour_list)
+                    i_cell=neighbour_list(i_cell_idx);
+                    variational_params(i_cell_idx).pi = variational_params_path.pi(i_cell,iter);
+                    variational_params(i_cell_idx).p_logit = log(variational_params(i_cell_idx).pi/(1-variational_params(i_cell_idx).pi));
+                    variational_params(i_cell_idx).alpha = variational_params_path.alpha(i_cell,iter);
+                    variational_params(i_cell_idx).beta = variational_params_path.beta(i_cell,iter);
+                    variational_params(i_cell_idx).alpha_gain = variational_params_path.alpha_gain(i_cell,iter);
+                    variational_params(i_cell_idx).beta_gain = variational_params_path.beta_gain(i_cell,iter);
+                end
+
+                prior_params.pi0= [variational_params(:).pi]';
+                prior_params.alpha0= [variational_params(:).alpha]';
+                prior_params.beta0 = [variational_params(:).beta]';
+                prior_params.alpha0_gain= [variational_params(:).alpha_gain]';
+                prior_params.beta0_gain =[variational_params(:).beta_gain]';
+
+                designs_remained=stim_size_connected(:,neighbour_list);
+                active_trials=find(sum(designs_remained,2)>stim_threshold);
+                designs_remained=designs_remained(active_trials,:);
+                mpp_remained=mpp_connected{iter}(active_trials);
+
+    %             
+    %             % find neighbours that are not in cell_list:
+    %             neighbour_list=find(sum(cell_neighbours(cell_list(cluster_of_cells{i_cluster}),:),1)>0)';
+    %             neighbour_list=setdiff(neighbour_list,cell_list(cluster_of_cells{i_cluster}));
+    %             designs_neighbours=stim_size_connected(active_trials,neighbour_list);
+    %             gamma_neighbours=mean_gamma_current(neighbour_list);
+    %               gain_neighbours=mean_gain_current(neighbour_list);
+    %       
+            designs_neighbours=[];        gamma_neighbours=[];         gain_neighbours=[];
+                [parameter_history] = fit_full_model_vi(...
+                    designs_remained, mpp_remained, background_rate, ...
+                    prob_trace_full,    stim_grid,...
+                    stim_scale,eff_stim_threshold,gain_bound,...
+                    variational_params,prior_params,C_threshold,stim_threshold,...
+                    designs_neighbours,gamma_neighbours,gain_neighbours,...
+                    S,epsilon,eta_logit,eta_beta,maxit);
+
+
+                %      lklh_func=@calculate_likelihood_bernoulli;
+                %     [parameter_history,~] = fit_working_model_vi(...
+                %             designs_remained,outputs_remained,background_rt, ...
+                %             variational_params,prior_params,C_threshold,...
+                %             S,epsilon,eta_logit,eta_beta,maxit,lklh_func);
+                %
+
+               %cell_list(cluster_of_cells{i_cluster})
+                variational_params_path.pi(neighbour_list,iter+1) = parameter_history.pi(:,end);
+            variational_params_path.alpha(neighbour_list,iter+1) = parameter_history.alpha(:,end);
+            variational_params_path.beta(neighbour_list,iter+1) = parameter_history.beta(:,end);
+             variational_params_path.alpha_gain(neighbour_list,iter+1) = parameter_history.alpha_gain(:,end);
+            variational_params_path.beta_gain(neighbour_list,iter+1) = parameter_history.beta_gain(:,end);
+
+
+            [mean_gamma_temp, var_gamma_temp] = calculate_posterior_mean(...
+                parameter_history.alpha(:,end),parameter_history.beta(:,end),0,1);
+            [mean_gain_temp, ~] = calculate_posterior_mean(...
+                parameter_history.alpha_gain(:,end),parameter_history.beta_gain(:,end),gain_bound.low,gain_bound.up);
+
+
+
+                variance_gamma_connected(neighbour_list)=var_gamma_temp;
+                var_gamma_path(neighbour_list,iter+1)=var_gamma_temp;
+                mean_gamma_connected(neighbour_list,1)=mean_gamma_temp;
+                mean_gamma_current(neighbour_list)=mean_gamma_temp;
+                mean_gain_current(neighbour_list)=mean_gain_temp;
+                gamma_path(neighbour_list,iter+1)=mean_gamma_temp;
+
+            end
+        end
+        change_gamma = sqrt(variance_gamma_connected);
+
+            %------------------------------------------------------%
+
+    % Debug 
+    %         etimes1=[mpp_remained(trials_locations==16).times];
+    %         etimes2=[mpp_remained(trials_locations==14).times];
+    %         
+    %         figure(2)
+    %         scatter(etimes1,0.07*ones(length(etimes1),1),'MarkerFaceColor','r')
+    %         hold on;
+    %          line(1:time_max, reshape(probs(:,1,1), [time_max 1]),'Color','r','LineStyle','-')
+    %          line(1:time_max, reshape(probs(:,1,2), [time_max 1]),'Color','r','LineStyle','--')
+    %         
+    %          
+    %          scatter(etimes2,0.05*ones(length(etimes2),1),'MarkerFaceColor','b')
+    %          line(1:time_max, reshape(probs(:,2,1), [time_max 1]),'Color','b','LineStyle','-')
+    %          line(1:time_max, reshape(probs(:,2,2), [time_max 1]),'Color','b','LineStyle','--')
+    %         
+    %          
+    %        hold off;
+    %        
+    % %        lines( reshape(probs(:,ii,j)
+    %        ylim([0 0.1])
+
+           %
+    %        gain_check = mean_gain_temp';
+    %         gamma_check=mean_gamma_temp;
+    %        gain_check=gain_truth([14 16])';
+    %        gamma_check=gamma_truth([14 16]);
+    %        est_stim_received=designs_remained.*(ones(size(designs_remained,1),1)*gain_check);
+    %         % estimate the number of events:
+    % %        est_events = mean_gamma_temp;
+    % %        for i_cell_temp = 1:length(est_events)
+    % %            est_events(i_cell_temp)=0;
+    % %            for i_trial = 1:size(designs_remained,1)
+    % %                est_events(i_cell_temp)=est_events(i_cell_temp)+stim_to_prob(...
+    % %                    est_stim_received(i_trial,i_cell_temp),stim_unique,prob_trace);
+    % %            end
+    % %        end
+    %     % 
+    %     stim_set=unique(est_stim_received,'rows');
+    %     probs=zeros(time_max,size(stim_set,1),size(stim_set,2));
+    %     for ii = 1:size(stim_set,1)
+    %        for j= 1:size(stim_set,2)
+    %                stim_index=max(1,round(stim_set(ii,j)*stim_scale));
+    %    probs(:,ii,j)=gamma_check(j)*prob_trace_full(stim_index,:);
+    %            
+    %        end
+    %     end
+    %             
+    %             
+    % 
+
+        %
+
+        %------------------------------------------------------%
+        % Moving the cell between groups
+        % mean_gamma_undefined & undefined_cells{iter} % A
+        % mean_gamma_disconnected & potentially_disconnected_cells{iter} %B
+        % mean_gamma_connected & potentially_connected_cells{iter} %C
+
+        undefined_to_disconnected = intersect(find(mean_gamma_undefined<disconnected_threshold),find( undefined_cells{iter}));
+        undefined_to_connected = intersect(find(mean_gamma_undefined>connected_threshold),find( undefined_cells{iter}));
+        % cells move together with their neighbours
+        undefined_to_disconnected=find(sum(cell_neighbours(undefined_to_disconnected,:),1)>0)';
+        undefined_to_connected =find(sum(cell_neighbours(undefined_to_connected,:),1)>0);
+        % if there are conflicts, move them to the potentially connected cells
+        undefined_to_disconnected=setdiff(undefined_to_disconnected,undefined_to_connected);
+
+        disconnected_to_undefined = intersect(find(mean_gamma_disconnected>disconnected_confirm_threshold),...
+            find(potentially_disconnected_cells{iter}));
+        disconnected_to_dead = intersect(find(mean_gamma_disconnected<disconnected_confirm_threshold),...
+            find(potentially_disconnected_cells{iter}));
+
+        disconnected_to_undefined=find(sum(cell_neighbours(disconnected_to_undefined,:),1)>0);
+        % if there are conflicts, move them to the potentially connected cells
+        disconnected_to_dead=setdiff(disconnected_to_dead,disconnected_to_undefined);
+
+
+        connected_to_dead = intersect(find(mean_gamma_connected<disconnected_confirm_threshold),...
+            find(potentially_connected_cells{iter}));
+        connected_to_alive = intersect(find(mean_gamma_connected>connected_confirm_threshold),...
+            find(potentially_connected_cells{iter}));
+        change_gamma =abs(gamma_path(:,iter+1)-gamma_path(:,iter));
+        connected_to_alive = intersect(find(change_gamma<change_threshold),...
+            connected_to_alive);
+
+        % Eliminate the weakly identifiable pairs if they are both assign to a
+        % group:
+        %moved_cells = [connected_to_dead; connected_to_alive]';
+        %cells_and_neighbours=find(sum(cell_neighbours(moved_cells,:),1)>0);
+        %neighbours_not_included=intersect(find(potentially_connected_cells{iter}), setdiff(cells_and_neighbours,moved_cells));
+        %blacklist=find(sum(cell_neighbours(neighbours_not_included,:),1)>0);
+        %connected_to_dead=setdiff(connected_to_dead ,blacklist);
+        %connected_to_alive=setdiff(connected_to_alive,blacklist);
+
+        % Update the cell lists:
+        undefined_cells{iter+1}=undefined_cells{iter};
+        undefined_cells{iter+1}(undefined_to_disconnected)=0;undefined_cells{iter+1}(undefined_to_connected)=0;
+        undefined_cells{iter+1}(disconnected_to_undefined)=1;
+
+        potentially_disconnected_cells{iter+1}=potentially_disconnected_cells{iter};
+        potentially_disconnected_cells{iter+1}(disconnected_to_dead)=0;potentially_disconnected_cells{iter+1}(disconnected_to_undefined)=0;
+        potentially_disconnected_cells{iter+1}(undefined_to_disconnected)=1;
+
+
+        potentially_connected_cells{iter+1}=potentially_connected_cells{iter};
+        potentially_connected_cells{iter+1}(connected_to_dead)=0;potentially_connected_cells{iter+1}(connected_to_alive)=0;
+        potentially_connected_cells{iter+1}(undefined_to_connected)=1;
+
+        dead_cells{iter+1}=dead_cells{iter};
+        dead_cells{iter+1}(disconnected_to_dead)=1;dead_cells{iter+1}(connected_to_dead)=1;
+
+        alive_cells{iter+1}=alive_cells{iter};
+        alive_cells{iter+1}(connected_to_alive)=1;
+
+        %
+        iter=iter+1;
+        %
+        if sum(dead_cells{iter}+alive_cells{iter})==n_cell_this_plane
+            id_continue=0;% terminate
+        else
+            id_continue=1;
+        end
+        % Plot the progress
+
+        fprintf('Number of trials so far: %d; number of cells killed: %d\n',n_trials, sum(dead_cells{iter}+alive_cells{iter}))
+
     end
-    nearby_locs = [handles.data.nearby_locations];
-    nearby_locs = ...
-        nearby_locs(nearby_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
-                       nearby_locs(:,3) < (z_offsets(i) + thresh_dist),:);
-% 	nearby_trunc = ceil(size(nearby_locs,1)/2);
-%     nearby_choice = randsample(size(nearby_locs,1),nearby_trunc);
-%     nearby_locs = nearby_locs(nearby_choice,:);
-%     rand_locs = handles.data.rand_locs;
-%     rand_locs = ...
-%         rand_locs(rand_locs(:,3) > (z_offsets(i) - 21) & ...
-%                        rand_locs(:,3) < (z_offsets(i) + 21),:);               
-    assignin('base','nuclear_locs_for_stim',nuclear_locs)
-    instruction.type = 82;
-    if num_design_iters == 1 || reduce_map_by_std
-        instruction.multitarg_locs = [];
-        instruction.single_spot_locs = [nuclear_locs];
-        set(handles.target_intensity,'String',user_input_powers)
-        set(handles.num_repeats,'String',num2str(20));
-    else
-        instruction.multitarg_locs = [nuclear_locs];
-        instruction.single_spot_locs = [];
-        set(handles.target_intensity,'String',initial_search_power)
-        set(handles.num_repeats,'String',num2str(1));
-    end
-    %nuclear_locs];
-%     instruction.nearby_locs = nearby_locs;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     instruction.targs_per_stim = 3;
     instruction.repeat_target = 10;
-%     if ~isempty(instruction.multitarg_locs)
+
         instruction.num_stim = ...
             size(instruction.multitarg_locs,1)*ceil(instruction.repeat_target/instruction.targs_per_stim);
-%     else
-%         instruction.num_stim = 0;
-%     end
+
     instruction.do_target = 1;
     assignin('base','instruction',instruction)
-    [return_info,success,handles] = do_instruction(instruction,handles);
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     guidata(hObject,handles)
     
     set(handles.num_stim,'String',num2str(return_info.num_stim));
@@ -5786,7 +6402,7 @@ for ii = 1:num_map_locations*num_design_iters
         handles.total_duration = total_duration;
         instruction.waittime = total_duration + 120;
         disp('sending instruction...')
-        [return_info,success,handles] = do_instruction(instruction,handles);
+        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 %         acq_gui_data = get_acq_gui_data();
 %         acq_gui_data.data.stim_key =  return_info.stim_key;
         acq_gui_data.data.sequence =  this_subseq;
@@ -5854,5 +6470,5 @@ end
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
-[return_info,success,handles] = do_instruction(instruction,handles);
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)

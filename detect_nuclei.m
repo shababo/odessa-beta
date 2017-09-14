@@ -1,4 +1,4 @@
-function [nuclear_locs,detect_img,fluor_vals,nuclear_locs_image_coord,plane_fit] = detect_nuclei(filename,varargin)
+function [nuclear_locs,fluor_vals,nuclear_locs_image_coord,plane_fit] = detect_nuclei(filename,varargin)
 
 if ~isempty(varargin) && ~isempty(varargin{1})
     image_um_per_px = varargin{1};
@@ -24,13 +24,20 @@ else
     do_detect = 1;
 end
 
-% if do_detect
+if length(varargin) > 4 && ~isempty(varargin{5})
+    fluor_min = varargin{5};
+else
+    fluor_min = 140;
+end
+
+if do_detect
     peak_detection_12(filename);
-% end
+end
 
 load([filename '.mat'])
-params_em_reduce = filter_nuclear_detection(params_em,35);
-params_em_reduce = params_em;
+
+params_em_reduce = filter_nuclear_detection(params_em,fluor_min);
+% params_em_reduce = params_em;
 nuclear_locs = params_em_reduce([3 2 4],:);
 fluor_vals = params_em_reduce(1,:);
 nuclear_locs_image_coord = nuclear_locs;
@@ -65,7 +72,7 @@ b = plane_fit_points(:,3);
 
 plane_fit = inv(A'*A)*A'*b;
 Z = plane_fit(1)*X + plane_fit(2)*Y + plane_fit(3);
-
+detect_img
 res = b - A*plane_fit;
 [min_z, min_z_cell] = max(-res)
 Z_offset = min_z;%plane_fit(1)*offset_cells(min_z_cell,1) + plane_fit(2)*offset_cells(min_z_cell,2) + plane_fit(3) 
@@ -87,7 +94,7 @@ scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,4),fluor_vals/6,'fi
 
 % end
 
-detect_img = [];
+% detect_img = [];
 
 % detect_img = plot_nuclear_detect_3D([filename '.tif'],nuclear_locs_image_coord,[],ceil(fluor_vals/10) + 1,fluor_vals);
 
