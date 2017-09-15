@@ -5339,6 +5339,7 @@ function map_w_online_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+params = handles.data.params;
 
 set(handles.close_socket_check,'Value',0)
 guidata(hObject,handles);
@@ -5529,15 +5530,20 @@ guidata(hObject,handles)
 assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 
 disp('computing optimal locations and cell groups...')
-instruction.type = 76;
-instruction.nuclear_locs = handles.data.nuclear_locs;
-instruction.z_locs = z_offsets;
-instruction.z_slice_width = 30;
+% instruction.type = 76;
+% instruction.nuclear_locs = handles.data.nuclear_locs;
+% instruction.z_locs = z_offsets;
+% instruction.z_slice_width = handles.data.params.exp.z_slice_width;
+% 
+% [return_info,success,handles] = do_instruction_analysis(instruction,handles);
+% handles.data.cells_targets = return_info.cells_targets;
 
-[return_info,success,handles] = do_instruction_analysis(instruction,handles);
+% z_slice_width = 30;
+handles.data.cells_targets = get_groups_and_stim_locs(...
+                handles.data.nuclear_locs, handles.data.params,...
+                z_offsets);
 
-handles.data.cells_targets = return_info.cells_targets;
-acq_gui_data.data.cells_targets = return_info.cells_targets;
+acq_gui_data.data.cells_targets = handles.data.cells_targets;
 
 guidata(acq_gui,acq_gui_data)
 guidata(hObject,handles)
@@ -5548,8 +5554,6 @@ set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
 set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 
 [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-
-
 
 % whole cell or cell-attached?
 % Construct a questdlg with three options
@@ -5771,11 +5775,25 @@ for i = 1:num_map_locations
     set(handles.thenewy,'String',num2str(obj_positions(i,2)))
     set(handles.thenewz,'String',num2str(obj_positions(i,3)))
     [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-    reduce_map_by_std = 0;
     
     
     % SETUP FOR ONLINE DESIGN!!!
-
+    
+    % get info for this group of cells
+    cell_group_list = handles.data.cells_targets.cell_group_list{i};
+    n_cell_this_plane = length(cell_group_list);
+    
+    pi_target_selected = handles.data.cells_targets.pi_target_selected{i};
+    inner_normalized_products = handles.data.cells_targets.inner_normalized_products{i};
+    target_locations_selected = handles.data.cells_targets.target_locations_selected{i};
+    power_selected = handles.data.cells_targets.power_selected{i};
+    target_locations_all = handles.data.cells_targets.target_locations_all{i};
+    cell_neighbours = handles.data.cells_targets.cell_neighbours{i};
+    target_locations_nuclei = handles.data.cells_targets.target_locations_nuclei{i};
+    power_nuclei = handles.data.cells_targets.power_nuclei{i};
+    pi_target_nuclei = handles.data.cells_targets.pi_target_nuclei{i};
+    loc_to_cell_nuclei = handles.data.cells_targets.loc_to_cell_nuclei{i};
+    
     % Initialize the five cell groups
     undefined_cells= cell(0); undefined_cells{1}=ones(n_cell_this_plane,1);%A
     potentially_disconnected_cells= cell(0); potentially_disconnected_cells{1}=zeros(n_cell_this_plane,1);%B
@@ -5799,30 +5817,15 @@ for i = 1:num_map_locations
 
     designs_undefined=[];designs_connected=[];designs_disconnected=[];
     outputs_undefined=[];outputs_connected=[];outputs_disconnected=[];
-    
-    % get info for this group of cells
-    cell_group_list = handles.data.cells_targets.cell_group_list{i};
-    n_cell_this_plane = length(cell_group_list);
-    
-    pi_target_selected = handles.data.cells_targets.pi_target_selected{i};
-    inner_normalized_products = handles.data.cells_targets.inner_normalized_products{i};
-    target_locations_selected = handles.data.cells_targets.target_locations_selected{i};
-    power_selected = handles.data.cells_targets.power_selected{i};
-    target_locations_all = handles.data.cells_targets.target_locations_all{i};
-    cell_neighbours = handles.data.cells_targets.cell_neighbours{i};
-    target_locations_nuclei = handles.data.cells_targets.target_locations_nuclei{i};
-    power_nuclei = handles.data.cells_targets.power_nuclei{i};
-    pi_target_nuclei = handles.data.cells_targets.pi_target_nuclei{i};
-    loc_to_cell_nuclei = handles.data.cells_targets.loc_to_cell_nuclei{i};
-    
-    variational_params_path.pi=var_pi_ini*ones(n_cell_this_plane,1);
-    variational_params_path.alpha=var_alpha_initial*ones(n_cell_this_plane,1);
-    variational_params_path.beta=var_beta_initial*ones(n_cell_this_plane,1);
-    variational_params_path.alpha_gain=var_alpha_gain_initial*ones(n_cell_this_plane,1);
-    variational_params_path.beta_gain=var_beta_gain_initial*ones(n_cell_this_plane,1);
+     
+    variational_params_path.pi=handles.data.params.design.var_pi_ini*ones(n_cell_this_plane,1);
+    variational_params_path.alpha=handles.data.params.design.var_alpha_initial*ones(n_cell_this_plane,1);
+    variational_params_path.beta=handles.data.params.design.var_beta_initial*ones(n_cell_this_plane,1);
+    variational_params_path.alpha_gain=handles.data.params.design.var_alpha_gain_initial*ones(n_cell_this_plane,1);
+    variational_params_path.beta_gain=handles.data.params.design.var_beta_gain_initial*ones(n_cell_this_plane,1);
     
     mean_gamma_current=zeros(n_cell_this_plane,1);
-    mean_gain_current=gain_template*ones(n_cell_this_plane,1);
+    mean_gain_current=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
     gamma_path=zeros(n_cell_this_plane,1);var_gamma_path=zeros(n_cell_this_plane,1);
     
     n_trials=0;
@@ -5830,10 +5833,10 @@ for i = 1:num_map_locations
     
     % get this z-depth spots
     
-    loc_to_cell = 1:size( target_locations_selected,1);
+    loc_to_cell = 1:size(target_locations_selected,1);
     
     % Online design:
-    while ((n_trials < trial_max) & (id_continue>0))
+    while n_trials < params.design.trial_max && id_continue > 0
         % while not exceeding the set threshold of total trials
         % and there are new cells being excluded
 
@@ -5844,24 +5847,30 @@ for i = 1:num_map_locations
         mpp_undefined{iter}=[];
         trials_locations_undefined{iter}=[];
         trials_powers_undefined{iter}=[];
-
+        trials_pockels_ratios_undefined{iter}=[];
+        trials_locations_undefined_key{iter} = [];
+        trials_pockels_ratios_multi_undefined{iter} = [];
         if sum(undefined_cells{iter})>0
 
             cell_list= find(undefined_cells{iter});
 %             gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
 
-            [trials_locations, trials_powers, pockels_ratio_refs] = random_design(...
+            [trials_locations, trials_powers, locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
                 target_locations_selected,power_selected,...
-                inner_normalized_products,single_spot_threshold,...
+                inner_normalized_products,params.design.single_spot_threshold,...
                 params.design.gamma_estimates,params.design.prob_weight,...
                 params.design.id_notconnected, loc_to_cell,... 
-                cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates);
+                cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
+                1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             [cells_probabilities_undefined, ~] = get_prob_and_size(...
                 pi_target_selected,trials_locations,trials_powers,...
-                stim_unique,prob_trace);
+                params.stim_unique,params.cell_template.prob_trace);
 
             trials_locations_undefined{iter}=trials_locations;
             trials_powers_undefined{iter}=trials_powers;
+            trials_pockels_ratios_undefined{iter} = pockels_ratio_refs;
+            trials_locations_undefined_key{iter} = locations_key;
+            trials_pockels_ratios_multi_undefined{iter} = pockels_ratios;
         end
         
         %-------
@@ -5869,50 +5878,70 @@ for i = 1:num_map_locations
         mpp_disconnected{iter}=[];
         trials_locations_disconnected{iter}=[];
         trials_powers_disconnected{iter}=[];
+        trials_pockels_ratios_disconnected{iter}=[];
+        trials_locations_disconnected_key{iter} = [];
+        trials_pockels_ratios_multi_disconnected{iter} = [];
         if sum(potentially_disconnected_cells{iter})>0
             % Find cells with close to zero gammas
             cell_list= find(potentially_disconnected_cells{iter});
             gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
-            [trials_locations,  trials_powers] = random_design(...
+            [trials_locations,  trials_powers, locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
                 target_locations_selected,power_selected,...
-                inner_normalized_products,single_spot_threshold,...
+                inner_normalized_products,params.design.single_spot_threshold,...
                 gamma_estimates_confirm,0,...
-                 id_notconnected, loc_to_cell,... 
-                cell_list,n_spots_per_trial,K_disconnected,n_replicates);
+                 params.design.id_notconnected, loc_to_cell,... 
+                cell_list,params.design.n_spots_per_trial,params.design.K_disconnected,params.design.n_replicates,...
+                1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             [cells_probabilities_disconnected, ~] = get_prob_and_size(...
                 pi_target_selected,trials_locations,trials_powers,...
-                stim_unique,prob_trace);
+                params.stim_unique,params.cell_template.prob_trace);
 
             trials_locations_disconnected{iter}=trials_locations;
             trials_powers_disconnected{iter}=trials_powers;
+            trials_pockels_ratios_disconnected{iter}=pockels_ratio_refs;
+            trials_locations_disconnected_key{iter} = locations_key;
+            trials_pockels_ratios_multi_disconnected{iter} = pockels_ratios;
         end
-
+        
         %-------
         % Conduct trials on group C, the potentially connected cells
         mpp_connected{iter}=[];
         trials_locations_connected{iter}=[];
+        trials_locations_connected_key{iter} = [];
         trials_powers_connected{iter}=[];
+        trials_pockels_ratios_connected{iter}=[];
         if sum(potentially_connected_cells{iter})>0
             % Find cells with close to zero gammas
             cell_list= find(potentially_connected_cells{iter});
             gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
-            [trials_locations,  trials_powers] = random_design(...
+            [trials_locations,  trials_powers, locations_key, pockels_ratio_refs] = random_design(...
                 target_locations_nuclei,power_nuclei,...
-                inner_normalized_products,single_spot_threshold,...
+                inner_normalized_products,params.design.single_spot_threshold,...
                 gamma_estimates_confirm,0,...
-                connected,  loc_to_cell_nuclei,... 
-                cell_list,1,K_connected,n_replicates);
+                params.design.connected,  loc_to_cell_nuclei,... 
+                cell_list,1,1,params.design.n_replicates,...
+                1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             %[cells_probabilities_connected, ~] = get_prob_and_size(...
             %    pi_target_nuclei,trials_locations,trials_powers,...
             %    stim_unique,prob_trace);
             [~, stim_size_connected] = get_prob_and_size(...
                 pi_target_nuclei,trials_locations,trials_powers,...
-                stim_unique,prob_trace);
+                params.stim_unique,params.cell_template.prob_trace);
 
             trials_locations_connected{iter}=trials_locations;
             trials_powers_connected{iter}=trials_powers;
+            trials_pockels_ratios_connected{iter} = pockels_ratio_refs;
+            trials_locations_connected_key{iter} = locations_key;
         end
-
+        
+        %------------------------------------------%
+        % Run the designed trials
+        
+        % build the holograms
+        instruction.type = 83;
+        instruction.do_target = 1;
+        instruction.
+        
 
         %------------------------------------------%
         % Transform the data

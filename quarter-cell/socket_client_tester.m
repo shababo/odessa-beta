@@ -163,7 +163,8 @@ DETECT_NUC_SERVE_W_STACK = 74;
 DETECT_NUC_FROM_MAT = 75;
 COMPUTE_GROUPS_AND_OPTIM_LOCS = 76;
 PRECOMPUTE_PHASE_NUCLEAR = 81;
-PRECOMPUTE_PHASE_MULTI = 82;
+PRECOMPUTE_PHASE_MULTI_W_COMBO_SELECT = 82;
+PRECOMPUTE_PHASE_MULTI = 83;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
 PRINT = 00;
@@ -452,7 +453,7 @@ if success >= 0
                 assignin_base(names,vars);
             end
 %             clear phase_masks_target
-        case PRECOMPUTE_PHASE_MULTI
+        case PRECOMPUTE_PHASE_MULTI_W_COMBO_SELECT
             ratio_map = evalin('base','power_map_upres');
             coarse_disks = evalin('base','tf_disk_grid');
             disk_key = evalin('base','tf_disk_key');
@@ -483,6 +484,37 @@ if success >= 0
             end
             return_info.num_stim = size(stim_key,1);
             clear phase_masks_target
+        case PRECOMPUTE_PHASE_MULTI
+%             ratio_map = evalin('base','power_map_upres');
+            coarse_disks = evalin('base','tf_disk_grid');
+            disk_key = evalin('base','tf_disk_key');
+            fine_spot_grid = evalin('base','tf_fine_grid_spots_phase');
+            fine_spot_key = evalin('base','tf_fine_grid_spots_key');
+            do_target = instruction.do_target;
+%             [phase_masks_target, dec_ind] = ...
+%                 build_single_loc_phases(instruction.target_locs,coarse_disks,disk_key,...
+%                 fine_spot_grid,fine_spot_key,do_target);
+            [phase_masks_target,stim_key,pockels_ratio_refs_multi] = ...
+                build_multi_loc_phases(instruction.multitarg_locs,instruction.num_stim,instruction.single_spot_locs,...
+                instruction.targs_per_stim,instruction.repeat_target,coarse_disks,disk_key,ratio_map,...
+                fine_spot_grid,fine_spot_key,do_target,1);
+            pockels_ratio_refs_tf = pockels_ratio_refs_multi;
+            vars{1} = pockels_ratio_refs_tf;
+            names{1} = 'pockels_ratio_refs_tf';
+            vars{2} = stim_key;
+            names{2} = 'tf_stim_key';
+            if do_target
+                vars{3} = phase_masks_target;
+                names{3} = 'precomputed_target';
+                assignin_base(names,vars);
+                evalin('base','set_precomp_target_ready')
+            else
+                vars{3} = phase_masks_target;
+                names{3} = 'phase_masks_target';
+                assignin_base(names,vars);
+            end
+            return_info.num_stim = size(stim_key,1);
+            clear phase_masks_target    
         case TAKE_SNAP
             evalin('base','take_snap')
             handles.snap_image = evalin('base','temp');
