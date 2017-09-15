@@ -167,6 +167,7 @@ PRECOMPUTE_PHASE_MULTI_W_COMBO_SELECT = 82;
 PRECOMPUTE_PHASE_MULTI = 83;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
+DETECT_EVENTS_OASIS = 100;
 PRINT = 00;
 
 instruction.type
@@ -528,6 +529,33 @@ if success >= 0
             return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
             return_info.image_um_per_px = evalin('base','image_um_per_px');
             return_info.stack_um_per_slice = evalin('base','stack_um_per_slice');
+        case DETECT_EVENTS_OASIS
+            cmd = 'python /home/shababo/projects/mapping/code/OASIS/run_oasis_online.py ';
+            fullsavepath = [' /media/shababo/data/' instruction.filename '.mat'];
+            oasis_out_path = [' /media/shababo/data/' instruction.filename '_detect.mat'];
+            save(fullsavepath,instruction.traces)
+            cmd = [cmd fullsavepath];
+            system(cmd)
+            % Wait for file to be created.
+            maxSecondsToWait = 60*5; % Wait five minutes...?
+            secondsWaitedSoFar  = 0;
+            while secondsWaitedSoFar < maxSecondsToWait 
+              if exist(oasis_out_path, 'file')
+                break;
+              end
+              pause(1); % Wait 1 second.
+              secondsWaitedSoFar = secondsWaitedSoFar + 1;
+            end
+            return_info.time_est = secondsWaitedSoFar;
+            if exist(oasis_out_path, 'file')
+              load(oasis_out_path)
+              return_info.oasis_data = reshape(event_process,size(instruction.traces'))';
+              
+            else
+              fprintf('Warning: x.log never got created after waiting %d seconds', secondsWaitedSoFar);
+%               uiwait(warndlg(warningMessage));
+              return_info.oasis_data = zeros(size(instruction.traces));
+            end
     end
     
     

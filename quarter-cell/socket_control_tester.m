@@ -436,45 +436,49 @@ all_powers = strread(get(handles.target_intensity,'String'));
 sequence_base.power = all_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
+sequence_base.group = 1;
 
 sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
 iti = str2double(get(handles.iti,'String'))*1000;
 
 target_power = str2double(get(handles.target_intensity,'String'));
-ind_mult = str2double(get(handles.ind_mult,'String'));
+% ind_mult = str2double(get(handles.ind_mult,'String'));
 count = 1;
-ind_offset = str2double(get(handles.ind_offset,'String'));
+count_ind = 1;
+% ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
-num_repeats = str2double(get(handles.num_repeats,'String'));
+% num_repeats = str2double(get(handles.num_repeats,'String'));
 for k = 1:length(all_powers)
-    for i = 1:num_stim
+    for ii = 1:params.design.num_groups
+        this_group_num = diff(handles.data.sequence_groups(ii,:))+1;
+        num_repeats = handles.data.group_repeats(ii);
+        group_count_ind = 1;
+        for i = 1:this_group_num
 
-        if i >= repeat_start_ind
-            this_repeat = num_repeats;
-        else
-            this_repeat = 1;
-        end
-        for j = 1:this_repeat
-            sequence(count) = sequence_base;
-            sequence(count).power = all_powers(k);
-            sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
+            for j = 1:this_repeat
+                sequence(count) = sequence_base;
+                sequence(count).power = all_powers(k);
+                sequence(count).precomputed_target_index = count_ind;
+                sequence(count).group = ii;
+                sequence(count).group_target_index = group_count_ind;
+        %             if get(handles.power,'Value')
+        %                 [~, c_i] = min(abs(x_positions(i) - conversion));
+        %                 [~, c_j] = min(abs(y_positions(j) - conversion));
+        %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
+        % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
+        %                 voltage = get_voltage(handles.lut,scaled_power);
+        %                 image_test(i,j) = voltage;
+        %                 sequence(count).power = voltage*100;
+        %             end
+        %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
+        %             sequence(count).power = powers(k)*100;
 
-    %             if get(handles.power,'Value')
-    %                 [~, c_i] = min(abs(x_positions(i) - conversion));
-    %                 [~, c_j] = min(abs(y_positions(j) - conversion));
-    %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
-    % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
-    %                 voltage = get_voltage(handles.lut,scaled_power);
-    %                 image_test(i,j) = voltage;
-    %                 sequence(count).power = voltage*100;
-    %             end
-    %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
-    %             sequence(count).power = powers(k)*100;
-
-            count = count + 1;
-        end
-        
+                count = count + 1;
+            end
+            count_ind = count_ind + 1;
+            group_count_ind = group_count_ind + 1;
+        end    
     end
 end
 num_stim = length(sequence);
@@ -501,7 +505,7 @@ for i = 1:length(sequence)
 end
 
 time_padding = 5; % in seconds
-total_duration = (sequence(end).start + iti)/1000 + time_padding;
+total_duration = (sequence(end).start + iti + sequence(end).duration)/1000 + time_padding;
 
 
 instruction.sequence = sequence;
@@ -5626,9 +5630,10 @@ handles.data.stack = return_info.image;
 disp('detecting nuclei...')
 instruction.type = 75;
 
-instruction.filename = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+handles.data.stack_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
     '_' num2str(clock_array(4)) ...
     '_' num2str(clock_array(5)) '_stack'];
+instruction.filename = handles.data.stack_id;
 
 instruction.stackmat = handles.data.stack;
 
@@ -6105,14 +6110,15 @@ for i = 1:num_map_locations
             handles.data.sequence_groups(2,2);
         single_spot_targs = cat(1,single_spot_targs,trials_locations_disconnected_key{iter});
             single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_disconnected{iter}];
-        handles.data.group_repeats(2) = params.design.K_connected;
-        num_stim = num_stim + length(trials_pockels_ratios_connected{iter})*params.design.K_connected;
+        handles.data.group_repeats(3) = params.design.K_connected;
+        num_stim = num_stim + length(trials_pockels_ratios_connected{iter})*params.design.K_connected
+%         num_stim_check = size(multi_spot_targs,1)+size(single_spot_targs,1)
         
         undefined_freq = num_stim/undefined_freq;
         disconnected_freq = num_stim/disconnected_freq;
         connected_freq = num_stim/params.design.K_connected;
         
-        stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq 1/.075]);
+        stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq 1/.075])
         set(handles.duration,'String',num2str(1/stim_freq))
         
         % build the holograms
@@ -6126,18 +6132,13 @@ for i = 1:num_map_locations
         
         [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
         guidata(hObject,handles)
-        num_stim = size(multi_spot_targs,1)+size(single_spot_targs,1);
+        
         set(handles.num_stim,'String',num2str(num_stim));
 %         set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
 
         set(handles.tf_flag,'Value',1)
         set(handles.set_seq_trigger,'Value',0)
         set(handles.target_intensity,'String',user_input_powers)
-        
-        if length(disconnected_cells{iter}) > 
-        
-        disconnected_freq = size(trials_locations_disconnected_key{iter},1) * ...
-                params.design.n_spots_per_trial/length(disconnected_cells{iter})/num_stim;
 
         [handles, acq_gui, acq_gui_data] = build_seq_groups(hObject, eventdata, handles);
     %     handles = guidata(hObject);
@@ -6148,12 +6149,13 @@ for i = 1:num_map_locations
         start_trial = acq_gui_data.data.sweep_counter + 1;
         
         for run_i = 1:num_runs
+            
             this_subseq = this_seq((run_i-1)*max_seq_length+1:min(run_i*max_seq_length,length(this_seq)));
             time_offset = this_subseq(1).start - 1000;
             for k = 1:length(this_subseq)
                 this_subseq(k).start = this_subseq(k).start - time_offset;
             end
-            total_duration = (this_subseq(end).start)/1000 + 5;
+            total_duration = (this_subseq(end).start + this_subseq(end).duration)/1000 + 5;
 
             set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
             acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
@@ -6180,8 +6182,35 @@ for i = 1:num_map_locations
             waitfor(acq_gui_data.run,'String','Start')
             guidata(acq_gui,acq_gui_data)
 
-
         end
+        
+        trials = start_trial:acq_gui_data.data.sweep_counter;
+        [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
+        instruction.data = traces;
+        instruction.type = 100;
+        instruction.filename = [handles.data.stack_id '_z' num2str(i) '_iter' num2str(iter)];
+        
+        [return_info,success,handles] = do_instruction_analysis(instruction,handles);
+        oasis_data = return_info.oasis_data;
+        for trial_i = 1:size(oasis_data,1)
+            mpp(trial_i).group = full_seq(trial_i).group;
+            mpp(trial_i).times = find(oasis_data(trial_i,:),1);
+            group_trial_id = full_seq(trial_i).group_target_index;
+            switch full_seq(trial_i).group
+                case 1
+                    locations = trials_locations_undefined{iter}(group_trial_id,:);
+                case 2
+                    locations = trials_locations_disconnected{iter}(group_trial_id,:);
+                case 3
+                    locations = trials_locations_connected{iter}(group_trial_id,:);
+            end
+            
+            mpp(trial_i).locations = locations;
+        end
+        
+        mpp_undefined{iter} = mpp([mpp.group] == 1);
+        mpp_disconnected{iter} = mpp([mpp.group] == 1);
+        mpp_connected{iter} = mpp([mpp.group] == 1);
         
         %------------------------------------------%
         % Transform the data
@@ -6582,51 +6611,6 @@ for i = 1:num_map_locations
     
     
     
-    
-    % plot map
-    try
-        trials = start_trial:acq_gui_data.data.sweep_counter;
-        show_raw_data = 1; do_stdmap = 1; do_corrmap = 1;
-        [maps,~,~,~,stddev_maps{i}] = ...
-            summarize_map(acq_gui_data.data,trials,show_raw_data,do_stdmap,do_corrmap);
-    
-%         this_std_map = stddev_maps{i}{end}{1}; % this map location, highest pow, ch 1
-%         [sorted_stds,sort_order] = sort(this_std_map(:),1,'descend');
-%         sort_order = sort_order(~isnan(sorted_stds));
-%         [x_inds, y_inds] = ind2sub(size(this_std_map),sort_order);
-%         figure
-%         subplot(131)
-%         plot_trace_stack(maps{i}{end}{1}{x_inds(1),y_inds(1)},30,'-')
-%         title(['Horiz: ' num2str(y_inds(1)/1.82 - 129)  ', Vert: ' num2str(x_inds(1)/1.82 - 131)])
-%         subplot(132)
-%         plot_trace_stack(maps{i}{end}{1}{x_inds(2),y_inds(2)},30,'-')
-%         title(['Horiz: ' num2str(y_inds(2)/1.82 - 129)  ', Vert: ' num2str(x_inds(2)/1.82 - 131)])
-%         subplot(133)
-%         plot_trace_stack(maps{i}{end}{1}{x_inds(3),y_inds(3)},30,'-')
-%         title(['Horiz: ' num2str(y_inds(3)/1.82 - 129)  ', Vert: ' num2str(x_inds(3)/1.82 - 131)])
-    catch e
-        disp('Could not plot')
-    end
-%     this_seq_plot = acq_gui_data.data.trial_metadata(cur_trial).sequence;
-%     this_stim_key = acq_gui_data.data.trial_metadata(cur_trial).stim_key;
-%     power_curve_num = unique([this_seq_plot.target_power]);
-%     show_raw_data = 0;
-%     for j = 1:length(power_curve_num)
-%         [traces_ch1,traces_ch2] = ...
-%         get_stim_stack(acq_gui_data.data,cur_trial,...
-%             length(this_seq_plot),[this_seq_plot.start]);
-% 
-%         traces_pow{1} = traces_ch1([this_seq_plot.target_power] == power_curve_num(j),:);
-%         traces_pow{2} = traces_ch2([this_seq_plot.target_power] == power_curve_num(j),:);
-%         this_seq_power = this_seq_plot([this_seq_plot.target_power] == power_curve_num(j));
-%         [~,~,~,stddev_maps] = ...
-%             see_grid_multi(traces_pow,this_seq_power,this_stim_key,5,show_raw_data);
-%         if show_raw_data
-%             title(['Power = ' num2str(power_curve_num(j)) ' mW'])
-%         end
-%     end
-
-end
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
