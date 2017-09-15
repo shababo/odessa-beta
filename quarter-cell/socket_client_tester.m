@@ -361,8 +361,13 @@ if success >= 0
                     instruction.stack_um_per_slice);
             end
             if instruction.dummy_targs || isempty(nuclear_locs) || any(isnan(nuclear_locs(:)))
-                nuclear_locs = [randi([-150 150],[50 1]) randi([-150 150],[50 1]) randi([0 100],[50 1])];
-                fluor_vals = zeros(50,1);
+                if isfield(instruction,'num_dummy_targs')
+                    num_targs = instruction.num_dummy_targs;
+                else
+                    num_targs = 100;
+                end
+                nuclear_locs = [randi([-150 150],[num_targs 1]) randi([-150 150],[num_targs 1]) randi([0 100],[num_targs 1])];
+                fluor_vals = zeros(num_targs,1);
             end
             return_info.nuclear_locs = nuclear_locs;
             return_info.fluor_vals = fluor_vals;
