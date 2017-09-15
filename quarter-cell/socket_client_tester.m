@@ -81,7 +81,7 @@ switch client_location
         handles.data = struct();
     case 'analysis'
         handles.port_num = 3001;
-        handles.data.params = init_oed();
+        handles.data.params = init_oed(0);
 end
 
 
