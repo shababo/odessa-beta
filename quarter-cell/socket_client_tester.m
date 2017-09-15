@@ -168,6 +168,7 @@ PRECOMPUTE_PHASE_MULTI = 83;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
 PRINT = 00;
+
 instruction.type
 return_info = struct();
 if success >= 0
@@ -495,9 +496,10 @@ if success >= 0
 %                 build_single_loc_phases(instruction.target_locs,coarse_disks,disk_key,...
 %                 fine_spot_grid,fine_spot_key,do_target);
             [phase_masks_target,stim_key,pockels_ratio_refs_multi] = ...
-                build_multi_loc_phases(instruction.multitarg_locs,instruction.num_stim,instruction.single_spot_locs,...
-                instruction.targs_per_stim,instruction.repeat_target,coarse_disks,disk_key,ratio_map,...
-                fine_spot_grid,fine_spot_key,do_target,1);
+                build_multi_loc_phases(instruction.multi_spot_targs,instruction.multi_spot_pockels,...
+                    instruction.pockels_ratios, instruction.single_spot_targs, ...
+                    instruction.single_spot_pockels_refs,...
+                    coarse_disks,disk_key,fine_spots,spot_key,instruction.do_target);
             pockels_ratio_refs_tf = pockels_ratio_refs_multi;
             vars{1} = pockels_ratio_refs_tf;
             names{1} = 'pockels_ratio_refs_tf';
@@ -550,6 +552,7 @@ handles.close_socket = instruction.close_socket;
 %     handles.waittime = 120
 % end
 
+handles.data.return_info = return_info;
 guidata(hObject,handles)
 
 

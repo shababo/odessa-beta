@@ -21,7 +21,7 @@ end
 targs_per_stim = size(multi_spot_targs,3);
 stim_key = Nan*ones(num_holograms,3,targs_per_stim);
 
-pockels_ratio_refs_all = [multi_spot_pockels_refs; single_spot_pockels_refs];
+pockels_ratio_refs_all = [multi_spot_pockels_refs single_spot_pockels_refs];
 
 
 for i = 1:num_multi_spots
