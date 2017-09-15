@@ -1,7 +1,7 @@
 function [phase_masks,stim_key,pockels_ratio_refs_multi] = ...
     build_multi_loc_phases(multitarg_locs,num_stim,single_spot_locs,targs_per_stim,...
     repeat_target,coarse_disks,disk_key,ratio_map,fine_spots,spot_key,do_target,show_stats)
-rng(123566)
+% rng(123566)
 
 tic
 % num_nuc = size(nuclear_locs,1);
@@ -27,6 +27,7 @@ singles_phases = zeros([slm_size num_singles+num_multi_spots]);
 
 
 for i = 1:num_singles
+
     this_loc = single_spot_locs(i,:);
     decval = round(this_loc,-1);
     unitval = round(this_loc - decval);

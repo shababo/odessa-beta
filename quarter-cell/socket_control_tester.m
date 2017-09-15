@@ -55,7 +55,7 @@ function socket_control_tester_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to socket_control_tester (see VARARGIN)
 
 % Choose default command line output for socket_control_tester
-instruction = hObject;
+handles.data.params = init_oed;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -5343,6 +5343,8 @@ function map_w_online_Callback(hObject, eventdata, handles)
 set(handles.close_socket_check,'Value',0)
 guidata(hObject,handles);
 
+params = handles.data.params;
+
 user_confirm = msgbox('Set Reference Position for Objective/SLM Zero-Order?');
 waitfor(user_confirm)
 handles = update_obj_pos_Callback(hObject, eventdata, handles);
@@ -5846,27 +5848,22 @@ for i = 1:num_map_locations
         if sum(undefined_cells{iter})>0
 
             cell_list= find(undefined_cells{iter});
-            gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
+%             gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
 
-            [trials_locations, trials_powers] = random_design(...
+            [trials_locations, trials_powers, pockels_ratio_refs] = random_design(...
                 target_locations_selected,power_selected,...
                 inner_normalized_products,single_spot_threshold,...
-                gamma_estimates,prob_weight,...
-                id_notconnected, loc_to_cell,... 
-                cell_list,n_spots_per_trial,K_undefined,n_replicates);
+                params.design.gamma_estimates,params.design.prob_weight,...
+                params.design.id_notconnected, loc_to_cell,... 
+                cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates);
             [cells_probabilities_undefined, ~] = get_prob_and_size(...
                 pi_target_selected,trials_locations,trials_powers,...
                 stim_unique,prob_trace);
 
-            % Generate mpp given the trials
-            [mpp_temp] = draw_samples(...
-                trials_locations, trials_powers, pi_target_selected, background_rate,...
-                v_th_known, v_reset_known, g_truth, gain_truth,gamma_truth,...
-                current_template, funcs, delay_params,stim_threshold,time_max);
-            mpp_undefined{iter}=mpp_temp;
             trials_locations_undefined{iter}=trials_locations;
             trials_powers_undefined{iter}=trials_powers;
         end
+        
         %-------
         % Conduct trials on group B, the potentially disconnected cells
         mpp_disconnected{iter}=[];
@@ -5886,12 +5883,6 @@ for i = 1:num_map_locations
                 pi_target_selected,trials_locations,trials_powers,...
                 stim_unique,prob_trace);
 
-            % Conduct trials
-            [mpp_temp] = draw_samples(...
-                trials_locations, trials_powers, pi_target_selected, background_rate,...
-                v_th_known, v_reset_known, g_truth, gain_truth,gamma_truth,...
-                current_template,  funcs,    delay_params,stim_threshold,time_max);
-            mpp_disconnected{iter}=mpp_temp;
             trials_locations_disconnected{iter}=trials_locations;
             trials_powers_disconnected{iter}=trials_powers;
         end
@@ -5918,12 +5909,6 @@ for i = 1:num_map_locations
                 pi_target_nuclei,trials_locations,trials_powers,...
                 stim_unique,prob_trace);
 
-            % Conduct trials
-            [mpp_temp] = draw_samples(...
-                trials_locations, trials_powers, pi_target_nuclei, background_rate,...
-                v_th_known, v_reset_known, g_truth, gain_truth,gamma_truth,...
-                current_template,  funcs,    delay_params,stim_threshold,time_max);
-            mpp_connected{iter}=mpp_temp;
             trials_locations_connected{iter}=trials_locations;
             trials_powers_connected{iter}=trials_powers;
         end
@@ -5958,7 +5943,7 @@ for i = 1:num_map_locations
         %------------------------------------------%
         % Analysis:
 
-         variational_params_path.pi(:,iter+1)=var_pi_ini*ones(n_cell_this_plane,1);
+        variational_params_path.pi(:,iter+1)=var_pi_ini*ones(n_cell_this_plane,1);
         variational_params_path.alpha(:,iter+1)=variational_params_path.alpha(:,iter);
         variational_params_path.beta(:,iter+1)=variational_params_path.beta(:,iter);
         variational_params_path.alpha_gain(:,iter+1)=variational_params_path.alpha_gain(:,iter);
@@ -5983,8 +5968,6 @@ for i = 1:num_map_locations
             prior_params.pi0= [variational_params(:).pi]';
             prior_params.alpha0= [variational_params(:).alpha]';
             prior_params.beta0 = [variational_params(:).beta]';
-
-
 
             designs_remained=cells_probabilities_undefined(:,cell_list);
             active_trials=find(sum(designs_remained,2)>1e-3);

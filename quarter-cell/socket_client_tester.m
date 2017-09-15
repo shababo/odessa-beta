@@ -81,7 +81,7 @@ switch client_location
         handles.data = struct();
     case 'analysis'
         handles.port_num = 3001;
-        handles.data = init_oed();
+        handles.data.params = init_oed();
 end
 
 
@@ -463,7 +463,7 @@ if success >= 0
 %                 build_single_loc_phases(instruction.target_locs,coarse_disks,disk_key,...
 %                 fine_spot_grid,fine_spot_key,do_target);
             [phase_masks_target,stim_key,pockels_ratio_refs_multi] = ...
-                build_multi_loc_phases(instruction.multitarg_locs,instruction.num_stim,instruction.single_spot_locs,...
+                build_multi_loc_phases_w_combos(instruction.multitarg_locs,instruction.num_stim,instruction.single_spot_locs,...
                 instruction.targs_per_stim,instruction.repeat_target,coarse_disks,disk_key,ratio_map,...
                 fine_spot_grid,fine_spot_key,do_target,1);
             pockels_ratio_refs_tf = pockels_ratio_refs_multi;
