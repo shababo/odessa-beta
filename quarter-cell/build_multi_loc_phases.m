@@ -10,7 +10,7 @@ num_singles = size(single_spot_targs,1);%num_nuc+num_nearby;
 slm_size = size(coarse_disks);
 slm_size = slm_size([1 2]);
 num_multi_spots = size(multi_spot_targs,1);
-num_holograms = num_multi_spots+num_singles;
+num_holograms = num_multi_spots+num_singles
 if do_target
     phase_masks(num_holograms).mode = 'Phase';
     phase_masks(num_holograms).pattern = zeros(slm_size);
@@ -19,7 +19,7 @@ else
 end
 
 targs_per_stim = size(multi_spot_targs,3);
-stim_key = Nan*ones(num_holograms,3,targs_per_stim);
+stim_key = NaN*ones(num_holograms,3,targs_per_stim);
 
 pockels_ratio_refs_all = [multi_spot_pockels_refs single_spot_pockels_refs];
 
@@ -34,7 +34,9 @@ for i = 1:num_multi_spots
     for k = 1:targs_per_stim
         this_loc = multi_spot_targs(i,:,k);
 
-
+        if any(isnan(this_loc))
+            continue;
+        end
         decval = round(this_loc,-1);
         unitval = round(this_loc - decval);
 %             dec_ind = find();
@@ -71,13 +73,13 @@ for i = 1:num_singles
 
     if do_target
 %         for j = 1:num_singles_repeats
-            phase_masks(i+num_stim).mode = 'Phase';
-            phase_masks(i+num_stim).pattern = convP;
+            phase_masks(i+num_multi_spots).mode = 'Phase';
+            phase_masks(i+num_multi_spots).pattern = convP;
             
 %         end
     else 
 %         for j = 1:num_singles_repeats
-            phase_masks(:,:,i+num_stim) = convP;
+            phase_masks(:,:,i+num_multi_spots) = convP;
 %         end
     end  
     stim_key(i+num_multi_spots,:,1) = round(this_loc);
