@@ -71,7 +71,7 @@ end
 switch server_location
     case 'ephys'
         handles.server_ipaddress = '128.32.177.239';
-    case 'slidebook'
+    case 'c'
         handles.server_ipaddress = '128.32.177.238';
 end
 
@@ -116,9 +116,9 @@ if ~isfield(handles,'sock')
     handles.sock = -1;
 % elseif isfield(handles,'sock') && isfield(handles,'close_socket') && handles.close_
 end
-
+disp('attempting to open socket')
 while handles.sock < 0
-    disp('attempting to open socket')
+    
     handles.sock = msconnect(handles.server_ipaddress,handles.port_num);
     drawnow
 end
@@ -130,11 +130,12 @@ disp('waiting for instruction...')
 % end
 instruction = [];
 disp('check for instruction...')
+pause(.1)
 while isempty(instruction)
-    
-    [instruction, success] = msrecv(handles.sock,5);
+    disp('check for instruction...')
+    [instruction, success] = msrecv(handles.sock,.5);
 end
-
+disp('got instruction')
 if isempty(instruction)
     disp('no instruction!!')
     msclose(handles.sock)
@@ -317,7 +318,7 @@ if success >= 0
             return_info.success = 1;
         case SET_TRIGGER_SEQ
 %             vars{1} = 1;
-%             names{1} = 'isTriggeredSequenceReady';
+%             names{1} = 'i25sTriggeredSequenceReady';
 %             assignin_base(names,vars);
 %             pause(1)
             vars{1} = instruction.sequence;
@@ -349,18 +350,27 @@ if success >= 0
             return_info.nuclear_locs = nuclear_locs;
             return_info.detect_img = zeros(256,256);
         case DETECT_NUC_FROM_MAT
-            filename = ['media/shababo/data/' instruction.filename '.tif'];
+%             system(['smbclient //adesnik2.ist.berkeley.edu/excitation adesnik110623 -c ''cd /shababo ; '...
+%                 'get ' instruction.stack_id '.mat ' '/media/shababo/data/' instruction.stack_id '.mat''']);
+%             load(['/media/shababo/data/' instruction.stack_id '.mat'])
+%             filename = ['/media/shababo/data/' instruction.filename '.tif'];
+%             write_tiff_stack(filename,imagemat)
+            disp('into main function')
+            filename = ['/media/shababo/data/' instruction.filename '.tif'];
+            disp('writing tif')
             write_tiff_stack(filename,instruction.stackmat)
             if ~isfield(instruction,'dummy_targs')
                 instruction.dummy_target = 0;
             end
             if ~instruction.dummy_targs
+                disp('detecting nucs')
                 [nuclear_locs, fluor_vals] = ...
                     detect_nuclei(filename,...
                     instruction.image_um_per_px,instruction.image_zero_order_coord,...
                     instruction.stack_um_per_slice);
             end
             if instruction.dummy_targs || isempty(nuclear_locs) || any(isnan(nuclear_locs(:)))
+                disp('creating dummy nucs')
                 if isfield(instruction,'num_dummy_targs')
                     num_targs = instruction.num_dummy_targs;
                 else
@@ -535,11 +545,21 @@ if success >= 0
             return_info.image_um_per_px = evalin('base','image_um_per_px');
             return_info.stack_um_per_slice = evalin('base','stack_um_per_slice');
         case DETECT_EVENTS_OASIS
+            
             cmd = 'python /home/shababo/projects/mapping/code/OASIS/run_oasis_online.py ';
-            fullsavepath = [' /media/shababo/data/' instruction.filename '.mat'];
-            oasis_out_path = [' /media/shababo/data/' instruction.filename '_detect.mat'];
-            save(fullsavepath,instruction.traces)
-            cmd = [cmd fullsavepath];
+            if instruction.do_dummy_data
+                instruction.filename = '1120traces_sub';
+            end
+            fullsavepath = ['/media/shababo/data/' instruction.filename '.mat'];
+            oasis_out_path = ['/media/shababo/data/' instruction.filename '_detect.mat'];
+            if ~instruction.do_dummy_data
+                traces = instruction.data;
+            else
+                load('/media/shababo/data/1120traces.mat')
+                traces = traces(1:size(instruction.data,1),:);
+            end
+            save(fullsavepath,'traces')
+            cmd = [cmd ' ' fullsavepath];
             system(cmd)
             % Wait for file to be created.
             maxSecondsToWait = 60*5; % Wait five minutes...?
@@ -554,7 +574,7 @@ if success >= 0
             return_info.time_est = secondsWaitedSoFar;
             if exist(oasis_out_path, 'file')
               load(oasis_out_path)
-              return_info.oasis_data = reshape(event_process,size(instruction.traces'))';
+              return_info.oasis_data = reshape(event_process,size(instruction.data'))';
               
             else
               fprintf('Warning: x.log never got created after waiting %d seconds', secondsWaitedSoFar);
@@ -588,6 +608,7 @@ handles.close_socket = instruction.close_socket;
 handles.data.return_info = return_info;
 guidata(hObject,handles)
 
+pause(10);
 
 if isfield(instruction,'close_socket') && instruction.close_socket
     disp('closing socket')

@@ -38,7 +38,7 @@ load([filename '.mat'])
 
 params_em_reduce = filter_nuclear_detection(params_em,fluor_min);
 % params_em_reduce = params_em;
-nuclear_locs = params_em_reduce([3 2 4],:);
+nuclear_locs = params_em_reduce([3 2 4],:); % flip from image coord order
 fluor_vals = params_em_reduce(1,:);
 nuclear_locs_image_coord = nuclear_locs;
 nuclear_locs([1 2],:) = ...
