@@ -5,7 +5,7 @@ isPrecomputedTargetArrayReady = 1;
 % while any(isPrecomputedHologramReady == 0)
 %     pause(5);
 % end
-wrndlg = warndlg('Precomp Done?');
+wrndlg = warndlg('Seq Done?');
 pos = get(wrndlg,'position');
 set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
 waitfor(wrndlg)

@@ -117,9 +117,14 @@ if ~isfield(handles,'sock')
 % elseif isfield(handles,'sock') && isfield(handles,'close_socket') && handles.close_
 end
 disp('attempting to open socket')
+
 while handles.sock < 0
-    
+
+% sock = -1;
+% while sock < 0
+
     handles.sock = msconnect(handles.server_ipaddress,handles.port_num);
+%     sock = msconnect('128.32.177.239',3000);
     drawnow
 end
 
@@ -132,8 +137,10 @@ instruction = [];
 disp('check for instruction...')
 pause(.1)
 while isempty(instruction)
+
     disp('check for instruction...')
     [instruction, success] = msrecv(handles.sock,.5);
+
 end
 disp('got instruction')
 if isempty(instruction)
@@ -270,7 +277,7 @@ if success >= 0
             disp('setting seq')
             sequence = instruction.sequence;
             handles.data.tf_flag = instruction.tf_flag;
-            if handles.data.sequence(1).power > 2
+            if sequence(1).power > 2
                 if handles.data.tf_flag
                     handles.data.lut = evalin('base','lut_tf');
                     handles.data.pockels_ratio_refs = evalin('base','pockels_ratio_refs_tf');
@@ -515,7 +522,7 @@ if success >= 0
                 build_multi_loc_phases(instruction.multi_spot_targs,instruction.multi_spot_pockels,...
                     instruction.pockels_ratios, instruction.single_spot_targs, ...
                     instruction.single_spot_pockels_refs,...
-                    coarse_disks,disk_key,fine_spots,spot_key,instruction.do_target);
+                    coarse_disks,disk_key,fine_spot_grid,fine_spot_key,instruction.do_target);
             pockels_ratio_refs_tf = pockels_ratio_refs_multi;
             vars{1} = pockels_ratio_refs_tf;
             names{1} = 'pockels_ratio_refs_tf';
@@ -539,6 +546,8 @@ if success >= 0
             return_info.snap_image = evalin('base','temp');
             return_info.success = 1;
         case TAKE_STACK
+            evalin('base','take_stack_prep')
+            pause(.1)
             evalin('base','take_stack')
             return_info.image = evalin('base','acquiredImage');
             return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));

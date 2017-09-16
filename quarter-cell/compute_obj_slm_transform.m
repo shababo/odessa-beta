@@ -103,6 +103,7 @@ for i = 1:num_points
               
 end
 
+full_trans_bu = full_trans
 full_trans = slm_cam_points\points_vec;
 full_trans = reshape(full_trans,3,2)'         
 
