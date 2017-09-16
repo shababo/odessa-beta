@@ -273,11 +273,11 @@ end
 % else
 %     instruction.close_socket = 1;
 % end
-pause(.1)
+pause(1)
 disp('sending instruction...')
 mssend(handles.sock_analysis,instruction);
 disp('getting return info...')
-pause(.1)
+pause(1)
 return_info = [];
 if isfield(instruction,'get_return')
     get_return = instruction.get_return;
@@ -285,8 +285,9 @@ else
     get_return = 1;
 end
 if get_return
+    pause(1)
     while isempty(return_info)
-        [return_info, success] = msrecv(handles.sock_analysis,1);
+        [return_info, success] = msrecv(handles.sock_analysis,5);
     end
     assignin('base','return_info',return_info)
 end
@@ -437,6 +438,7 @@ sequence_base.power = all_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
 sequence_base.group = 1;
+sequence_base.group_target_index = 1;
 
 sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
@@ -452,7 +454,7 @@ repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 for k = 1:length(all_powers)
     for ii = 1:params.design.num_groups
         this_group_num = diff(handles.data.sequence_groups(ii,:))+1;
-        num_repeats = handles.data.group_repeats(ii);
+        this_repeat = handles.data.group_repeats(ii);
         group_count_ind = 1;
         for i = 1:this_group_num
 
@@ -501,7 +503,7 @@ sequence = sequence(order);
 
 
 for i = 1:length(sequence)
-    sequence(i).start = start_time + (i-1)*(iti + sequence_base.duration);
+    sequence(i).start = round(start_time + (i-1)*(iti + sequence_base.duration));
 end
 
 time_padding = 5; % in seconds
@@ -5462,7 +5464,12 @@ function map_w_online_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+handles.data.params = init_oed();
 params = handles.data.params;
+
+% shift focus
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
 
 set(handles.close_socket_check,'Value',0)
 guidata(hObject,handles);
@@ -5483,7 +5490,7 @@ end
 
 if take_new_ref
     handles = update_obj_pos_Callback(hObject, eventdata, handles);
-    [acq_gui, acq_gui_data] = get_acq_gui_data;
+    
     acq_gui_data.data.ref_obj_position = handles.data.obj_position;
     handles.data.ref_obj_position = handles.data.obj_position;
     guidata(acq_gui, acq_gui_data);
@@ -5651,7 +5658,11 @@ if take_new_stack
     handles.data.image_um_per_px = return_info.image_um_per_px;
     handles.data.stack_um_per_slice = return_info.stack_um_per_slice;     
     handles.data.stack = return_info.image;
+    
+    guidata(hObject,handles);
+    guidata(acq_gui, acq_gui_data);
 end
+
 
 detect_nucs = 0;
 choice = questdlg('Detect Nuclei?', ...
@@ -5668,14 +5679,19 @@ end
 if detect_nucs
     disp('detecting nuclei...')
     instruction.type = 75;
-
+    clock_array = clock;
     handles.data.stack_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
         '_' num2str(clock_array(4)) ...
         '_' num2str(clock_array(5)) '_stack'];
     instruction.filename = handles.data.stack_id;
-
     instruction.stackmat = handles.data.stack;
-
+%     imagemat = handles.data.stack;
+%     save(['C:\data\Shababo\' handles.data.stack_id '.mat'],'imagemat')
+%     pause(5)
+%     copyfile(['C:\data\Shababo\' handles.data.stack_id '.mat'], ['X:\shababo\' handles.data.stack_id '.mat']);
+%     pause(5)
+    
+    instruction.stackmat = 0;
     instruction.image_zero_order_coord = handles.data.image_zero_order_coord;
     instruction.image_um_per_px = handles.data.image_um_per_px;
     instruction.stack_um_per_slice = handles.data.stack_um_per_slice;
@@ -5695,6 +5711,14 @@ if detect_nucs
 
     assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 end
+
+% POWERS HERE*****************************
+user_input_powers = inputdlg('Enter desired powers (space-delimited):',...
+             'Powers to run?',1,{params.exp.power_levels});
+user_input_powers = strread(user_input_powers{1});
+handles.data.params.exp.user_power_level = user_input_powers(1);
+params = handles.data.params;
+guidata(hObject,handles)
 
 do_cells_targets = 0;
 choice = questdlg('Compute Cell Groups and Optimal Targets?', ...
@@ -5784,105 +5808,119 @@ else
     whole_cell2 = 0;
 end
 
+
 if whole_cell1 || whole_cell2
     
-    user_confirm = msgbox('Break in! Rs okay? Test pulse off? In v-clamp?');
-    waitfor(user_confirm)
-
-
-%     acq_gui = findobj('Tag','acq_gui');
-%     acq_gui_data = guidata(acq_gui);
-
-
-    % do single testpulse trial to get Rs
-    % set acq params
-    set(acq_gui_data.run,'String','Prepping...')
-    set(acq_gui_data.Cell1_type_popup,'Value',1)
-    set(acq_gui_data.Cell2_type_popup,'Value',1)
-    
-    set(acq_gui_data.trial_length,'String',5.0)
-    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-    set(acq_gui_data.test_pulse,'Value',1)
-    set(acq_gui_data.loop,'Value',1)
-    set(acq_gui_data.loop_count,'String',num2str(1))
-    set(acq_gui_data.trigger_seq,'Value',0)
-    % run trial
-    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-    waitfor(acq_gui_data.run,'String','Start')
-    guidata(acq_gui,acq_gui_data)
-
-
-    do_intrinsics = 0;
-    choice = questdlg('Do intrinsics?', ...
-        'Do intrinsics?', ...
-        'Cell 1','None','Cell 1 & 2','None');
+    do_whole_cell_stuff = 0;
+    choice = questdlg('Get patch ready and take baseline/instrinsics?', ...
+        'Get patch ready and take baseline/instrinsics?', ...
+        'Yes','No','Yes');
     % Handle response
     switch choice
-        case 'Cell 1'
-            do_intrinsics = 1;
-            set(acq_gui_data.Cell1_type_popup,'Value',2)
-            acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
-        case 'Cell 2'
-            do_intrinsics = 1;
-            set(acq_gui_data.Cell2_type_popup,'Value',2)
-            acq_gui_data = Acq('cell2_intrinsics_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
-        case 'Cell 1 & 2'
-            do_intrinsics = 1;
-            set(acq_gui_data.Cell1_type_popup,'Value',2)
-            set(acq_gui_data.Cell2_type_popup,'Value',2)
-            acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
-            acq_gui_data = Acq('cell2_intrinsics_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
-        case 'None'
-            do_intrinsics = 0;
+        case 'Yes'
+            do_whole_cell_stuff = 1;
+        case 'No'
+            do_whole_cell_stuff = 0;
     end
-
-    if do_intrinsics
-        % tell user to switch to I=0
-        user_confirm = msgbox('Please switch Multiclamp to CC with I = 0 for intrinsics cells');
+    
+    if do_whole_cell_stuff
+        user_confirm = msgbox('Break in! Rs okay? Test pulse off? In v-clamp?');
         waitfor(user_confirm)
 
-        % run intrinsic ephys
+
+    %     acq_gui = findobj('Tag','acq_gui');
+    %     acq_gui_data = guidata(acq_gui);
+
+
+        % do single testpulse trial to get Rs
         % set acq params
         set(acq_gui_data.run,'String','Prepping...')
-        
-%         guidata(acq_gui,acq_gui_data);
-        set(acq_gui_data.test_pulse,'Value',0)
+        set(acq_gui_data.Cell1_type_popup,'Value',1)
+        set(acq_gui_data.Cell2_type_popup,'Value',1)
+
+        set(acq_gui_data.trial_length,'String',5.0)
+        acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+        set(acq_gui_data.test_pulse,'Value',1)
+        set(acq_gui_data.loop,'Value',1)
+        set(acq_gui_data.loop_count,'String',num2str(1))
         set(acq_gui_data.trigger_seq,'Value',0)
         % run trial
-
         acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
         waitfor(acq_gui_data.run,'String','Start')
         guidata(acq_gui,acq_gui_data)
-        
-         switch choice
+
+
+        do_intrinsics = 0;
+        choice = questdlg('Do intrinsics?', ...
+            'Do intrinsics?', ...
+            'Cell 1','None','Cell 1 & 2','None');
+        % Handle response
+        switch choice
             case 'Cell 1'
                 do_intrinsics = 1;
-%                 set(acq_gui_data.Cell1_type_popup,'Value',2)
-%                 acq_gui_data.data.ch1.pulseamp = 0;
-                set(acq_gui_data.ccpulseamp1,'String','0');
-                acq_gui_data = Acq('ccpulseamp1_Callback',acq_gui_data.ccpulseamp1,eventdata,acq_gui_data);
-                acq_gui_data = Acq('update_cc_cell1_button_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+                set(acq_gui_data.Cell1_type_popup,'Value',2)
+                acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
             case 'Cell 2'
                 do_intrinsics = 1;
-%                 set(acq_gui_data.Cell2_type_popup,'Value',2)
-%                 acq_gui_data.data.ch2.pulseamp = 0;
-                set(acq_gui_data.ccpulseamp2,'String','0');
-                acq_gui_data = Acq('ccpulseamp2_Callback',acq_gui_data.ccpulseamp2,eventdata,acq_gui_data);
-                acq_gui_data = Acq('update_cc_cell2_button_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
+                set(acq_gui_data.Cell2_type_popup,'Value',2)
+                acq_gui_data = Acq('cell2_intrinsics_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
             case 'Cell 1 & 2'
                 do_intrinsics = 1;
-%                 set(acq_gui_data.Cell1_type_popup,'Value',2)
-%                 set(acq_gui_data.Cell2_type_popup,'Value',2)
-                set(acq_gui_data.ccpulseamp1,'String','0');
-                acq_gui_data = Acq('ccpulseamp1_Callback',acq_gui_data.ccpulseamp1,eventdata,acq_gui_data);
-                set(acq_gui_data.ccpulseamp2,'String','0');
-                acq_gui_data = Acq('ccpulseamp2_Callback',acq_gui_data.ccpulseamp2,eventdata,acq_gui_data);
-                acq_gui_data = Acq('update_cc_cell1_button_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
-                acq_gui_data = Acq('update_cc_cell2_button_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
+                set(acq_gui_data.Cell1_type_popup,'Value',2)
+                set(acq_gui_data.Cell2_type_popup,'Value',2)
+                acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+                acq_gui_data = Acq('cell2_intrinsics_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
+            case 'None'
+                do_intrinsics = 0;
         end
+
+        if do_intrinsics
+            % tell user to switch to I=0
+            user_confirm = msgbox('Please switch Multiclamp to CC with I = 0 for intrinsics cells');
+            waitfor(user_confirm)
+
+            % run intrinsic ephys
+            % set acq params
+            set(acq_gui_data.run,'String','Prepping...')
+
+    %         guidata(acq_gui,acq_gui_data);
+            set(acq_gui_data.test_pulse,'Value',0)
+            set(acq_gui_data.trigger_seq,'Value',0)
+            % run trial
+
+            acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+            waitfor(acq_gui_data.run,'String','Start')
+            guidata(acq_gui,acq_gui_data)
+
+             switch choice
+                case 'Cell 1'
+                    do_intrinsics = 1;
+    %                 set(acq_gui_data.Cell1_type_popup,'Value',2)
+    %                 acq_gui_data.data.ch1.pulseamp = 0;
+                    set(acq_gui_data.ccpulseamp1,'String','0');
+                    acq_gui_data = Acq('ccpulseamp1_Callback',acq_gui_data.ccpulseamp1,eventdata,acq_gui_data);
+                    acq_gui_data = Acq('update_cc_cell1_button_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+                case 'Cell 2'
+                    do_intrinsics = 1;
+    %                 set(acq_gui_data.Cell2_type_popup,'Value',2)
+    %                 acq_gui_data.data.ch2.pulseamp = 0;
+                    set(acq_gui_data.ccpulseamp2,'String','0');
+                    acq_gui_data = Acq('ccpulseamp2_Callback',acq_gui_data.ccpulseamp2,eventdata,acq_gui_data);
+                    acq_gui_data = Acq('update_cc_cell2_button_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
+                case 'Cell 1 & 2'
+                    do_intrinsics = 1;
+    %                 set(acq_gui_data.Cell1_type_popup,'Value',2)
+    %                 set(acq_gui_data.Cell2_type_popup,'Value',2)
+                    set(acq_gui_data.ccpulseamp1,'String','0');
+                    acq_gui_data = Acq('ccpulseamp1_Callback',acq_gui_data.ccpulseamp1,eventdata,acq_gui_data);
+                    set(acq_gui_data.ccpulseamp2,'String','0');
+                    acq_gui_data = Acq('ccpulseamp2_Callback',acq_gui_data.ccpulseamp2,eventdata,acq_gui_data);
+                    acq_gui_data = Acq('update_cc_cell1_button_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
+                    acq_gui_data = Acq('update_cc_cell2_button_Callback',acq_gui_data.cell2_intrinsics,eventdata,acq_gui_data);
+            end
+        end
+
     end
-
-
     user_confirm = msgbox('Please switch Multiclamp to VC with desired holding current. Rs is good?');
     waitfor(user_confirm)
 end
@@ -5925,18 +5963,12 @@ end
 guidata(hObject,handles);
 guidata(acq_gui,acq_gui_data)
 
-% shift focus
-figure(acq_gui)
+
 
 set(handles.rand_order,'Value',1);
 set(handles.num_repeats,'String',num2str(10));
 set(handles.duration,'String',num2str(.003));
-set(handles.iti,'String',num2str(0.075));
-% POWERS HERE*****************************
-user_input_powers = inputdlg('Enter desired powers (space-delimited):',...
-             'Powers to run?',1,{params.exp.power_levels});
-user_input_powers = strread(user_input_powers{1});
-
+% set(handles.iti,'String',num2str(0.075));
 
 set(acq_gui_data.test_pulse,'Value',1)
 set(acq_gui_data.loop,'Value',1)
@@ -6019,6 +6051,7 @@ for i = 1:num_map_locations
         % while not exceeding the set threshold of total trials
         % and there are new cells being excluded
 
+        iter
 
         % Conduct random trials
 
@@ -6030,7 +6063,7 @@ for i = 1:num_map_locations
         trials_locations_undefined_key{iter} = [];
         trials_pockels_ratios_multi_undefined{iter} = [];
         if sum(undefined_cells{iter})>0
-
+            disp('designing undefined stim')
             cell_list= find(undefined_cells{iter});
             gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
 
@@ -6043,7 +6076,7 @@ for i = 1:num_map_locations
                 1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             [cells_probabilities_undefined, ~] = get_prob_and_size(...
                 pi_target_selected,trials_locations,trials_powers,...
-                params.stim_unique,params.cell_template.prob_trace);
+                params.stim_unique,params.template_cell.prob_trace);
 
             trials_locations_undefined{iter}=trials_locations;
             trials_powers_undefined{iter}=trials_powers;
@@ -6061,6 +6094,7 @@ for i = 1:num_map_locations
         trials_locations_disconnected_key{iter} = [];
         trials_pockels_ratios_multi_disconnected{iter} = [];
         if sum(potentially_disconnected_cells{iter})>0
+            disp('designing disconnected stim')
             % Find cells with close to zero gammas
             cell_list= find(potentially_disconnected_cells{iter});
             gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
@@ -6073,7 +6107,7 @@ for i = 1:num_map_locations
                 1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             [cells_probabilities_disconnected, ~] = get_prob_and_size(...
                 pi_target_selected,trials_locations,trials_powers,...
-                params.stim_unique,params.cell_template.prob_trace);
+                params.stim_unique,params.template_cell.prob_trace);
 
             trials_locations_disconnected{iter}=trials_locations;
             trials_powers_disconnected{iter}=trials_powers;
@@ -6090,6 +6124,7 @@ for i = 1:num_map_locations
         trials_powers_connected{iter}=[];
         trials_pockels_ratios_connected{iter}=[];
         if sum(potentially_connected_cells{iter})>0
+            disp('designing connected stim')
             % Find cells with close to zero gammas
             cell_list= find(potentially_connected_cells{iter});
             gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
@@ -6098,14 +6133,14 @@ for i = 1:num_map_locations
                 inner_normalized_products,params.design.single_spot_threshold,...
                 gamma_estimates_confirm,0,...
                 params.design.connected,  loc_to_cell_nuclei,... 
-                cell_list,1,1,params.design.n_replicates,...
+                cell_list,1,params.design.K_connected,params.design.n_replicates,...
                 1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             %[cells_probabilities_connected, ~] = get_prob_and_size(...
             %    pi_target_nuclei,trials_locations,trials_powers,...
             %    stim_unique,prob_trace);
             [~, stim_size_connected] = get_prob_and_size(...
                 pi_target_nuclei,trials_locations,trials_powers,...
-                params.stim_unique,params.cell_template.prob_trace);
+                params.stim_unique,params.template_cell.prob_trace);
 
             trials_locations_connected{iter}=trials_locations;
             trials_powers_connected{iter}=trials_powers;
@@ -6116,142 +6151,189 @@ for i = 1:num_map_locations
         %------------------------------------------%
         % Run the designed trials
         
-        multi_spot_targs = [];
-        multi_spot_pockels = [];
-        pockels_ratios = [];
-        single_spot_targs = [];
-        single_spot_pockels_refs = [];
-        
-        num_stim = 0;
-        
-        handles.data.sequence_groups = zeros(3,2);
-        % add undefined targets
-        handles.data.sequence_groups(1,:) = [1 length(trials_pockels_ratios_undefined{iter})];
-        if ~isempty(trials_pockels_ratios_multi_undefined{iter})
-            multi_spot_targs = cat(1,multi_spot_targs,trials_locations_undefined_key{iter});
-            multi_spot_pockels = [multi_spot_pockels trials_pockels_ratios_undefined{iter}];
-            pockels_ratios = cat(1,pockels_ratios,trials_pockels_ratios_multi_undefined{iter});
-            undefined_freq = size(trials_locations_undefined_key{iter},1) * ...
-                params.design.n_spots_per_trial/length(undefined_cells{iter});
-            handles.data.group_repeats(1) = 1;
-            num_stim = num_stim + length(trials_pockels_ratios_undefined{iter});
-        else
-            single_spot_targs = cat(1,single_spot_targs,trials_locations_undefined_key{iter});
-            single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_undefined{iter}];
-            undefined_freq = params.design.K_undefined;
-            handles.data.group_repeats(1) = params.design.K_undefined;
-            num_stim = num_stim + length(trials_pockels_ratios_undefined{iter})*params.design.K_undefined;
+        do_create_stim_phases = 0;
+        choice = questdlg('Design targets and compute holo?', ...
+            'Design targets and compute holo?', ...
+            'Yes','No','Yes');
+        % Handle response
+        switch choice
+            case 'Yes'
+                do_create_stim_phases = 1;
+            case 'No'
+                do_create_stim_phases = 0;
         end
-        
-        % add disconnected targets
-        handles.data.sequence_groups(2,:) = [1  length(trials_pockels_ratios_disconnected{iter})] +...
-            handles.data.sequence_groups(1,2);
-        if ~isempty(trials_pockels_ratios_multi_disconnected{iter})
-            multi_spot_targs = cat(1,multi_spot_targs,trials_locations_disconnected_key{iter});
-            multi_spot_pockels = [multi_spot_pockels trials_pockels_ratios_disconnected{iter}];
-            pockels_ratios = cat(1,pockels_ratios,trials_pockels_ratios_multi_disconnected{iter});
-            disconnected_freq = size(trials_locations_disconnected_key{iter},1) * ...
-                params.design.n_spots_per_trial/length(disconnected_cells{iter});
-            handles.data.group_repeats(2) = 1;
-            num_stim = num_stim + length(trials_pockels_ratios_disconnected{iter});
-        else
-            single_spot_targs = cat(1,single_spot_targs,trials_locations_disconnected_key{iter});
-            single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_disconnected{iter}];
-            undefined_freq = params.design.K_disconnected;
-            handles.data.group_repeats(2) = params.design.K_disconnected;
-            num_stim = num_stim + length(trials_pockels_ratios_disconnected{iter})*params.design.K_disconnected;
-        end
-        
-        % add connected targets
-        handles.data.sequence_groups(3,:) = [1  length(trials_pockels_ratios_connected{iter})] + ...
-            handles.data.sequence_groups(2,2);
-        single_spot_targs = cat(1,single_spot_targs,trials_locations_disconnected_key{iter});
-            single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_disconnected{iter}];
-        handles.data.group_repeats(3) = params.design.K_connected;
-        num_stim = num_stim + length(trials_pockels_ratios_connected{iter})*params.design.K_connected
-%         num_stim_check = size(multi_spot_targs,1)+size(single_spot_targs,1)
-        
-        undefined_freq = num_stim/undefined_freq;
-        disconnected_freq = num_stim/disconnected_freq;
-        connected_freq = num_stim/params.design.K_connected;
-        
-        stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq 1/.075])
-        set(handles.duration,'String',num2str(1/stim_freq))
-        
-        % build the holograms
-        instruction.type = 83;
-        instruction.do_target = 1;
-        instruction.multi_spot_targs = multi_spot_targs;
-        instruction.multi_spot_pockels = multi_spot_pockels;
-        instruction.pockels_ratios = pockels_ratios;
-        instruction.single_spot_targs = single_spot_targs;
-        instruction.single_spot_pockels_refs = single_spot_pockels_refs;
-        
-        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-        guidata(hObject,handles)
-        
-        set(handles.num_stim,'String',num2str(num_stim));
-%         set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
+        if do_create_stim_phases
+            multi_spot_targs = [];
+            multi_spot_pockels = [];
+            pockels_ratios = [];
+            single_spot_targs = [];
+            single_spot_pockels_refs = [];
 
-        set(handles.tf_flag,'Value',1)
-        set(handles.set_seq_trigger,'Value',0)
-        set(handles.target_intensity,'String',user_input_powers)
+            num_stim = 0;
 
-        [handles, acq_gui, acq_gui_data] = build_seq_groups(hObject, eventdata, handles);
-    %     handles = guidata(hObject);
-    %     acq_gui_data = get_acq_gui_data();
-        max_seq_length = str2double(get(handles.max_seq_length,'String'));
-        this_seq = acq_gui_data.data.sequence;
-        num_runs = ceil(length(this_seq)/max_seq_length);
-        start_trial = acq_gui_data.data.sweep_counter + 1;
-        
-        for run_i = 1:num_runs
-            
-            this_subseq = this_seq((run_i-1)*max_seq_length+1:min(run_i*max_seq_length,length(this_seq)));
-            time_offset = this_subseq(1).start - 1000;
-            for k = 1:length(this_subseq)
-                this_subseq(k).start = this_subseq(k).start - time_offset;
+            handles.data.sequence_groups = zeros(3,2);
+            % add undefined targets
+            handles.data.sequence_groups(1,:) = [1 length(trials_pockels_ratios_undefined{iter})];
+            if ~isempty(trials_pockels_ratios_multi_undefined{iter})
+                multi_spot_targs = cat(1,multi_spot_targs,trials_locations_undefined_key{iter});
+                multi_spot_pockels = [multi_spot_pockels trials_pockels_ratios_undefined{iter}];
+                pockels_ratios = cat(1,pockels_ratios,trials_pockels_ratios_multi_undefined{iter});
+                undefined_freq = size(trials_locations_undefined_key{iter},1) * ...
+                    params.design.n_spots_per_trial/length(undefined_cells{iter});
+                handles.data.group_repeats(1) = 1;
+                num_stim = num_stim + length(trials_pockels_ratios_undefined{iter});
+            else
+                single_spot_targs = cat(1,single_spot_targs,trials_locations_undefined_key{iter});
+                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_undefined{iter}];
+                undefined_freq = params.design.K_undefined;
+                handles.data.group_repeats(1) = params.design.reps_undefined_single;
+                num_stim = num_stim + length(trials_pockels_ratios_undefined{iter})*params.design.reps_undefined_single;
             end
-            total_duration = (this_subseq(end).start + this_subseq(end).duration)/1000 + 5;
 
-            set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
-            acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-            instruction.type = 32; %SEND SEQ
-            handles.sequence = this_subseq;
-            instruction.sequence = this_subseq;
-            handles.total_duration = total_duration;
-            instruction.waittime = total_duration + 120;
-            disp('sending instruction...')
+            % add disconnected targets
+            handles.data.sequence_groups(2,:) = [1  length(trials_pockels_ratios_disconnected{iter})] +...
+                handles.data.sequence_groups(1,2);
+            if ~isempty(trials_pockels_ratios_multi_disconnected{iter})
+                multi_spot_targs = cat(1,multi_spot_targs,trials_locations_disconnected_key{iter});
+                multi_spot_pockels = [multi_spot_pockels trials_pockels_ratios_disconnected{iter}];
+                pockels_ratios = cat(1,pockels_ratios,trials_pockels_ratios_multi_disconnected{iter});
+                disconnected_freq = size(trials_locations_disconnected_key{iter},1) * ...
+                    params.design.n_spots_per_trial/length(disconnected_cells{iter});
+                handles.data.group_repeats(2) = 1;
+                num_stim = num_stim + length(trials_pockels_ratios_disconnected{iter});
+            else
+                single_spot_targs = cat(1,single_spot_targs,trials_locations_disconnected_key{iter});
+                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_disconnected{iter}];
+                disconnected_freq = params.design.K_disconnected;
+                handles.data.group_repeats(2) = params.design.reps_disconnected_single;
+                num_stim = num_stim + length(trials_pockels_ratios_disconnected{iter})*params.design.reps_disconnected_single;
+            end
+
+            % add connected targets
+            handles.data.sequence_groups(3,:) = [1  length(trials_pockels_ratios_connected{iter})] + ...
+                handles.data.sequence_groups(2,2);
+            single_spot_targs = cat(1,single_spot_targs,trials_locations_connected_key{iter});
+                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_connected{iter}];
+            handles.data.group_repeats(3) = params.design.reps_connected;%params.design.K_connected;
+            num_stim = num_stim + length(trials_pockels_ratios_connected{iter})*params.design.reps_connected;
+    %         num_stim_check = size(multi_spot_targs,1)+size(single_spot_targs,1)
+
+            undefined_freq = num_stim/undefined_freq;
+            disconnected_freq = num_stim/disconnected_freq;
+            connected_freq = num_stim/params.design.K_connected;
+
+            stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq 1/.075])
+            set(handles.iti,'String',num2str(1/stim_freq))
+
+
+            % build the holograms
+            instruction.type = 83;
+            instruction.do_target = 1;
+            instruction.multi_spot_targs = multi_spot_targs;
+            instruction.multi_spot_pockels = multi_spot_pockels;
+            instruction.pockels_ratios = pockels_ratios;
+            instruction.single_spot_targs = single_spot_targs;
+            instruction.single_spot_pockels_refs = single_spot_pockels_refs;
+
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    %         acq_gui_data = get_acq_gui_data();
-    %         acq_gui_data.data.stim_key =  return_info.stim_key;
-            acq_gui_data.data.sequence =  this_subseq;
-    %         acq_gui = findobj('Tag','acq_gui');
-            guidata(acq_gui,acq_gui_data)
-
-            set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-            acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-
             guidata(hObject,handles)
-    %         guidata(acq_gui,acq_gui_data)
 
-            acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-            waitfor(acq_gui_data.run,'String','Start')
-            guidata(acq_gui,acq_gui_data)
-
+            set(handles.num_stim,'String',num2str(num_stim));
+        end
+%         set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
+        
+        do_run_trials = 0;
+        choice = questdlg('Run the trials?', ...
+            'Run the trials?', ...
+            'Yes','No','Yes');
+        % Handle response
+        switch choice
+            case 'Yes'
+                do_run_trials = 1;
+            case 'No'
+                do_run_trials = 0;
         end
         
-        trials = start_trial:acq_gui_data.data.sweep_counter;
-        [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
-        instruction.data = traces;
-        instruction.type = 100;
-        instruction.filename = [handles.data.stack_id '_z' num2str(i) '_iter' num2str(iter)];
+        if do_run_trials
+            set(handles.tf_flag,'Value',1)
+            set(handles.set_seq_trigger,'Value',0)
+            set(handles.target_intensity,'String',user_input_powers)
+
+            [handles, acq_gui, acq_gui_data] = build_seq_groups(hObject, eventdata, handles);
+        %     handles = guidata(hObject);
+        %     acq_gui_data = get_acq_gui_data();
+            max_seq_length = str2double(get(handles.max_seq_length,'String'));
+            this_seq = acq_gui_data.data.sequence;
+            num_runs = ceil(length(this_seq)/max_seq_length);
+            handles.data.start_trial = acq_gui_data.data.sweep_counter + 1;
+
+            for run_i = 1:num_runs
+
+                this_subseq = this_seq((run_i-1)*max_seq_length+1:min(run_i*max_seq_length,length(this_seq)));
+                time_offset = this_subseq(1).start - 1000;
+                for k = 1:length(this_subseq)
+                    this_subseq(k).start = this_subseq(k).start - time_offset;
+                end
+                total_duration = (this_subseq(end).start + this_subseq(end).duration)/1000 + 5;
+
+                set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+                acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+                instruction.type = 32; %SEND SEQ
+                handles.sequence = this_subseq;
+                instruction.sequence = this_subseq;
+                handles.total_duration = total_duration;
+                instruction.waittime = total_duration + 120;
+                disp('sending instruction...')
+                [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+        %         acq_gui_data = get_acq_gui_data();
+        %         acq_gui_data.data.stim_key =  return_info.stim_key;
+                acq_gui_data.data.sequence =  this_subseq;
+        %         acq_gui = findobj('Tag','acq_gui');
+                guidata(acq_gui,acq_gui_data)
+
+                set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+                acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+
+                guidata(hObject,handles)
+        %         guidata(acq_gui,acq_gui_data)
+
+                acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+                waitfor(acq_gui_data.run,'String','Start')
+                guidata(acq_gui,acq_gui_data)
+
+            end
+        end
         
-        [return_info,success,handles] = do_instruction_analysis(instruction,handles);
-        oasis_data = return_info.oasis_data;
+        do_oasis = 0;
+        choice = questdlg('Run OASIS?', ...
+            'Run OASIS?', ...
+            'Yes','No','Yes');
+        % Handle response
+        switch choice
+            case 'Yes'
+                do_oasis = 1;
+            case 'No'
+                do_oasis = 0;
+        end
+        if do_oasis
+            trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
+            [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
+            instruction.data = traces;
+            instruction.type = 100;
+            instruction.filename = [handles.data.stack_id '_z' num2str(i) '_iter' num2str(iter)];
+            instruction.do_dummy_data = 1;
+
+            [return_info,success,handles] = do_instruction_analysis(instruction,handles);
+            
+            handles.data.oasis_data = return_info.oasis_data;
+            handles.data.full_seq = full_seq;
+            guidata(hObject,handles)
+        end
+        oasis_data = handles.data.oasis_data;
+        full_seq = handles.data.full_seq;
         for trial_i = 1:size(oasis_data,1)
             mpp(trial_i).group = full_seq(trial_i).group;
-            mpp(trial_i).times = find(oasis_data(trial_i,:),1);
+            mpp(trial_i).times = find(oasis_data(trial_i,1:params.time.max_time),1);
             group_trial_id = full_seq(trial_i).group_target_index;
             switch full_seq(trial_i).group
                 case 1
@@ -6278,6 +6360,8 @@ for i = 1:num_map_locations
             for i_trial = 1:size(cells_probabilities_undefined,1)
                 outputs_undefined(i_trial,1)=length(mpp_undefined{iter}(i_trial).times);
             end
+            binary_resp = sort(ouputs_undefined > 0);
+            undefined_baseline = mean(binary_resp(1:ceil(length(binary_resp/15))));
             n_trials=n_trials+i_trial;
         end
         if  sum(potentially_disconnected_cells{iter})>0
@@ -6285,6 +6369,8 @@ for i = 1:num_map_locations
             for i_trial = 1:size(cells_probabilities_disconnected,1)
                 outputs_disconnected(i_trial,1)=length(mpp_disconnected{iter}(i_trial).times);
             end
+            binary_resp = sort(outputs_disconnected > 0);
+            disconnected_baseline = mean(binary_resp(1:ceil(length(binary_resp/15))));
             n_trials=n_trials+i_trial;
         end
         if  sum(potentially_connected_cells{iter})>0
@@ -6648,9 +6734,11 @@ for i = 1:num_map_locations
 
         alive_cells{iter+1}=alive_cells{iter};
         alive_cells{iter+1}(connected_to_alive)=1;
-
+        assignin('base','undefined_cells',undefined_cells)
+        assignin('base','potentially_disconnected_cells',potentially_disconnected_cells)
+        assignin('base','potentially_connected_cells',potentially_connected_cells)
         %
-        iter=iter+1;
+        iter=iter+1
         %
         if sum(dead_cells{iter}+alive_cells{iter})==n_cell_this_plane
             id_continue=0;% terminate
