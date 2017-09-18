@@ -549,10 +549,13 @@ if success >= 0
             evalin('base','take_stack_prep')
             pause(.1)
             evalin('base','take_stack')
-            return_info.image = evalin('base','acquiredImage');
+            image_all_ch = evalin('base','acquiredImage');
+            return_info.image = image_all_ch(:,:,:,1);
             return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
             return_info.image_um_per_px = evalin('base','image_um_per_px');
             return_info.stack_um_per_slice = evalin('base','stack_um_per_slice');
+            write_tiff_stack([instruction.filename '.tif'],uint16(image_all_ch(:,:,:,1)));
+            copyfile([instruction.filename '.tif'], ['Y:\shababo\' instruction.filename '.tif']);
         case DETECT_EVENTS_OASIS
             
             cmd = 'python /home/shababo/projects/mapping/code/OASIS/run_oasis_online.py ';
