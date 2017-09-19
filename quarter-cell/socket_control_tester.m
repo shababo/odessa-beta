@@ -55,7 +55,8 @@ function socket_control_tester_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to socket_control_tester (see VARARGIN)
 
 % Choose default command line output for socket_control_tester
-handles.data.params = init_oed;
+load_power_info = 1;
+handles.data.params = init_oed(load_power_info);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -5464,7 +5465,7 @@ function map_w_online_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.data.params = init_oed();
+% handles.data.params = init_oed(1);
 params = handles.data.params;
 
 % shift focus
@@ -5474,10 +5475,10 @@ figure(acq_gui)
 set(handles.close_socket_check,'Value',0)
 guidata(hObject,handles);
 
-params = handles.data.params;
+% params = handles.data.params;
 
 take_new_ref = 0;
-choice = questdlg('Set Reference Position for Objective/SLM Zero-Order?', ...
+choice = questdlg('Set Reference Position for Objective/SLM Zero-Order?',...
 	'Set Reference Position for Objective/SLM Zero-Order?', ...
 	'Yes','No','Yes');
 % Handle response
@@ -5601,18 +5602,35 @@ set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 % make obj locations
 % z_offsets = [30]';
 % z_offsets = handles.data.cell2_pos(3) handles.data.cell1_pos(3)];\
-if ~isfield(handles.data,'cell2_pos')
-    z_offsets = inputdlg('Z Locations?',...
-             'Z Locations?',1,{[num2str(handles.data.cell1_pos(3))]});
-else
-    z_offsets = inputdlg('Z Locations?',...
-                 'Z Locations?',1,{[num2str(handles.data.cell1_pos(3)) ' ' num2str(handles.data.cell2_pos(3))]});
-end
-z_offsets = strread(z_offsets{1})';
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
-obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
+% if ~isfield(handles.data,'cell2_pos')
+%     z_offsets = inputdlg('Z Locations?',...
+%              'Z Locations?',1,{[num2str(handles.data.cell1_pos(3))]});
+% else
+%     z_offsets = inputdlg('Z Locations?',...
+%                  'Z Locations?',1,{[num2str(handles.data.cell1_pos(3)) ' ' num2str(handles.data.cell2_pos(3))]});
+% end
 
-guidata(hObject,handles);
+set_depths = 0;
+choice = questdlg('Set Z-Depths?', ...
+	'Set Cell Pos?', ...
+	'Yes','No','Yes');
+% Handle response
+switch choice
+    case 'Yes'
+        set_depths = 1;
+    case 'No'
+        set_depths = 0;
+end
+if set_depths
+    z_offsets = inputdlg('Z Locations?',...
+                 'Z Locations?',1,{params.exp.z_depths});
+    z_offsets = strread(z_offsets{1})';
+    handles.data.obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+    handles.data.obj_positions = bsxfun(@plus,handles.data.obj_positions,handles.data.obj_position);
+    acq_gui_data.data.obj_positions = handles.data.obj_positions;
+    guidata(hObject,handles);
+    guidata(acq_gui,acq_gui_data)
+end
 
 % disp('take stack and nuclear detect...')
 % 
@@ -5648,21 +5666,28 @@ end
 
 if take_new_stack
     disp('take stack')
+    instruction = struct();
     instruction.type = 92;
+    clock_array = clock;
+    handles.data.stack_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+        '_' num2str(clock_array(4)) ...
+        '_' num2str(clock_array(5)) '_stack'];
+    instruction.filename = handles.data.stack_id;
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    acq_gui_data.data.stack = return_info.image;
+%     acq_gui_data.data.stack = return_info.image;
     acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
     acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
     acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
     handles.data.image_zero_order_coord = return_info.image_zero_order_coord;
     handles.data.image_um_per_px = return_info.image_um_per_px;
     handles.data.stack_um_per_slice = return_info.stack_um_per_slice;     
-    handles.data.stack = return_info.image;
+%     handles.data.stack = return_info.image;
     
     guidata(hObject,handles);
     guidata(acq_gui, acq_gui_data);
 end
 
+% pause(2)
 
 detect_nucs = 0;
 choice = questdlg('Detect Nuclei?', ...
@@ -5678,25 +5703,26 @@ end
 
 if detect_nucs
     disp('detecting nuclei...')
+    instruction = struct();
     instruction.type = 75;
-    clock_array = clock;
-    handles.data.stack_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
-        '_' num2str(clock_array(4)) ...
-        '_' num2str(clock_array(5)) '_stack'];
+%     clock_array = clock;
+%     handles.data.stack_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+%         '_' num2str(clock_array(4)) ...
+%         '_' num2str(clock_array(5)) '_stack'];
     instruction.filename = handles.data.stack_id;
-    instruction.stackmat = handles.data.stack;
+%     instruction.stackmat = handles.data.stack;
 %     imagemat = handles.data.stack;
 %     save(['C:\data\Shababo\' handles.data.stack_id '.mat'],'imagemat')
 %     pause(5)
 %     copyfile(['C:\data\Shababo\' handles.data.stack_id '.mat'], ['X:\shababo\' handles.data.stack_id '.mat']);
 %     pause(5)
     
-    instruction.stackmat = 0;
+%     instruction.stackmat = 0;
     instruction.image_zero_order_coord = handles.data.image_zero_order_coord;
     instruction.image_um_per_px = handles.data.image_um_per_px;
     instruction.stack_um_per_slice = handles.data.stack_um_per_slice;
     
-    instruction.dummy_targs = 1;
+    instruction.dummy_targs = 0;
     instruction.num_dummy_targs = 500;
     
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
@@ -5744,7 +5770,7 @@ if do_cells_targets
 
     % z_slice_width = 30;
     handles.data.cells_targets = get_groups_and_stim_locs(...
-                    handles.data.nuclear_locs, handles.data.params,...
+                    handles.data.nuclear_locs(:,1:3), handles.data.params,...
                     z_offsets);
 
     acq_gui_data.data.cells_targets = handles.data.cells_targets;
@@ -5754,11 +5780,11 @@ if do_cells_targets
 end
 
 % move objective to ref position as a safety
-set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
-set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
-set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
-
-[handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+% set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
+% set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
+% set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
+% 
+% [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
 % whole cell or cell-attached?
 % Construct a questdlg with three options
@@ -5975,16 +6001,16 @@ set(acq_gui_data.loop,'Value',1)
 set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
 set(acq_gui_data.trigger_seq,'Value',1)
 set(acq_gui_data.loop_count,'String',num2str(1))
-num_map_locations = size(obj_positions,1);
+num_map_locations = size(handles.data.obj_positions,1);
 
 
-
+handles.data.design.variational_params_path = cell(num_map_locations,1);
 for i = 1:num_map_locations
     
     % move obj
-    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
-    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
-    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
+    set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(handles.data.obj_positions(i,3)))
     [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
     
     
@@ -6006,127 +6032,130 @@ for i = 1:num_map_locations
     loc_to_cell_nuclei = handles.data.cells_targets.loc_to_cell_nuclei{i};
     
     % Initialize the five cell groups
-    undefined_cells= cell(0); undefined_cells{1}=ones(n_cell_this_plane,1);%A
-    potentially_disconnected_cells= cell(0); potentially_disconnected_cells{1}=zeros(n_cell_this_plane,1);%B
-    dead_cells= cell(0); dead_cells{1}=zeros(n_cell_this_plane,1);%D
-    potentially_connected_cells= cell(0); potentially_connected_cells{1}=zeros(n_cell_this_plane,1);%C
-    alive_cells= cell(0);
-    alive_cells{1}=zeros(n_cell_this_plane,1);
+    handles.data.design.undefined_cells= cell(0); handles.data.design.undefined_cells{1}=ones(n_cell_this_plane,1);%A
+    handles.data.design.potentially_disconnected_cells= cell(0); handles.data.design.potentially_disconnected_cells{1}=zeros(n_cell_this_plane,1);%B
+    handles.data.design.dead_cells= cell(0); handles.data.design.dead_cells{1}=zeros(n_cell_this_plane,1);%D
+    handles.data.design.potentially_connected_cells= cell(0); handles.data.design.potentially_connected_cells{1}=zeros(n_cell_this_plane,1);%C
+    handles.data.design.alive_cells= cell(0);
+    handles.data.design.alive_cells{1}=zeros(n_cell_this_plane,1);
     
-    iter=1;
-    mpp_undefined=cell(0);
-    trials_locations_undefined=cell(0);
-    trials_powers_undefined=cell(0);
+    handles.data.design.iter=1;
+    handles.data.design.mpp_undefined=cell(0);
+    handles.data.design.trials_locations_undefined=cell(0);
+    handles.data.design.trials_powers_undefined=cell(0);
+    handles.data.design.trials_pockels_ratios_undefined=cell(0);
+    handles.data.design.trials_locations_undefined_key=cell(0);
+    handles.data.design.trials_pockels_ratios_multi_undefined=cell(0);
 
-    mpp_disconnected=cell(0);
-    trials_locations_disconnected=cell(0);
-    trials_powers_disconnected=cell(0);
+    handles.data.design.mpp_disconnected=cell(0);
+    handles.data.design.trials_locations_disconnected=cell(0);
+    handles.data.design.trials_powers_disconnected=cell(0);
 
-    mpp_connected=cell(0);
-    trials_locations_connected=cell(0);
-    trials_powers_connected=cell(0);
+    handles.data.design.mpp_connected=cell(0);
+    handles.data.design.trials_locations_connected=cell(0);
+    handles.data.design.trials_powers_connected=cell(0);
 
     designs_undefined=[];designs_connected=[];designs_disconnected=[];
     outputs_undefined=[];outputs_connected=[];outputs_disconnected=[];
      
-    variational_params_path.pi=handles.data.params.design.var_pi_ini*ones(n_cell_this_plane,1);
-    variational_params_path.alpha=handles.data.params.design.var_alpha_initial*ones(n_cell_this_plane,1);
-    variational_params_path.beta=handles.data.params.design.var_beta_initial*ones(n_cell_this_plane,1);
-    variational_params_path.alpha_gain=handles.data.params.design.var_alpha_gain_initial*ones(n_cell_this_plane,1);
-    variational_params_path.beta_gain=handles.data.params.design.var_beta_gain_initial*ones(n_cell_this_plane,1);
+    handles.data.design.variational_params_path{i}.pi=handles.data.params.design.var_pi_ini*ones(n_cell_this_plane,1);
+    handles.data.design.variational_params_path{i}.alpha=handles.data.params.design.var_alpha_initial*ones(n_cell_this_plane,1);
+    handles.data.design.variational_params_path{i}.beta=handles.data.params.design.var_beta_initial*ones(n_cell_this_plane,1);
+    handles.data.design.variational_params_path{i}.alpha_gain=handles.data.params.design.var_alpha_gain_initial*ones(n_cell_this_plane,1);
+    handles.data.design.variational_params_path{i}.beta_gain=handles.data.params.design.var_beta_gain_initial*ones(n_cell_this_plane,1);
     
-    mean_gamma_current=zeros(n_cell_this_plane,1);
-    mean_gain_current=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
-    gamma_path=zeros(n_cell_this_plane,1);var_gamma_path=zeros(n_cell_this_plane,1);
+    handles.data.design.mean_gamma_current=zeros(n_cell_this_plane,1);
+    handles.data.design.mean_gain_current=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
+    handles.data.design.gamma_path=zeros(n_cell_this_plane,1);handles.data.design.var_gamma_path=zeros(n_cell_this_plane,1);
     
-    n_trials=0;
-    id_continue=1;% an indicator
+    handles.data.design.n_trials=0;
+    handles.data.design.id_continue=1;% an indicator
     
     % get this z-depth spots
     
-    loc_to_cell = 1:size(target_locations_selected,1);
+    handles.data.design.loc_to_cell = 1:size(target_locations_selected,1);
     
     % Online design:
-    while n_trials < params.design.trial_max && id_continue > 0
+    while handles.data.design.n_trials < params.design.trial_max && handles.data.design.id_continue > 0
         % while not exceeding the set threshold of total trials
         % and there are new cells being excluded
 
-        iter
+        handles.data.design.iter
 
         % Conduct random trials
 
         % On the undefined cells
-        mpp_undefined{iter}=[];
-        trials_locations_undefined{iter}=[];
-        trials_powers_undefined{iter}=[];
-        trials_pockels_ratios_undefined{iter}=[];
-        trials_locations_undefined_key{iter} = [];
-        trials_pockels_ratios_multi_undefined{iter} = [];
-        if sum(undefined_cells{iter})>0
+        handles.data.design.mpp_undefined{handles.data.design.iter}=[];
+        handles.data.design.trials_locations_undefined{handles.data.design.iter}=[];
+        handles.data.design.trials_powers_undefined{handles.data.design.iter}=[];
+        handles.data.design.trials_pockels_ratios_undefined{handles.data.design.iter}=[];
+        handles.data.design.trials_locations_undefined_key{handles.data.design.iter} = [];
+        handles.data.design.trials_pockels_ratios_multi_undefined{handles.data.design.iter} = [];
+        if sum(handles.data.undefined_cells{handles.data.design.iter})>0
             disp('designing undefined stim')
-            cell_list= find(undefined_cells{iter});
+            cell_list= find(handles.data.undefined_cells{handles.data.design.iter});
             gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
 
             [trials_locations, trials_powers, locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
                 target_locations_selected,power_selected,...
                 inner_normalized_products,params.design.single_spot_threshold,...
                 gamma_estimates,params.design.prob_weight,...
-                params.design.id_notconnected, loc_to_cell,... 
+                params.design.id_notconnected, handles.data.design.loc_to_cell,... 
                 cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
                 1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             [cells_probabilities_undefined, ~] = get_prob_and_size(...
                 pi_target_selected,trials_locations,trials_powers,...
                 params.stim_unique,params.template_cell.prob_trace);
 
-            trials_locations_undefined{iter}=trials_locations;
-            trials_powers_undefined{iter}=trials_powers;
-            trials_pockels_ratios_undefined{iter} = pockels_ratio_refs;
-            trials_locations_undefined_key{iter} = locations_key;
-            trials_pockels_ratios_multi_undefined{iter} = pockels_ratios;
+            handles.data.design.trials_locations_undefined{handles.data.design.iter}=trials_locations;
+            handles.data.design.trials_powers_undefined{handles.data.design.iter}=trials_powers;
+            handles.data.design.trials_pockels_ratios_undefined{handles.data.design.iter} = pockels_ratio_refs;
+            handles.data.design.trials_locations_undefined_key{handles.data.design.iter} = locations_key;
+            handles.data.design.trials_pockels_ratios_multi_undefined{handles.data.design.iter} = pockels_ratios;
         end
         
         %-------
         % Conduct trials on group B, the potentially disconnected cells
-        mpp_disconnected{iter}=[];
-        trials_locations_disconnected{iter}=[];
-        trials_powers_disconnected{iter}=[];
-        trials_pockels_ratios_disconnected{iter}=[];
-        trials_locations_disconnected_key{iter} = [];
-        trials_pockels_ratios_multi_disconnected{iter} = [];
-        if sum(potentially_disconnected_cells{iter})>0
+        handles.data.design.mpp_disconnected{handles.data.design.iter}=[];
+        handles.data.design.trials_locations_disconnected{handles.data.design.iter}=[];
+        handles.data.design.trials_powers_disconnected{handles.data.design.iter}=[];
+        trials_pockels_ratios_disconnected{handles.data.design.iter}=[];
+        trials_locations_disconnected_key{handles.data.design.iter} = [];
+        trials_pockels_ratios_multi_disconnected{handles.data.design.iter} = [];
+        if sum(handles.data.potentially_disconnected_cells{handles.data.design.iter})>0
             disp('designing disconnected stim')
             % Find cells with close to zero gammas
-            cell_list= find(potentially_disconnected_cells{iter});
+            cell_list= find(handles.data.potentially_disconnected_cells{handles.data.design.iter});
             gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
             [trials_locations,  trials_powers, locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
                 target_locations_selected,power_selected,...
                 inner_normalized_products,params.design.single_spot_threshold,...
                 gamma_estimates_confirm,0,...
-                 params.design.id_notconnected, loc_to_cell,... 
+                 params.design.id_notconnected, handles.data.design.loc_to_cell,... 
                 cell_list,params.design.n_spots_per_trial,params.design.K_disconnected,params.design.n_replicates,...
                 1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
             [cells_probabilities_disconnected, ~] = get_prob_and_size(...
                 pi_target_selected,trials_locations,trials_powers,...
                 params.stim_unique,params.template_cell.prob_trace);
 
-            trials_locations_disconnected{iter}=trials_locations;
-            trials_powers_disconnected{iter}=trials_powers;
-            trials_pockels_ratios_disconnected{iter}=pockels_ratio_refs;
-            trials_locations_disconnected_key{iter} = locations_key;
-            trials_pockels_ratios_multi_disconnected{iter} = pockels_ratios;
+            handles.data.design.trials_locations_disconnected{handles.data.design.iter}=trials_locations;
+            handles.data.design.trials_powers_disconnected{handles.data.design.iter}=trials_powers;
+            trials_pockels_ratios_disconnected{handles.data.design.iter}=pockels_ratio_refs;
+            trials_locations_disconnected_key{handles.data.design.iter} = locations_key;
+            trials_pockels_ratios_multi_disconnected{handles.data.design.iter} = pockels_ratios;
         end
         
         %-------
         % Conduct trials on group C, the potentially connected cells
-        mpp_connected{iter}=[];
-        trials_locations_connected{iter}=[];
-        trials_locations_connected_key{iter} = [];
-        trials_powers_connected{iter}=[];
-        trials_pockels_ratios_connected{iter}=[];
-        if sum(potentially_connected_cells{iter})>0
+        handles.data.design.mpp_connected{handles.data.design.iter}=[];
+        handles.data.design.trials_locations_connected{handles.data.design.iter}=[];
+        trials_locations_connected_key{handles.data.design.iter} = [];
+        handles.data.design.trials_powers_connected{handles.data.design.iter}=[];
+        trials_pockels_ratios_connected{handles.data.design.iter}=[];
+        if sum(handles.data.potentially_connected_cells{handles.data.design.iter})>0
             disp('designing connected stim')
             % Find cells with close to zero gammas
-            cell_list= find(potentially_connected_cells{iter});
+            cell_list= find(handles.data.potentially_connected_cells{handles.data.design.iter});
             gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
             [trials_locations,  trials_powers, locations_key, pockels_ratio_refs] = random_design(...
                 target_locations_nuclei,power_nuclei,...
@@ -6142,10 +6171,10 @@ for i = 1:num_map_locations
                 pi_target_nuclei,trials_locations,trials_powers,...
                 params.stim_unique,params.template_cell.prob_trace);
 
-            trials_locations_connected{iter}=trials_locations;
-            trials_powers_connected{iter}=trials_powers;
-            trials_pockels_ratios_connected{iter} = pockels_ratio_refs;
-            trials_locations_connected_key{iter} = locations_key;
+            handles.data.design.trials_locations_connected{handles.data.design.iter}=trials_locations;
+            handles.data.design.trials_powers_connected{handles.data.design.iter}=trials_powers;
+            trials_pockels_ratios_connected{handles.data.design.iter} = pockels_ratio_refs;
+            trials_locations_connected_key{handles.data.design.iter} = locations_key;
         end
         
         %------------------------------------------%
@@ -6173,49 +6202,49 @@ for i = 1:num_map_locations
 
             handles.data.sequence_groups = zeros(3,2);
             % add undefined targets
-            handles.data.sequence_groups(1,:) = [1 length(trials_pockels_ratios_undefined{iter})];
-            if ~isempty(trials_pockels_ratios_multi_undefined{iter})
-                multi_spot_targs = cat(1,multi_spot_targs,trials_locations_undefined_key{iter});
-                multi_spot_pockels = [multi_spot_pockels trials_pockels_ratios_undefined{iter}];
-                pockels_ratios = cat(1,pockels_ratios,trials_pockels_ratios_multi_undefined{iter});
-                undefined_freq = size(trials_locations_undefined_key{iter},1) * ...
-                    params.design.n_spots_per_trial/length(undefined_cells{iter});
+            handles.data.sequence_groups(1,:) = [1 length(handles.data.design.trials_pockels_ratios_undefined{handles.data.design.iter})];
+            if ~isempty(handles.data.design.trials_pockels_ratios_multi_undefined{handles.data.design.iter})
+                multi_spot_targs = cat(1,multi_spot_targs,handles.data.design.trials_locations_undefined_key{handles.data.design.iter});
+                multi_spot_pockels = [multi_spot_pockels handles.data.design.trials_pockels_ratios_undefined{handles.data.design.iter}];
+                pockels_ratios = cat(1,pockels_ratios,handles.data.design.trials_pockels_ratios_multi_undefined{handles.data.design.iter});
+                undefined_freq = size(handles.data.design.trials_locations_undefined_key{handles.data.design.iter},1) * ...
+                    params.design.n_spots_per_trial/length(handles.data.undefined_cells{handles.data.design.iter});
                 handles.data.group_repeats(1) = 1;
-                num_stim = num_stim + length(trials_pockels_ratios_undefined{iter});
+                num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_undefined{handles.data.design.iter});
             else
-                single_spot_targs = cat(1,single_spot_targs,trials_locations_undefined_key{iter});
-                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_undefined{iter}];
+                single_spot_targs = cat(1,single_spot_targs,handles.data.design.trials_locations_undefined_key{handles.data.design.iter});
+                single_spot_pockels_refs = [single_spot_pockels_refs handles.data.design.trials_pockels_ratios_undefined{handles.data.design.iter}];
                 undefined_freq = params.design.K_undefined;
                 handles.data.group_repeats(1) = params.design.reps_undefined_single;
-                num_stim = num_stim + length(trials_pockels_ratios_undefined{iter})*params.design.reps_undefined_single;
+                num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_undefined{handles.data.design.iter})*params.design.reps_undefined_single;
             end
 
             % add disconnected targets
-            handles.data.sequence_groups(2,:) = [1  length(trials_pockels_ratios_disconnected{iter})] +...
+            handles.data.sequence_groups(2,:) = [1  length(trials_pockels_ratios_disconnected{handles.data.design.iter})] +...
                 handles.data.sequence_groups(1,2);
-            if ~isempty(trials_pockels_ratios_multi_disconnected{iter})
-                multi_spot_targs = cat(1,multi_spot_targs,trials_locations_disconnected_key{iter});
-                multi_spot_pockels = [multi_spot_pockels trials_pockels_ratios_disconnected{iter}];
-                pockels_ratios = cat(1,pockels_ratios,trials_pockels_ratios_multi_disconnected{iter});
-                disconnected_freq = size(trials_locations_disconnected_key{iter},1) * ...
-                    params.design.n_spots_per_trial/length(disconnected_cells{iter});
+            if ~isempty(trials_pockels_ratios_multi_disconnected{handles.data.design.iter})
+                multi_spot_targs = cat(1,multi_spot_targs,trials_locations_disconnected_key{handles.data.design.iter});
+                multi_spot_pockels = [multi_spot_pockels trials_pockels_ratios_disconnected{handles.data.design.iter}];
+                pockels_ratios = cat(1,pockels_ratios,trials_pockels_ratios_multi_disconnected{handles.data.design.iter});
+                disconnected_freq = size(trials_locations_disconnected_key{handles.data.design.iter},1) * ...
+                    params.design.n_spots_per_trial/length(handles.data.potentially_disconnected_cells{handles.data.design.iter});
                 handles.data.group_repeats(2) = 1;
-                num_stim = num_stim + length(trials_pockels_ratios_disconnected{iter});
+                num_stim = num_stim + length(trials_pockels_ratios_disconnected{handles.data.design.iter});
             else
-                single_spot_targs = cat(1,single_spot_targs,trials_locations_disconnected_key{iter});
-                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_disconnected{iter}];
+                single_spot_targs = cat(1,single_spot_targs,trials_locations_disconnected_key{handles.data.design.iter});
+                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_disconnected{handles.data.design.iter}];
                 disconnected_freq = params.design.K_disconnected;
                 handles.data.group_repeats(2) = params.design.reps_disconnected_single;
-                num_stim = num_stim + length(trials_pockels_ratios_disconnected{iter})*params.design.reps_disconnected_single;
+                num_stim = num_stim + length(trials_pockels_ratios_disconnected{handles.data.design.iter})*params.design.reps_disconnected_single;
             end
 
             % add connected targets
-            handles.data.sequence_groups(3,:) = [1  length(trials_pockels_ratios_connected{iter})] + ...
+            handles.data.sequence_groups(3,:) = [1  length(trials_pockels_ratios_connected{handles.data.design.iter})] + ...
                 handles.data.sequence_groups(2,2);
-            single_spot_targs = cat(1,single_spot_targs,trials_locations_connected_key{iter});
-                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_connected{iter}];
+            single_spot_targs = cat(1,single_spot_targs,trials_locations_connected_key{handles.data.design.iter});
+                single_spot_pockels_refs = [single_spot_pockels_refs trials_pockels_ratios_connected{handles.data.design.iter}];
             handles.data.group_repeats(3) = params.design.reps_connected;%params.design.K_connected;
-            num_stim = num_stim + length(trials_pockels_ratios_connected{iter})*params.design.reps_connected;
+            num_stim = num_stim + length(trials_pockels_ratios_connected{handles.data.design.iter})*params.design.reps_connected;
     %         num_stim_check = size(multi_spot_targs,1)+size(single_spot_targs,1)
 
             undefined_freq = num_stim/undefined_freq;
@@ -6227,6 +6256,7 @@ for i = 1:num_map_locations
 
 
             % build the holograms
+            instruction = struct();
             instruction.type = 83;
             instruction.do_target = 1;
             instruction.multi_spot_targs = multi_spot_targs;
@@ -6278,6 +6308,7 @@ for i = 1:num_map_locations
 
                 set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
                 acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+                instruction = struct();
                 instruction.type = 32; %SEND SEQ
                 handles.sequence = this_subseq;
                 instruction.sequence = this_subseq;
@@ -6318,10 +6349,11 @@ for i = 1:num_map_locations
         if do_oasis
             trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
             [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
+            instruction = struct();
             instruction.data = traces;
             instruction.type = 100;
-            instruction.filename = [handles.data.stack_id '_z' num2str(i) '_iter' num2str(iter)];
-            instruction.do_dummy_data = 1;
+            instruction.filename = [handles.data.stack_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
+            instruction.do_dummy_data = 0;
 
             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
             
@@ -6333,78 +6365,81 @@ for i = 1:num_map_locations
         full_seq = handles.data.full_seq;
         for trial_i = 1:size(oasis_data,1)
             mpp(trial_i).group = full_seq(trial_i).group;
-            mpp(trial_i).times = find(oasis_data(trial_i,1:params.time.max_time),1);
+            mpp(trial_i).times = find(oasis_data(trial_i,params.time.min_time:params.time.max_time),1);
             group_trial_id = full_seq(trial_i).group_target_index;
             switch full_seq(trial_i).group
                 case 1
-                    locations = trials_locations_undefined{iter}(group_trial_id,:);
+                    locations = handles.data.design.trials_locations_undefined{handles.data.design.iter}(group_trial_id,:);
                 case 2
-                    locations = trials_locations_disconnected{iter}(group_trial_id,:);
+                    locations = handles.data.design.trials_locations_disconnected{handles.data.design.iter}(group_trial_id,:);
                 case 3
-                    locations = trials_locations_connected{iter}(group_trial_id,:);
+                    locations = handles.data.design.trials_locations_connected{handles.data.design.iter}(group_trial_id,:);
             end
             
             mpp(trial_i).locations = locations;
         end
-        
-        mpp_undefined{iter} = mpp([mpp.group] == 1);
-        mpp_disconnected{iter} = mpp([mpp.group] == 1);
-        mpp_connected{iter} = mpp([mpp.group] == 1);
+        assignin('base','mpp',mpp)
+        handles.data.design.mpp_undefined{handles.data.design.iter} = mpp([mpp.group] == 1);
+        handles.data.design.mpp_disconnected{handles.data.design.iter} = mpp([mpp.group] == 1);
+        handles.data.design.mpp_connected{handles.data.design.iter} = mpp([mpp.group] == 1);
         
         %------------------------------------------%
         % Transform the data
         % no need to record the probabilities all the time..
 
         %cells_probabilities_undefined;
-        if sum(undefined_cells{iter})>0
+%         assignin('base','handles.data.design.mpp_undefined',handles.data.design.mpp_undefined)
+%         assignin('base','cells_probabilities_undefined',cells_probabilities_undefined)
+        
+        if sum(handles.data.undefined_cells{handles.data.design.iter})>0
             for i_trial = 1:size(cells_probabilities_undefined,1)
-                outputs_undefined(i_trial,1)=length(mpp_undefined{iter}(i_trial).times);
+                outputs_undefined(i_trial,1)=length(handles.data.design.mpp_undefined{handles.data.design.iter}(i_trial).times);
             end
-            binary_resp = sort(ouputs_undefined > 0);
+            binary_resp = sort(outputs_undefined > 0);
             undefined_baseline = mean(binary_resp(1:ceil(length(binary_resp/15))));
-            n_trials=n_trials+i_trial;
+            handles.data.design.n_trials=handles.data.design.n_trials+i_trial;
         end
-        if  sum(potentially_disconnected_cells{iter})>0
+        if  sum(handles.data.potentially_disconnected_cells{handles.data.design.iter})>0
             %cells_probabilities_disconnected;
             for i_trial = 1:size(cells_probabilities_disconnected,1)
-                outputs_disconnected(i_trial,1)=length(mpp_disconnected{iter}(i_trial).times);
+                outputs_disconnected(i_trial,1)=length(handles.data.design.mpp_disconnected{handles.data.design.iter}(i_trial).times);
             end
             binary_resp = sort(outputs_disconnected > 0);
             disconnected_baseline = mean(binary_resp(1:ceil(length(binary_resp/15))));
-            n_trials=n_trials+i_trial;
+            handles.data.design.n_trials=handles.data.design.n_trials+i_trial;
         end
-        if  sum(potentially_connected_cells{iter})>0
+        if  sum(handles.data.potentially_connected_cells{handles.data.design.iter})>0
             %cells_probabilities_disconnected;
     %         for i_trial = 1:size(stim_size_connected,1)
-    %             outputs_connected(i_trial,1)=length(mpp_connected{iter}(i_trial).times);
+    %             outputs_connected(i_trial,1)=length(handles.data.design.mpp_connected{handles.data.design.iter}(i_trial).times);
     %         end
-            n_trials=n_trials+size(stim_size_connected,1);
+            handles.data.design.n_trials=handles.data.design.n_trials+size(stim_size_connected,1);
         end
 
         %------------------------------------------%
         % Analysis:
 
-        variational_params_path.pi(:,iter+1)=params.design.var_pi_ini*ones(n_cell_this_plane,1);
-        variational_params_path.alpha(:,iter+1)=variational_params_path.alpha(:,iter);
-        variational_params_path.beta(:,iter+1)=variational_params_path.beta(:,iter);
-        variational_params_path.alpha_gain(:,iter+1)=variational_params_path.alpha_gain(:,iter);
-        variational_params_path.beta_gain(:,iter+1)=variational_params_path.beta_gain(:,iter);
+        handles.data.design.variational_params_path{i}.pi(:,handles.data.design.iter+1)=params.design.var_pi_ini*ones(n_cell_this_plane,1);
+        handles.data.design.variational_params_path{i}.alpha(:,handles.data.design.iter+1)=handles.data.design.variational_params_path{i}.alpha(:,handles.data.design.iter);
+        handles.data.design.variational_params_path{i}.beta(:,handles.data.design.iter+1)=handles.data.design.variational_params_path{i}.beta(:,handles.data.design.iter);
+        handles.data.design.variational_params_path{i}.alpha_gain(:,handles.data.design.iter+1)=handles.data.design.variational_params_path{i}.alpha_gain(:,handles.data.design.iter);
+        handles.data.design.variational_params_path{i}.beta_gain(:,handles.data.design.iter+1)=handles.data.design.variational_params_path{i}.beta_gain(:,handles.data.design.iter);
 
 
         %------------------------------------------------------%
         % Fit VI on Group A: the undefined cells
         mean_gamma_undefined=zeros(n_cell_this_plane,1);
 
-        if sum(undefined_cells{iter})>0
-            cell_list= find(undefined_cells{iter});
+        if sum(handles.data.undefined_cells{handles.data.design.iter})>0
+            cell_list= find(handles.data.undefined_cells{handles.data.design.iter});
             % Update variational and prior distribution
            variational_params=struct([]);
             for i_cell_idx = 1:length(cell_list)
                 i_cell=cell_list(i_cell_idx);
-                variational_params(i_cell_idx).pi = variational_params_path.pi(i_cell,iter);
+                variational_params(i_cell_idx).pi = handles.data.design.variational_params_path{i}.pi(i_cell,handles.data.design.iter);
                 variational_params(i_cell_idx).p_logit = log(variational_params(i_cell_idx).pi/(1-variational_params(i_cell_idx).pi));
-                variational_params(i_cell_idx).alpha = variational_params_path.alpha(i_cell,iter);
-                variational_params(i_cell_idx).beta = variational_params_path.beta(i_cell,iter);
+                variational_params(i_cell_idx).alpha = handles.data.design.variational_params_path{i}.alpha(i_cell,handles.data.design.iter);
+                variational_params(i_cell_idx).beta = handles.data.design.variational_params_path{i}.beta(i_cell,handles.data.design.iter);
             end
             prior_params.pi0= [variational_params(:).pi]';
             prior_params.alpha0= [variational_params(:).alpha]';
@@ -6419,7 +6454,7 @@ for i = 1:num_map_locations
             neighbour_list=find(sum(cell_neighbours(cell_list,:),1)>0)';
             neighbour_list=setdiff(neighbour_list,cell_list);
             designs_neighbours=cells_probabilities_undefined(active_trials,neighbour_list);
-            gamma_neighbours=mean_gamma_current(neighbour_list);
+            gamma_neighbours=handles.data.design.mean_gamma_current(neighbour_list);
 
             lklh_func=@calculate_likelihood_bernoulli;
             % calculate_likelihood_bernoulli for multiple events 
@@ -6431,15 +6466,15 @@ for i = 1:num_map_locations
                 params.design.eta_beta,params.design.maxit,lklh_func);
 
             % Record the variational parameters
-            variational_params_path.pi(cell_list,iter+1) = parameter_history.pi(:,end);
-            variational_params_path.alpha(cell_list,iter+1) = parameter_history.alpha(:,end);
-            variational_params_path.beta(cell_list,iter+1) = parameter_history.beta(:,end);
+            handles.data.design.variational_params_path{i}.pi(cell_list,handles.data.design.iter+1) = parameter_history.pi(:,end);
+            handles.data.design.variational_params_path{i}.alpha(cell_list,handles.data.design.iter+1) = parameter_history.alpha(:,end);
+            handles.data.design.variational_params_path{i}.beta(cell_list,handles.data.design.iter+1) = parameter_history.beta(:,end);
 
             [mean_gamma_temp, ~] = calculate_posterior_mean(parameter_history.alpha(:,end),parameter_history.beta(:,end),0,1);
 
             mean_gamma_undefined(cell_list,1)=mean_gamma_temp;
-            mean_gamma_current(cell_list)=mean_gamma_temp;
-            gamma_path(cell_list,iter+1)=mean_gamma_temp;
+            handles.data.design.mean_gamma_current(cell_list)=mean_gamma_temp;
+            handles.data.design.gamma_path(cell_list,handles.data.design.iter+1)=mean_gamma_temp;
 
         end
         %-------------------------------------------------------------%
@@ -6447,15 +6482,15 @@ for i = 1:num_map_locations
         %----------------------------------------------------------------%
         % Fit the VI on Group B: potentially disconnected cells
         mean_gamma_disconnected=ones(n_cell_this_plane,1);
-        if sum(potentially_disconnected_cells{iter})>0
-            cell_list= find(potentially_disconnected_cells{iter});
+        if sum(handles.data.potentially_disconnected_cells{handles.data.design.iter})>0
+            cell_list= find(handles.data.potentially_disconnected_cells{handles.data.design.iter});
             variational_params=struct([]);
             for i_cell_idx = 1:length(cell_list)
                 i_cell=cell_list(i_cell_idx);
-                variational_params(i_cell_idx).pi = variational_params_path.pi(i_cell,iter);
+                variational_params(i_cell_idx).pi = handles.data.design.variational_params_path{i}.pi(i_cell,handles.data.design.iter);
                 variational_params(i_cell_idx).p_logit = log(variational_params(i_cell_idx).pi/(1-variational_params(i_cell_idx).pi));
-                variational_params(i_cell_idx).alpha = variational_params_path.alpha(i_cell,iter);
-                variational_params(i_cell_idx).beta = variational_params_path.beta(i_cell,iter);
+                variational_params(i_cell_idx).alpha = handles.data.design.variational_params_path{i}.alpha(i_cell,handles.data.design.iter);
+                variational_params(i_cell_idx).beta = handles.data.design.variational_params_path{i}.beta(i_cell,handles.data.design.iter);
             end
 
             prior_params.pi0= [variational_params(:).pi]';
@@ -6472,7 +6507,7 @@ for i = 1:num_map_locations
             neighbour_list=find(sum(cell_neighbours(cell_list,:),1)>0)';
             neighbour_list=setdiff(neighbour_list,cell_list);
             designs_neighbours=cells_probabilities_disconnected(active_trials,neighbour_list);
-            gamma_neighbours=mean_gamma_current(neighbour_list);
+            gamma_neighbours=handles.data.design.mean_gamma_current(neighbour_list);
 
             lklh_func=@calculate_likelihood_bernoulli;
             [parameter_history,~] = fit_working_model_vi(...
@@ -6483,15 +6518,15 @@ for i = 1:num_map_locations
                 params.design.eta_beta,params.design.maxit,lklh_func);
 
             % Record the variational parameters
-            variational_params_path.pi(cell_list,iter+1) = parameter_history.pi(:,end);
-            variational_params_path.alpha(cell_list,iter+1) = parameter_history.alpha(:,end);
-            variational_params_path.beta(cell_list,iter+1) = parameter_history.beta(:,end);
+            handles.data.design.variational_params_path{i}.pi(cell_list,handles.data.design.iter+1) = parameter_history.pi(:,end);
+            handles.data.design.variational_params_path{i}.alpha(cell_list,handles.data.design.iter+1) = parameter_history.alpha(:,end);
+            handles.data.design.variational_params_path{i}.beta(cell_list,handles.data.design.iter+1) = parameter_history.beta(:,end);
 
             [mean_gamma_temp, ~] = calculate_posterior_mean(parameter_history.alpha(:,end),parameter_history.beta(:,end),0,1);
 
             mean_gamma_disconnected(cell_list,1)=mean_gamma_temp;
-            mean_gamma_current(cell_list)=mean_gamma_temp;
-            gamma_path(cell_list,iter+1)=mean_gamma_temp;
+            handles.data.design.mean_gamma_current(cell_list)=mean_gamma_temp;
+            handles.data.design.gamma_path(cell_list,handles.data.design.iter+1)=mean_gamma_temp;
         end
         %---------------------------------------------%
 
@@ -6500,13 +6535,13 @@ for i = 1:num_map_locations
         % This step is different, we shoul fit each neuron seperately if possible
         mean_gamma_connected=zeros(n_cell_this_plane,1);
         variance_gamma_connected=ones(n_cell_this_plane,1);
-
-        if sum(potentially_connected_cells{iter})>0
-            cell_list= find(potentially_connected_cells{iter});
+        lklh_func=@lif_glm_firstspike_loglikelihood_for_VI;
+        if sum(handles.data.potentially_connected_cells{handles.data.design.iter})>0
+            cell_list= find(handles.data.potentially_connected_cells{handles.data.design.iter});
             designs_remained=stim_size_connected(:,cell_list);
 
             % Break the trials into unrelated clusters
-            if sum(potentially_connected_cells{iter})>1
+            if sum(handles.data.potentially_connected_cells{handles.data.design.iter})>1
                 % Use inner product:
                 adj_corr= abs( designs_remained'*designs_remained)./size(designs_remained,1);
                 adj_corr=1*(adj_corr> (params.eff_stim_threshold/params.template_cell.gain_template/2)^2);
@@ -6547,12 +6582,12 @@ for i = 1:num_map_locations
                 variational_params=struct([]);
                 for i_cell_idx = 1:length(neighbour_list)
                     i_cell=neighbour_list(i_cell_idx);
-                    variational_params(i_cell_idx).pi = variational_params_path.pi(i_cell,iter);
+                    variational_params(i_cell_idx).pi = handles.data.design.variational_params_path{i}.pi(i_cell,handles.data.design.iter);
                     variational_params(i_cell_idx).p_logit = log(variational_params(i_cell_idx).pi/(1-variational_params(i_cell_idx).pi));
-                    variational_params(i_cell_idx).alpha = variational_params_path.alpha(i_cell,iter);
-                    variational_params(i_cell_idx).beta = variational_params_path.beta(i_cell,iter);
-                    variational_params(i_cell_idx).alpha_gain = variational_params_path.alpha_gain(i_cell,iter);
-                    variational_params(i_cell_idx).beta_gain = variational_params_path.beta_gain(i_cell,iter);
+                    variational_params(i_cell_idx).alpha = handles.data.design.variational_params_path{i}.alpha(i_cell,handles.data.design.iter);
+                    variational_params(i_cell_idx).beta = handles.data.design.variational_params_path{i}.beta(i_cell,handles.data.design.iter);
+                    variational_params(i_cell_idx).alpha_gain = handles.data.design.variational_params_path{i}.alpha_gain(i_cell,handles.data.design.iter);
+                    variational_params(i_cell_idx).beta_gain = handles.data.design.variational_params_path{i}.beta_gain(i_cell,handles.data.design.iter);
                 end
 
                 prior_params.pi0= [variational_params(:).pi]';
@@ -6564,15 +6599,15 @@ for i = 1:num_map_locations
                 designs_remained=stim_size_connected(:,neighbour_list);
                 active_trials=find(sum(designs_remained,2)>params.design.stim_threshold);
                 designs_remained=designs_remained(active_trials,:);
-                mpp_remained=mpp_connected{iter}(active_trials);
+                mpp_remained=handles.data.design.mpp_connected{handles.data.design.iter}(active_trials);
 
     %             
     %             % find neighbours that are not in cell_list:
     %             neighbour_list=find(sum(cell_neighbours(cell_list(cluster_of_cells{i_cluster}),:),1)>0)';
     %             neighbour_list=setdiff(neighbour_list,cell_list(cluster_of_cells{i_cluster}));
     %             designs_neighbours=stim_size_connected(active_trials,neighbour_list);
-    %             gamma_neighbours=mean_gamma_current(neighbour_list);
-    %               gain_neighbours=mean_gain_current(neighbour_list);
+    %             gamma_neighbours=handles.data.design.mean_gamma_current(neighbour_list);
+    %               gain_neighbours=handles.data.design.mean_gain_current(neighbour_list);
     %       
                 designs_neighbours=[];        gamma_neighbours=[];         gain_neighbours=[];
                 [parameter_history] = fit_full_model_vi(...
@@ -6582,7 +6617,7 @@ for i = 1:num_map_locations
                     variational_params,prior_params,params.design.C_threshold,params.design.stim_threshold,...
                     designs_neighbours,gamma_neighbours,gain_neighbours,...
                     params.design.S,params.design.epsilon,params.design.eta_logit,...
-                    params.design.eta_beta,params.design.maxit);
+                    params.design.eta_beta,params.design.maxit,lklh_func);
 
 
                 %      lklh_func=@calculate_likelihood_bernoulli;
@@ -6593,11 +6628,11 @@ for i = 1:num_map_locations
                 %
 
                %cell_list(cluster_of_cells{i_cluster})
-                variational_params_path.pi(neighbour_list,iter+1) = parameter_history.pi(:,end);
-                variational_params_path.alpha(neighbour_list,iter+1) = parameter_history.alpha(:,end);
-                variational_params_path.beta(neighbour_list,iter+1) = parameter_history.beta(:,end);
-                variational_params_path.alpha_gain(neighbour_list,iter+1) = parameter_history.alpha_gain(:,end);
-                variational_params_path.beta_gain(neighbour_list,iter+1) = parameter_history.beta_gain(:,end);
+                handles.data.design.variational_params_path{i}.pi(neighbour_list,handles.data.design.iter+1) = parameter_history.pi(:,end);
+                handles.data.design.variational_params_path{i}.alpha(neighbour_list,handles.data.design.iter+1) = parameter_history.alpha(:,end);
+                handles.data.design.variational_params_path{i}.beta(neighbour_list,handles.data.design.iter+1) = parameter_history.beta(:,end);
+                handles.data.design.variational_params_path{i}.alpha_gain(neighbour_list,handles.data.design.iter+1) = parameter_history.alpha_gain(:,end);
+                handles.data.design.variational_params_path{i}.beta_gain(neighbour_list,handles.data.design.iter+1) = parameter_history.beta_gain(:,end);
 
 
             [mean_gamma_temp, var_gamma_temp] = calculate_posterior_mean(...
@@ -6608,11 +6643,11 @@ for i = 1:num_map_locations
 
 
                 variance_gamma_connected(neighbour_list)=var_gamma_temp;
-                var_gamma_path(neighbour_list,iter+1)=var_gamma_temp;
+                handles.data.design.var_gamma_path(neighbour_list,handles.data.design.iter+1)=var_gamma_temp;
                 mean_gamma_connected(neighbour_list,1)=mean_gamma_temp;
-                mean_gamma_current(neighbour_list)=mean_gamma_temp;
-                mean_gain_current(neighbour_list)=mean_gain_temp;
-                gamma_path(neighbour_list,iter+1)=mean_gamma_temp;
+                handles.data.design.mean_gamma_current(neighbour_list)=mean_gamma_temp;
+                handles.data.design.mean_gain_current(neighbour_list)=mean_gain_temp;
+                handles.data.design.gamma_path(neighbour_list,handles.data.design.iter+1)=mean_gamma_temp;
 
             end
         end
@@ -6674,14 +6709,14 @@ for i = 1:num_map_locations
 
         %------------------------------------------------------%
         % Moving the cell between groups
-        % mean_gamma_undefined & undefined_cells{iter} % A
-        % mean_gamma_disconnected & potentially_disconnected_cells{iter} %B
-        % mean_gamma_connected & potentially_connected_cells{iter} %C
+        % mean_gamma_undefined & handles.data.undefined_cells{handles.data.design.iter} % A
+        % mean_gamma_disconnected & handles.data.potentially_disconnected_cells{handles.data.design.iter} %B
+        % mean_gamma_connected & handles.data.potentially_connected_cells{handles.data.design.iter} %C
 
         undefined_to_disconnected = ...
-            intersect(find(mean_gamma_undefined<params.design.disconnected_threshold),find( undefined_cells{iter}));
+            intersect(find(mean_gamma_undefined<params.design.disconnected_threshold),find( handles.data.undefined_cells{handles.data.design.iter}));
         undefined_to_connected = ...
-            intersect(find(mean_gamma_undefined>params.design.connected_threshold),find( undefined_cells{iter}));
+            intersect(find(mean_gamma_undefined>params.design.connected_threshold),find( handles.data.undefined_cells{handles.data.design.iter}));
         % cells move together with their neighbours
         undefined_to_disconnected=find(sum(cell_neighbours(undefined_to_disconnected,:),1)>0)';
         undefined_to_connected =find(sum(cell_neighbours(undefined_to_connected,:),1)>0);
@@ -6689,9 +6724,9 @@ for i = 1:num_map_locations
         undefined_to_disconnected=setdiff(undefined_to_disconnected,undefined_to_connected);
 
         disconnected_to_undefined = intersect(find(mean_gamma_disconnected>params.design.disconnected_confirm_threshold),...
-            find(potentially_disconnected_cells{iter}));
+            find(handles.data.potentially_disconnected_cells{handles.data.design.iter}));
         disconnected_to_dead = intersect(find(mean_gamma_disconnected<params.design.disconnected_confirm_threshold),...
-            find(potentially_disconnected_cells{iter}));
+            find(handles.data.potentially_disconnected_cells{handles.data.design.iter}));
 
         disconnected_to_undefined=find(sum(cell_neighbours(disconnected_to_undefined,:),1)>0);
         % if there are conflicts, move them to the potentially connected cells
@@ -6699,10 +6734,10 @@ for i = 1:num_map_locations
 
 
         connected_to_dead = intersect(find(mean_gamma_connected<params.design.disconnected_confirm_threshold),...
-            find(potentially_connected_cells{iter}));
+            find(handles.data.potentially_connected_cells{handles.data.design.iter}));
         connected_to_alive = intersect(find(mean_gamma_connected>params.design.connected_confirm_threshold),...
-            find(potentially_connected_cells{iter}));
-        change_gamma =abs(gamma_path(:,iter+1)-gamma_path(:,iter));
+            find(handles.data.potentially_connected_cells{handles.data.design.iter}));
+        change_gamma =abs(handles.data.design.gamma_path(:,handles.data.design.iter+1)-handles.data.design.gamma_path(:,handles.data.design.iter));
         connected_to_alive = intersect(find(change_gamma<params.design.change_threshold),...
             connected_to_alive);
 
@@ -6710,44 +6745,44 @@ for i = 1:num_map_locations
         % group:
         %moved_cells = [connected_to_dead; connected_to_alive]';
         %cells_and_neighbours=find(sum(cell_neighbours(moved_cells,:),1)>0);
-        %neighbours_not_included=intersect(find(potentially_connected_cells{iter}), setdiff(cells_and_neighbours,moved_cells));
+        %neighbours_not_included=intersect(find(handles.data.potentially_connected_cells{handles.data.design.iter}), setdiff(cells_and_neighbours,moved_cells));
         %blacklist=find(sum(cell_neighbours(neighbours_not_included,:),1)>0);
         %connected_to_dead=setdiff(connected_to_dead ,blacklist);
         %connected_to_alive=setdiff(connected_to_alive,blacklist);
 
         % Update the cell lists:
-        undefined_cells{iter+1}=undefined_cells{iter};
-        undefined_cells{iter+1}(undefined_to_disconnected)=0;undefined_cells{iter+1}(undefined_to_connected)=0;
-        undefined_cells{iter+1}(disconnected_to_undefined)=1;
+        handles.data.undefined_cells{handles.data.design.iter+1}=handles.data.undefined_cells{handles.data.design.iter};
+        handles.data.undefined_cells{handles.data.design.iter+1}(undefined_to_disconnected)=0;handles.data.undefined_cells{handles.data.design.iter+1}(undefined_to_connected)=0;
+        handles.data.undefined_cells{handles.data.design.iter+1}(disconnected_to_undefined)=1;
 
-        potentially_disconnected_cells{iter+1}=potentially_disconnected_cells{iter};
-        potentially_disconnected_cells{iter+1}(disconnected_to_dead)=0;potentially_disconnected_cells{iter+1}(disconnected_to_undefined)=0;
-        potentially_disconnected_cells{iter+1}(undefined_to_disconnected)=1;
+        handles.data.potentially_disconnected_cells{handles.data.design.iter+1}=handles.data.potentially_disconnected_cells{handles.data.design.iter};
+        handles.data.potentially_disconnected_cells{handles.data.design.iter+1}(disconnected_to_dead)=0;handles.data.potentially_disconnected_cells{handles.data.design.iter+1}(disconnected_to_undefined)=0;
+        handles.data.potentially_disconnected_cells{handles.data.design.iter+1}(undefined_to_disconnected)=1;
 
 
-        potentially_connected_cells{iter+1}=potentially_connected_cells{iter};
-        potentially_connected_cells{iter+1}(connected_to_dead)=0;potentially_connected_cells{iter+1}(connected_to_alive)=0;
-        potentially_connected_cells{iter+1}(undefined_to_connected)=1;
+        handles.data.potentially_connected_cells{handles.data.design.iter+1}=handles.data.potentially_connected_cells{handles.data.design.iter};
+        handles.data.potentially_connected_cells{handles.data.design.iter+1}(connected_to_dead)=0;handles.data.potentially_connected_cells{handles.data.design.iter+1}(connected_to_alive)=0;
+        handles.data.potentially_connected_cells{handles.data.design.iter+1}(undefined_to_connected)=1;
 
-        dead_cells{iter+1}=dead_cells{iter};
-        dead_cells{iter+1}(disconnected_to_dead)=1;dead_cells{iter+1}(connected_to_dead)=1;
+        handles.data.dead_cells{handles.data.design.iter+1}=handles.data.dead_cells{handles.data.design.iter};
+        handles.data.dead_cells{handles.data.design.iter+1}(disconnected_to_dead)=1;handles.data.dead_cells{handles.data.design.iter+1}(connected_to_dead)=1;
 
-        alive_cells{iter+1}=alive_cells{iter};
-        alive_cells{iter+1}(connected_to_alive)=1;
-        assignin('base','undefined_cells',undefined_cells)
-        assignin('base','potentially_disconnected_cells',potentially_disconnected_cells)
-        assignin('base','potentially_connected_cells',potentially_connected_cells)
+        handles.data.alive_cells{handles.data.design.iter+1}=handles.data.alive_cells{handles.data.design.iter};
+        handles.data.alive_cells{handles.data.design.iter+1}(connected_to_alive)=1;
+        assignin('base','undefined_cells',handles.data.undefined_cells)
+        assignin('base','potentially_disconnected_cells',handles.data.potentially_disconnected_cells)
+        assignin('base','potentially_connected_cells',handles.data.potentially_connected_cells)
         %
-        iter=iter+1
+        handles.data.design.iter=handles.data.design.iter+1
         %
-        if sum(dead_cells{iter}+alive_cells{iter})==n_cell_this_plane
-            id_continue=0;% terminate
+        if sum(handles.data.dead_cells{handles.data.design.iter}+handles.data.alive_cells{handles.data.design.iter})==n_cell_this_plane
+            handles.data.design.id_continue=0;% terminate
         else
-            id_continue=1;
+            handles.data.design.id_continue=1;
         end
         % Plot the progress
 
-        fprintf('Number of trials so far: %d; number of cells killed: %d\n',n_trials, sum(dead_cells{iter}+alive_cells{iter}))
+        fprintf('Number of trials so far: %d; number of cells killed: %d\n',handles.data.design.n_trials, sum(handles.data.dead_cells{handles.data.design.iter}+handles.data.alive_cells{handles.data.design.iter}))
 
     end
 end    
