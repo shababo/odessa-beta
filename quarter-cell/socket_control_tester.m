@@ -5480,7 +5480,33 @@ if reinit_oed
     handles.data.params = init_oed(1);
     guidata(hObject,handles)
 end
-params = handles.data.params;
+
+load_exp = 0
+choice = questdlg('Load an experiment?',...
+	'Initialize OED params?', ...
+	'Yes','No','Yes');
+% Handle response
+switch choice
+    case 'Yes'
+        load_exp = 1;
+    case 'No'
+        load_exp = 0;
+end
+if load_exp
+    [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
+    load(fullfile(data_pathname,data_filename),'data')
+    handles.data = data;
+    params = handles.data.params;
+else
+    params = handles.data.params;
+    clock_array = clock;
+    handles.data.map_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+        '_' num2str(clock_array(4)) ...
+        '_' num2str(clock_array(5))];
+    handles.data.fullsavefile = fullfile(params.savedir,[handles.data.map_id '_data.mat']);
+end
+
+guidata(hObject,handles)
 
 % shift focus
 [acq_gui, acq_gui_data] = get_acq_gui_data;
@@ -5510,6 +5536,7 @@ if take_new_ref
     handles.data.ref_obj_position = handles.data.obj_position;
     guidata(acq_gui, acq_gui_data);
     guidata(hObject,handles)
+    data = handles.data; save(handles.data.fullsavefile,'data')
 end
 
 set_cell_pos = 0;
@@ -5554,7 +5581,7 @@ if set_cell_pos
     
     guidata(acq_gui, acq_gui_data);
     guidata(hObject,handles)
-
+    data = handles.data; save(handles.data.fullsavefile,'data')
 end
 
 
@@ -5601,7 +5628,7 @@ if set_cell2_pos
     guidata(hObject,handles)
     
     set(acq_gui_data.record_cell2_check,'Value',1);
-
+    data = handles.data; save(handles.data.fullsavefile,'data')
 end
 
 
@@ -5644,6 +5671,7 @@ if set_depths
     acq_gui_data.data.obj_positions = handles.data.obj_positions;
     guidata(hObject,handles);
     guidata(acq_gui,acq_gui_data)
+    data = handles.data; save(handles.data.fullsavefile,'data')
 end
 
 % disp('take stack and nuclear detect...')
@@ -5682,11 +5710,8 @@ if take_new_stack
     disp('take stack')
     instruction = struct();
     instruction.type = 92;
-    clock_array = clock;
-    handles.data.stack_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
-        '_' num2str(clock_array(4)) ...
-        '_' num2str(clock_array(5)) '_stack'];
-    instruction.filename = handles.data.stack_id;
+    
+    instruction.filename = [handles.data.map_id '_stack'];
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 %     acq_gui_data.data.stack = return_info.image;
     acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
@@ -5699,6 +5724,7 @@ if take_new_stack
     
     guidata(hObject,handles);
     guidata(acq_gui, acq_gui_data);
+    data = handles.data; save(handles.data.fullsavefile,'data')
 end
 
 % pause(2)
@@ -5719,16 +5745,13 @@ if detect_nucs
     disp('detecting nuclei...')
     instruction = struct();
     instruction.type = 75;
-%     clock_array = clock;
-%     handles.data.stack_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
-%         '_' num2str(clock_array(4)) ...
-%         '_' num2str(clock_array(5)) '_stack'];
-    instruction.filename = handles.data.stack_id;
+
+    instruction.filename = [handles.data.map_id '_stack'];
 %     instruction.stackmat = handles.data.stack;
 %     imagemat = handles.data.stack;
-%     save(['C:\data\Shababo\' handles.data.stack_id '.mat'],'imagemat')
+%     save(['C:\data\Shababo\' handles.data.map_id '.mat'],'imagemat')
 %     pause(5)
-%     copyfile(['C:\data\Shababo\' handles.data.stack_id '.mat'], ['X:\shababo\' handles.data.stack_id '.mat']);
+%     copyfile(['C:\data\Shababo\' handles.data.map_id '.mat'], ['X:\shababo\' handles.data.map_id '.mat']);
 %     pause(5)
     
 %     instruction.stackmat = 0;
@@ -5748,8 +5771,8 @@ if detect_nucs
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
-
-    assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
+    data = handles.data; save(handles.data.fullsavefile,'data')
+%     assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 end
 
 % POWERS HERE*****************************
@@ -5791,6 +5814,7 @@ if do_cells_targets
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
+    data = handles.data; save(handles.data.fullsavefile,'data')
 end
 
 % move objective to ref position as a safety
@@ -6128,6 +6152,8 @@ for i = start_obj_ind:num_map_locations
         handles.data.design.loc_to_cell{i} = 1:size(target_locations_selected,1);
         
         guidata(hObject,handles)
+        data = handles.data; save(handles.data.fullsavefile,'data')
+        
     end
         
     
@@ -6249,7 +6275,7 @@ for i = start_obj_ind:num_map_locations
             end
             
             guidata(hObject,handles)
-            
+            data = handles.data; save(handles.data.fullsavefile,'data')
         end
         
         %------------------------------------------%
@@ -6267,6 +6293,7 @@ for i = start_obj_ind:num_map_locations
                 do_create_stim_phases = 0;
         end
         if do_create_stim_phases
+            
             multi_spot_targs = [];
             multi_spot_pockels = [];
             pockels_ratios = [];
@@ -6342,7 +6369,7 @@ for i = start_obj_ind:num_map_locations
 
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
             guidata(hObject,handles)
-
+            data = handles.data; save(handles.data.fullsavefile,'data')
             set(handles.num_stim,'String',num2str(num_stim));
         end
 %         set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
@@ -6401,6 +6428,7 @@ for i = start_obj_ind:num_map_locations
                 acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
 
                 guidata(hObject,handles)
+                data = handles.data; save(handles.data.fullsavefile,'data')
         %         guidata(acq_gui,acq_gui_data)
 
                 acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
@@ -6427,7 +6455,7 @@ for i = start_obj_ind:num_map_locations
             instruction = struct();
             instruction.data = traces;
             instruction.type = 100;
-            instruction.filename = [handles.data.stack_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
+            instruction.filename = [handles.data.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
             instruction.do_dummy_data = 0;
 
             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
@@ -6435,6 +6463,7 @@ for i = start_obj_ind:num_map_locations
             handles.data.oasis_data = return_info.oasis_data;
             handles.data.full_seq = full_seq;
             guidata(hObject,handles)
+            data = handles.data; save(handles.data.fullsavefile,'data')
         end
         
         run_vi = 0;
@@ -6742,6 +6771,7 @@ for i = start_obj_ind:num_map_locations
             end
             change_gamma = sqrt(variance_gamma_connected);
             guidata(hObject,handles)
+            data = handles.data; save(handles.data.fullsavefile,'data')
         end
             %------------------------------------------------------%
 
@@ -6884,6 +6914,7 @@ for i = start_obj_ind:num_map_locations
                 handles.data.design.id_continue{i}=1;
             end
             guidata(hObject,handles)
+            data = handles.data; save(handles.data.fullsavefile,'data')
         end
         
         % Plot the progress
@@ -6891,6 +6922,8 @@ for i = start_obj_ind:num_map_locations
 
     end
 end    
+
+data = handles.data; save(handles.data.fullsavefile,'data')
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
