@@ -357,22 +357,22 @@ if success >= 0
             return_info.nuclear_locs = nuclear_locs;
             return_info.detect_img = zeros(256,256);
         case DETECT_NUC_FROM_MAT
-%             system(['smbclient //adesnik2.ist.berkeley.edu/excitation adesnik110623 -c ''cd /shababo ; '...
-%                 'get ' instruction.stack_id '.mat ' '/media/shababo/data/' instruction.stack_id '.mat''']);
+            system(['smbclient //adesnik2.ist.berkeley.edu/excitation adesnik110623 -c ''cd /shababo ; '...
+                'get ' instruction.filename '.tif ' '/media/shababo/data/' instruction.filename '.tif''']);
 %             load(['/media/shababo/data/' instruction.stack_id '.mat'])
 %             filename = ['/media/shababo/data/' instruction.filename '.tif'];
 %             write_tiff_stack(filename,imagemat)
             disp('into main function')
             filename = ['/media/shababo/data/' instruction.filename '.tif'];
-            disp('writing tif')
-            write_tiff_stack(filename,instruction.stackmat)
+%             disp('writing tif')
+%             write_tiff_stack(filename,instruction.stackmat)
             if ~isfield(instruction,'dummy_targs')
                 instruction.dummy_target = 0;
             end
             if ~instruction.dummy_targs
                 disp('detecting nucs')
                 [nuclear_locs, fluor_vals] = ...
-                    detect_nuclei(filename,...
+                    detect_nuclei(['/media/shababo/data/' instruction.filename],...
                     instruction.image_um_per_px,instruction.image_zero_order_coord,...
                     instruction.stack_um_per_slice);
             end

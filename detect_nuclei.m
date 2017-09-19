@@ -27,7 +27,7 @@ end
 if length(varargin) > 4 && ~isempty(varargin{5})
     fluor_min = varargin{5};
 else
-    fluor_min = 140;
+    fluor_min = 15;
 end
 
 if do_detect
@@ -72,7 +72,7 @@ b = plane_fit_points(:,3);
 
 plane_fit = inv(A'*A)*A'*b;
 Z = plane_fit(1)*X + plane_fit(2)*Y + plane_fit(3);
-detect_img
+% detect_img
 res = b - A*plane_fit;
 [min_z, min_z_cell] = max(-res)
 Z_offset = min_z;%plane_fit(1)*offset_cells(min_z_cell,1) + plane_fit(2)*offset_cells(min_z_cell,2) + plane_fit(3) 
