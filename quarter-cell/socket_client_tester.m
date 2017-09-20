@@ -176,6 +176,7 @@ PRECOMPUTE_PHASE_MULTI = 83;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
+RUN_VI = 110;
 PRINT = 00;
 
 instruction.type
@@ -593,6 +594,8 @@ if success >= 0
 %               uiwait(warndlg(warningMessage));
               return_info.oasis_data = zeros(size(instruction.traces));
             end
+        case RUN_VI
+            return_info.data = run_vi_online(instruction.data);
     end
     
     
