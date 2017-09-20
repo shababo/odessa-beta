@@ -1,4 +1,4 @@
- socfunction varargout = socket_control_tester(varargin)
+function varargout = socket_control_tester(varargin)
 % SOCKET_CONTROL_TESTER MATLAB code for socket_control_tester.fig
 %      SOCKET_CONTROL_TESTER, by itself, creates a new SOCKET_CONTROL_TESTER or raises the existing
 %      singleton*.
@@ -6453,11 +6453,10 @@ for i = start_obj_ind:num_map_locations
             trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
             [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
             instruction = struct();
-            instruction.data = traces;
+%             instruction.data = traces;
             instruction.type = 100;
             instruction.filename = [handles.data.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
-%             save(['X:\shababo\' instruction.filename '.mat'],'traces')
-%             pause(3.0)
+            save('X:\shababo\' 
             instruction.do_dummy_data = 1;
 
             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
