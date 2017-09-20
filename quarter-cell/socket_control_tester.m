@@ -1,4 +1,4 @@
-function varargout = socket_control_tester(varargin)
+ socfunction varargout = socket_control_tester(varargin)
 % SOCKET_CONTROL_TESTER MATLAB code for socket_control_tester.fig
 %      SOCKET_CONTROL_TESTER, by itself, creates a new SOCKET_CONTROL_TESTER or raises the existing
 %      singleton*.

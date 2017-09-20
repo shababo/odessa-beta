@@ -620,7 +620,7 @@ handles.close_socket = instruction.close_socket;
 handles.data.return_info = return_info;
 guidata(hObject,handles)
 
-pause(10);
+% pause(10);
 
 if isfield(instruction,'close_socket') && instruction.close_socket
     disp('closing socket')
