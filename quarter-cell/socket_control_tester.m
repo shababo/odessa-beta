@@ -998,12 +998,12 @@ guidata(hObject,handles);
 % z_start = str2double(get(handles.z_start,'String'));
 % z_stop = str2double(get(handles.z_stop,'String'));
 % z_spacing = str2double(get(handles.z_spacing,'String'));
-% z_offsets = z_start:z_spacing:z_stop;
-% z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
-% z_offsets = [-50 -10 0 10 50]';
+% handles.data.z_offsets = z_start:z_spacing:z_stop;
+% handles.data.z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
+% handles.data.z_offsets = [-50 -10 0 10 50]';
 
-z_offsets = [-20 0 20]';
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+handles.data.z_offsets = [-20 0 20]';
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 
 update_obj_pos_Callback(hObject, eventdata, handles)
 handles = guidata(hObject);
@@ -1350,11 +1350,11 @@ function neural_resp_prot_Callback(hObject, eventdata, handles)
 set(handles.close_socket_check,'Value',0)
 guidata(hObject,handles);
 
-z_offsets = -70:10:70;
-z_offsets = z_offsets';
+handles.data.z_offsets = -70:10:70;
+handles.data.z_offsets = handles.data.z_offsets';
 grid_edge_size = [3 3 3 3 3 3 5 9 5 3 3 3 3 3 3]';
 
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 
 % update_obj_pos_Callback(hObject, eventdata, handles)
 set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
@@ -1624,13 +1624,13 @@ guidata(hObject,handles);
 % z_start = str2double(get(handles.z_start,'String'));
 % z_stop = str2double(get(handles.z_stop,'String'));
 % z_spacing = str2double(get(handles.z_spacing,'String'));
-% z_offsets = z_start:z_spacing:z_stop;
-% z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
-% z_offsets = [-50 -10 0 10 50]';
+% handles.data.z_offsets = z_start:z_spacing:z_stop;
+% handles.data.z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
+% handles.data.z_offsets = [-50 -10 0 10 50]';
 
-z_offsets = [-40 -20 0 20 40]';
+handles.data.z_offsets = [-40 -20 0 20 40]';
 grid_edge_size = [1 3 5 3 1]';
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 
 set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
 handles = guidata(hObject);
@@ -2006,15 +2006,15 @@ guidata(hObject,handles);
 % z_start = str2double(get(handles.z_start,'String'));
 % z_stop = str2double(get(handles.z_stop,'String'));
 % z_spacing = str2double(get(handles.z_spacing,'String'));
-% z_offsets = z_start:z_spacing:z_stop;
-% z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
-% z_offsets = [-50 -10 0 10 50]';
+% handles.data.z_offsets = z_start:z_spacing:z_stop;
+% handles.data.z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
+% handles.data.z_offsets = [-50 -10 0 10 50]';
 
 
-z_offsets = [-90 -50 -20 0 20 50 90]';
+handles.data.z_offsets = [-90 -50 -20 0 20 50 90]';
 grid_edge_size = [7 7 9 9 9 7 7]';
 
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 
 set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
 handles = guidata(hObject);
@@ -2726,8 +2726,8 @@ user_confirm = msgbox('Please switch Multiclamp to VC with desired holding curre
 waitfor(user_confirm)
 
 % MAP IT
-z_offsets = [0]';
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+handles.data.z_offsets = [0]';
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 start_position = handles.data.obj_position;
 obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
 
@@ -3085,17 +3085,17 @@ set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
 % make obj locations
-% z_offsets = [30]';
-% z_offsets = handles.data.cell2_pos(3) handles.data.cell1_pos(3)];\
+% handles.data.z_offsets = [30]';
+% handles.data.z_offsets = handles.data.cell2_pos(3) handles.data.cell1_pos(3)];\
 if ~set_cell2_pos
-    z_offsets = inputdlg('Z Locations?',...
+    handles.data.z_offsets = inputdlg('Z Locations?',...
              'Z Locations?',1,{[num2str(handles.data.cell1_pos(3))]});
 else
-    z_offsets = inputdlg('Z Locations?',...
+    handles.data.z_offsets = inputdlg('Z Locations?',...
                  'Z Locations?',1,{[num2str(handles.data.cell1_pos(3)) ' ' num2str(handles.data.cell2_pos(3))]});
 end
-z_offsets = strread(z_offsets{1})';
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+handles.data.z_offsets = strread(handles.data.z_offsets{1})';
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
 
 guidata(hObject,handles);
@@ -3421,8 +3421,8 @@ for ii = 1:num_map_locations*num_design_iters
     nuclear_locs = handles.data.nuclear_locs;
     % cut by z
     nuclear_locs = ...
-        nuclear_locs(nuclear_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
-                       nuclear_locs(:,3) < (z_offsets(i) + thresh_dist),:);
+        nuclear_locs(nuclear_locs(:,3) > (handles.data.z_offsets(i) - thresh_dist) & ...
+                       nuclear_locs(:,3) < (handles.data.z_offsets(i) + thresh_dist),:);
     % cut by std dev  
     if reduce_map_by_std
         disp('DOING ONLINE DESIGN')      
@@ -3442,15 +3442,15 @@ for ii = 1:num_map_locations*num_design_iters
     end
     nearby_locs = [handles.data.nearby_locations];
     nearby_locs = ...
-        nearby_locs(nearby_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
-                       nearby_locs(:,3) < (z_offsets(i) + thresh_dist),:);
+        nearby_locs(nearby_locs(:,3) > (handles.data.z_offsets(i) - thresh_dist) & ...
+                       nearby_locs(:,3) < (handles.data.z_offsets(i) + thresh_dist),:);
 % 	nearby_trunc = ceil(size(nearby_locs,1)/2);
 %     nearby_choice = randsample(size(nearby_locs,1),nearby_trunc);
 %     nearby_locs = nearby_locs(nearby_choice,:);
 %     rand_locs = handles.data.rand_locs;
 %     rand_locs = ...
-%         rand_locs(rand_locs(:,3) > (z_offsets(i) - 21) & ...
-%                        rand_locs(:,3) < (z_offsets(i) + 21),:);               
+%         rand_locs(rand_locs(:,3) > (handles.data.z_offsets(i) - 21) & ...
+%                        rand_locs(:,3) < (handles.data.z_offsets(i) + 21),:);               
     assignin('base','nuclear_locs_for_stim',nuclear_locs)
     instruction.type = 82;
     if num_design_iters == 1 || reduce_map_by_std
@@ -3616,9 +3616,9 @@ guidata(hObject,handles);
 % z_start = str2double(get(handles.z_start,'String'));
 % z_stop = str2double(get(handles.z_stop,'String'));
 % z_spacing = str2double(get(handles.z_spacing,'String'));
-% z_offsets = z_start:z_spacing:z_stop;
-% z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
-% z_offsets = [-50 -10 0 10 50]';
+% handles.data.z_offsets = z_start:z_spacing:z_stop;
+% handles.data.z_offsets = [-70 -50 -30 -20 -10 0 10 20 30 50 70]';
+% handles.data.z_offsets = [-50 -10 0 10 50]';
 
 set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
 handles = guidata(hObject);
@@ -3920,9 +3920,9 @@ waitfor(user_confirm)
 handles = update_obj_pos_Callback(hObject, eventdata, handles);
 
 % make obj locations
-z_offsets = [0]';
-% z_offsets = [20]';
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+handles.data.z_offsets = [0]';
+% handles.data.z_offsets = [20]';
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 start_position = handles.data.obj_position;
 obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
 
@@ -4135,19 +4135,19 @@ for i = 1:num_map_locations
     
     nuclear_locs = handles.data.nuclear_locs;
 %     nuclear_locs = ...
-%         nuclear_locs(nuclear_locs(:,3) > (z_offsets(i) - 21) & ...
-%                        nuclear_locs(:,3) < (z_offsets(i) + 21),:);
+%         nuclear_locs(nuclear_locs(:,3) > (handles.data.z_offsets(i) - 21) & ...
+%                        nuclear_locs(:,3) < (handles.data.z_offsets(i) + 21),:);
 %     nearby_locs = [handles.data.nearby_locations];
 %     nearby_locs = ...
-%         nearby_locs(nearby_locs(:,3) > (z_offsets(i) - 21) & ...
-%                        nearby_locs(:,3) < (z_offsets(i) + 21),:);
+%         nearby_locs(nearby_locs(:,3) > (handles.data.z_offsets(i) - 21) & ...
+%                        nearby_locs(:,3) < (handles.data.z_offsets(i) + 21),:);
 % 	nearby_trunc = ceil(size(nearby_locs,1)/2);
 %     nearby_choice = randsample(size(nearby_locs,1),nearby_trunc);
 %     nearby_locs = nearby_locs(nearby_choice,:);
 %     rand_locs = handles.data.rand_locs;
 %     rand_locs = ...
-%         rand_locs(rand_locs(:,3) > (z_offsets(i) - 21) & ...
-%                        rand_locs(:,3) < (z_offsets(i) + 21),:);               
+%         rand_locs(rand_locs(:,3) > (handles.data.z_offsets(i) - 21) & ...
+%                        rand_locs(:,3) < (handles.data.z_offsets(i) + 21),:);               
     
 %     instruction.type = 82;
 %     instruction.multitarg_locs = [nuclear_locs];
@@ -4272,9 +4272,9 @@ user_confirm = msgbox('Client socket waiting?');
 waitfor(user_confirm)
 handles = update_obj_pos_Callback(hObject, eventdata, handles);
 
-z_offsets = [0]';
-z_order = randperm(length(z_offsets));
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+handles.data.z_offsets = [0]';
+z_order = randperm(length(handles.data.z_offsets));
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 start_position = handles.data.obj_position;
 obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
 obj_positions = obj_positions(z_order,:);
@@ -4589,10 +4589,10 @@ set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
 % make obj locations
-z_offsets = inputdlg('Z Locations?',...
+handles.data.z_offsets = inputdlg('Z Locations?',...
              'Z Locations?',1,{num2str(handles.data.cell1_pos(3))});
-z_offsets = strread(z_offsets{1})';
-obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+handles.data.z_offsets = strread(handles.data.z_offsets{1})';
+obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
 obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
 
 guidata(hObject,handles);
@@ -5300,8 +5300,8 @@ for ii = 1:num_map_locations*num_design_iters
     nuclear_locs = handles.data.nuclear_locs;
     % cut by within dist of cell_pos
     nuclear_locs = ...
-        nuclear_locs(nuclear_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
-                       nuclear_locs(:,3) < (z_offsets(i) + thresh_dist),:);
+        nuclear_locs(nuclear_locs(:,3) > (handles.data.z_offsets(i) - thresh_dist) & ...
+                       nuclear_locs(:,3) < (handles.data.z_offsets(i) + thresh_dist),:);
     % cut by std dev  
     if reduce_map_by_std
         disp('DOING ONLINE DESIGN')      
@@ -5321,15 +5321,15 @@ for ii = 1:num_map_locations*num_design_iters
     end
     nearby_locs = [handles.data.nearby_locations];
     nearby_locs = ...
-        nearby_locs(nearby_locs(:,3) > (z_offsets(i) - thresh_dist) & ...
-                       nearby_locs(:,3) < (z_offsets(i) + thresh_dist),:);
+        nearby_locs(nearby_locs(:,3) > (handles.data.z_offsets(i) - thresh_dist) & ...
+                       nearby_locs(:,3) < (handles.data.z_offsets(i) + thresh_dist),:);
 % 	nearby_trunc = ceil(size(nearby_locs,1)/2);
 %     nearby_choice = randsample(size(nearby_locs,1),nearby_trunc);
 %     nearby_locs = nearby_locs(nearby_choice,:);
 %     rand_locs = handles.data.rand_locs;
 %     rand_locs = ...
-%         rand_locs(rand_locs(:,3) > (z_offsets(i) - 21) & ...
-%                        rand_locs(:,3) < (z_offsets(i) + 21),:);               
+%         rand_locs(rand_locs(:,3) > (handles.data.z_offsets(i) - 21) & ...
+%                        rand_locs(:,3) < (handles.data.z_offsets(i) + 21),:);               
     assignin('base','nuclear_locs_for_stim',nuclear_locs)
     clear instruction
     instruction.type = 82;
@@ -5499,11 +5499,6 @@ if load_exp
     params = handles.data.params;
 else
     params = handles.data.params;
-    clock_array = clock;
-    handles.data.map_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
-        '_' num2str(clock_array(4)) ...
-        '_' num2str(clock_array(5))];
-    handles.data.fullsavefile = fullfile(params.savedir,[handles.data.map_id '_data.mat']);
 end
 
 guidata(hObject,handles)
@@ -5536,7 +5531,7 @@ if take_new_ref
     handles.data.ref_obj_position = handles.data.obj_position;
     guidata(acq_gui, acq_gui_data);
     guidata(hObject,handles)
-    data = handles.data; save(handles.data.fullsavefile,'data')
+    data = handles.data; save(handles.data.params.fullsavefile,'data')
 end
 
 set_cell_pos = 0;
@@ -5581,7 +5576,7 @@ if set_cell_pos
     
     guidata(acq_gui, acq_gui_data);
     guidata(hObject,handles)
-    data = handles.data; save(handles.data.fullsavefile,'data')
+    data = handles.data; save(handles.data.params.fullsavefile,'data')
 end
 
 
@@ -5628,7 +5623,7 @@ if set_cell2_pos
     guidata(hObject,handles)
     
     set(acq_gui_data.record_cell2_check,'Value',1);
-    data = handles.data; save(handles.data.fullsavefile,'data')
+    data = handles.data; save(handles.data.params.fullsavefile,'data')
 end
 
 
@@ -5641,13 +5636,13 @@ set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
 % make obj locations
-% z_offsets = [30]';
-% z_offsets = handles.data.cell2_pos(3) handles.data.cell1_pos(3)];\
+% handles.data.z_offsets = [30]';
+% handles.data.z_offsets = handles.data.cell2_pos(3) handles.data.cell1_pos(3)];\
 % if ~isfield(handles.data,'cell2_pos')
-%     z_offsets = inputdlg('Z Locations?',...
+%     handles.data.z_offsets = inputdlg('Z Locations?',...
 %              'Z Locations?',1,{[num2str(handles.data.cell1_pos(3))]});
 % else
-%     z_offsets = inputdlg('Z Locations?',...
+%     handles.data.z_offsets = inputdlg('Z Locations?',...
 %                  'Z Locations?',1,{[num2str(handles.data.cell1_pos(3)) ' ' num2str(handles.data.cell2_pos(3))]});
 % end
 
@@ -5663,15 +5658,15 @@ switch choice
         set_depths = 0;
 end
 if set_depths
-    z_offsets = inputdlg('Z Locations?',...
+    handles.data.z_offsets = inputdlg('Z Locations?',...
                  'Z Locations?',1,{params.exp.z_depths});
-    z_offsets = strread(z_offsets{1})';
-    handles.data.obj_positions = [zeros(length(z_offsets),1) zeros(length(z_offsets),1) z_offsets];
+    handles.data.z_offsets = strread(handles.data.z_offsets{1})';
+    handles.data.obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
     handles.data.obj_positions = bsxfun(@plus,handles.data.obj_positions,handles.data.obj_position);
     acq_gui_data.data.obj_positions = handles.data.obj_positions;
     guidata(hObject,handles);
     guidata(acq_gui,acq_gui_data)
-    data = handles.data; save(handles.data.fullsavefile,'data')
+    data = handles.data; save(handles.data.params.fullsavefile,'data')
 end
 
 % disp('take stack and nuclear detect...')
@@ -5711,9 +5706,9 @@ if take_new_stack
     instruction = struct();
     instruction.type = 92;
     
-    instruction.filename = [handles.data.map_id '_stack'];
+    instruction.filename = [handles.data.params.map_id '_stack'];
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-%     acq_gui_data.data.stack = return_info.image;
+    acq_gui_data.data.stack = return_info.image;
     acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
     acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
     acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
@@ -5724,7 +5719,7 @@ if take_new_stack
     
     guidata(hObject,handles);
     guidata(acq_gui, acq_gui_data);
-    data = handles.data; save(handles.data.fullsavefile,'data')
+    data = handles.data; save(handles.data.params.fullsavefile,'data')
 end
 
 % pause(2)
@@ -5746,12 +5741,12 @@ if detect_nucs
     instruction = struct();
     instruction.type = 75;
 
-    instruction.filename = [handles.data.map_id '_stack'];
-%     instruction.stackmat = handles.data.stack;
+    instruction.filename = [handles.data.params.map_id '_stack'];
+    instruction.stackmat = acq_gui_data.data.stack;
 %     imagemat = handles.data.stack;
-%     save(['C:\data\Shababo\' handles.data.map_id '.mat'],'imagemat')
+%     save(['C:\data\Shababo\' handles.data.params.map_id '.mat'],'imagemat')
 %     pause(5)
-%     copyfile(['C:\data\Shababo\' handles.data.map_id '.mat'], ['X:\shababo\' handles.data.map_id '.mat']);
+%     copyfile(['C:\data\Shababo\' handles.data.params.map_id '.mat'], ['X:\shababo\' handles.data.params.map_id '.mat']);
 %     pause(5)
     
 %     instruction.stackmat = 0;
@@ -5759,7 +5754,7 @@ if detect_nucs
     instruction.image_um_per_px = handles.data.image_um_per_px;
     instruction.stack_um_per_slice = handles.data.stack_um_per_slice;
     
-    instruction.dummy_targs = 1;
+    instruction.dummy_targs = 0;
     instruction.num_dummy_targs = 500;
     
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
@@ -5771,7 +5766,7 @@ if detect_nucs
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
-    data = handles.data; save(handles.data.fullsavefile,'data')
+    data = handles.data; save(handles.data.params.fullsavefile,'data')
 %     assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 end
 
@@ -5799,7 +5794,7 @@ if do_cells_targets
     disp('computing optimal locations and cell groups...')
     % instruction.type = 76;
     % instruction.nuclear_locs = handles.data.nuclear_locs;
-    % instruction.z_locs = z_offsets;
+    % instruction.z_locs = handles.data.z_offsets;
     % instruction.z_slice_width = handles.data.params.exp.z_slice_width;
     % 
     % [return_info,success,handles] = do_instruction_analysis(instruction,handles);
@@ -5808,13 +5803,13 @@ if do_cells_targets
     % z_slice_width = 30;
     handles.data.cells_targets = get_groups_and_stim_locs(...
                     handles.data.nuclear_locs(:,1:3), handles.data.params,...
-                    z_offsets);
+                    handles.data.z_offsets);
 
     acq_gui_data.data.cells_targets = handles.data.cells_targets;
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
-    data = handles.data; save(handles.data.fullsavefile,'data')
+    data = handles.data; save(handles.data.params.fullsavefile,'data')
 end
 
 % move objective to ref position as a safety
@@ -6152,7 +6147,7 @@ for i = start_obj_ind:num_map_locations
         handles.data.design.loc_to_cell{i} = 1:size(target_locations_selected,1);
         
         guidata(hObject,handles)
-        data = handles.data; save(handles.data.fullsavefile,'data')
+        data = handles.data; save(handles.data.params.fullsavefile,'data')
         
     end
         
@@ -6275,7 +6270,7 @@ for i = start_obj_ind:num_map_locations
             end
             
             guidata(hObject,handles)
-            data = handles.data; save(handles.data.fullsavefile,'data')
+            data = handles.data; save(handles.data.params.fullsavefile,'data')
         end
         
         %------------------------------------------%
@@ -6369,7 +6364,7 @@ for i = start_obj_ind:num_map_locations
 
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
             guidata(hObject,handles)
-            data = handles.data; save(handles.data.fullsavefile,'data')
+            data = handles.data; save(handles.data.params.fullsavefile,'data')
             set(handles.num_stim,'String',num2str(num_stim));
         end
 %         set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
@@ -6428,7 +6423,7 @@ for i = start_obj_ind:num_map_locations
                 acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
 
                 guidata(hObject,handles)
-                data = handles.data; save(handles.data.fullsavefile,'data')
+                data = handles.data; save(handles.data.params.fullsavefile,'data')
         %         guidata(acq_gui,acq_gui_data)
 
                 acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
@@ -6455,17 +6450,17 @@ for i = start_obj_ind:num_map_locations
             instruction = struct();
             instruction.data = traces;
             instruction.type = 100;
-            instruction.filename = [handles.data.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
+            instruction.filename = [handles.data.params.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
 %             save(['X:\shababo\' instruction.filename '.mat'],'traces')
 %             pause(3.0)
-            instruction.do_dummy_data = 1;
+            instruction.do_dummy_data = 0;
 
             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
             
             handles.data.oasis_data = return_info.oasis_data;
             handles.data.full_seq = full_seq;
             guidata(hObject,handles)
-            data = handles.data; save(handles.data.fullsavefile,'data')
+            data = handles.data; save(handles.data.params.fullsavefile,'data')
         end
         
         run_vi = 0;
@@ -6482,15 +6477,18 @@ for i = start_obj_ind:num_map_locations
         
         if run_vi
             
+            handles.data.design.i = i;
+            handles.data.design.n_cell_this_plane = n_cell_this_plane;
+            
             instruction.type = 110;
             instruction.data = handles.data;
-            
+%             instruction.params = handles.d
             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
             
             handles.data = return_info.data; 
             guidata(hObject,handles)
             data = handles.data;
-            save(data.fullsavefile,'data')
+            save(handles.data.params.fullsavefile,'data')
             
         end    
             
@@ -6576,7 +6574,7 @@ for i = start_obj_ind:num_map_locations
             end
 
             guidata(hObject,handles)
-            data = handles.data; save(handles.data.fullsavefile,'data')
+            data = handles.data; save(handles.data.params.fullsavefile,'data')
         end
         
         % Plot the progress
@@ -6585,7 +6583,7 @@ for i = start_obj_ind:num_map_locations
     end
 end    
 
-data = handles.data; save(handles.data.fullsavefile,'data')
+data = handles.data; save(handles.data.params.fullsavefile,'data')
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
