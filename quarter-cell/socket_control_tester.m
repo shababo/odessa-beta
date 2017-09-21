@@ -6505,6 +6505,7 @@ for i = start_obj_ind:num_map_locations
         end
 
         if regroup_cells
+            data = handles.data;
             undefined_to_disconnected = ...
                 intersect(find(data.design.mean_gamma_undefined<params.design.disconnected_threshold),find( data.design.undefined_cells{i}{data.design.iter}));
             undefined_to_connected = ...
@@ -6564,18 +6565,20 @@ for i = start_obj_ind:num_map_locations
             assignin('base','undefined_cells',data.design.undefined_cells{i})
             assignin('base','potentially_disconnected_cells',data.design.potentially_disconnected_cells{i})
             assignin('base','potentially_connected_cells',data.design.potentially_connected_cells{i})
-            %
-            data.design.iter = data.design.iter + 1
+            
             %
             if sum(data.design.dead_cells{i}{data.design.iter}+data.design.alive_cells{i}{data.design.iter})==n_cell_this_plane
                 data.design.id_continue{i}=0;% terminate
             else
                 data.design.id_continue{i}=1;
             end
-
+            
+            handles.data = data;
             guidata(hObject,handles)
-            data = handles.data; save(handles.data.params.fullsavefile,'data')
+            save(handles.data.params.fullsavefile,'data')
         end
+        
+        
         
         % Plot the progress
         fprintf('Number of trials so far: %d; number of cells killed: %d\n',handles.data.design.n_trials{i}, sum(handles.data.design.dead_cells{i}{handles.data.design.iter}+handles.data.design.alive_cells{i}{handles.data.design.iter}))
