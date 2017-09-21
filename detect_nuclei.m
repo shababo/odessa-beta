@@ -27,7 +27,7 @@ end
 if length(varargin) > 4 && ~isempty(varargin{5})
     fluor_min = varargin{5};
 else
-    fluor_min = 15;
+    fluor_min = 80;
 end
 
 if do_detect
@@ -57,7 +57,7 @@ fluor_vals(out_of_range) = [];
 
 % if ~isempty(fluor_vals)
 
-fluor_cut = .95;
+fluor_cut = .90;
 plane_fit_points = nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),:);
 [min_z,min_z_cell] = min(nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),3));
 % offset_cells = nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),:);
