@@ -6449,6 +6449,9 @@ for i = start_obj_ind:num_map_locations
         if do_oasis
             trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
             [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
+            if ~params.design.do_connected_vi
+                traces = traces([full_seq.group] ~= 3,:);
+            end
             instruction = struct();
             instruction.data = traces;
             instruction.type = 100;
