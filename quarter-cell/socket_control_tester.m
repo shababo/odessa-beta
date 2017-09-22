@@ -6577,7 +6577,7 @@ for i = start_obj_ind:num_map_locations
             else
                 data.design.id_continue{i}=1;
             end
-            
+            data.design.iter = data.design.iter + 1
             handles.data = data;
             guidata(hObject,handles)
             save(handles.data.params.fullsavefile,'data')
