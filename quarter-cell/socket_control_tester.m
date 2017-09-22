@@ -5883,6 +5883,7 @@ if whole_cell1 || whole_cell2
     end
     
     if do_whole_cell_stuff
+        
         user_confirm = msgbox('Break in! Rs okay? Test pulse off? In v-clamp?');
         waitfor(user_confirm)
 
@@ -6175,6 +6176,7 @@ for i = start_obj_ind:num_map_locations
         end
         
         if choose_stim
+            
             % On the undefined cells
             handles.data.design.trials_locations_undefined{i}{handles.data.design.iter}=[];
             handles.data.design.trials_powers_undefined{i}{handles.data.design.iter}=[];
