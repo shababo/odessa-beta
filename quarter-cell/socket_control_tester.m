@@ -6590,7 +6590,22 @@ for i = start_obj_ind:num_map_locations
         
         % Plot the progress
         fprintf('Number of trials so far: %d; number of cells killed: %d\n',handles.data.design.n_trials{i}, sum(handles.data.design.dead_cells{i}{handles.data.design.iter}+handles.data.design.alive_cells{i}{handles.data.design.iter}))
+        
+        do_cont = 0;
+        choice = questdlg('Continue Plane?', ...
+        'Continue Plane?', ...
+        'Yes','No','Yes');
+        % Handle response
+        switch choice
+        case 'Yes'
+            do_cont = 1;
+        case 'No'
+            do_cont = 0;
+        end
 
+        if ~do_cont   
+            handles.data.design.id_continue{i} = 0;
+        end
     end
 end    
 
