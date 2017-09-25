@@ -6199,7 +6199,7 @@ for i = start_obj_ind:num_map_locations
                     params.design.id_notconnected, handles.data.design.loc_to_cell{i},... 
                     cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
                     1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
-                [handles.data.design.cells_probabilities_undefined, ~] = get_prob_and_size(...
+                [cells_probabilities_undefined, ~] = get_prob_and_size(...
                     pi_target_selected,trials_locations,trials_powers,...
                     params.stim_unique,params.template_cell.prob_trace);
 
@@ -6208,6 +6208,7 @@ for i = start_obj_ind:num_map_locations
                 handles.data.design.trials_pockels_ratios_undefined{i}{handles.data.design.iter} = pockels_ratio_refs;
                 handles.data.design.trials_locations_undefined_key{i}{handles.data.design.iter} = locations_key;
                 handles.data.design.trials_pockels_ratios_multi_undefined{i}{handles.data.design.iter} = pockels_ratios;
+                handles.data.design.cells_probabilities_undefined{i}{handles.data.design.iter} = cells_probabilities_undefined;
             end
 
             %-------
@@ -6229,7 +6230,7 @@ for i = start_obj_ind:num_map_locations
                      params.design.id_notconnected, handles.data.design.loc_to_cell{i},... 
                     cell_list,params.design.n_spots_per_trial,params.design.K_disconnected,params.design.n_replicates,...
                     1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
-                [handles.data.design.cells_probabilities_disconnected, ~] = get_prob_and_size(...
+                [cells_probabilities_disconnected, ~] = get_prob_and_size(...
                     pi_target_selected,trials_locations,trials_powers,...
                     params.stim_unique,params.template_cell.prob_trace);
 
@@ -6238,6 +6239,7 @@ for i = start_obj_ind:num_map_locations
                 handles.data.design.trials_pockels_ratios_disconnected{i}{handles.data.design.iter}=pockels_ratio_refs;
                 handles.data.design.trials_locations_disconnected_key{i}{handles.data.design.iter} = locations_key;
                 handles.data.design.trials_pockels_ratios_multi_disconnected{i}{handles.data.design.iter} = pockels_ratios;
+                handles.data.design.cells_probabilities_disconnected{i}{handles.data.design.iter} = cells_probabilities_disconnected;
             end
 
             %-------
@@ -6261,7 +6263,7 @@ for i = start_obj_ind:num_map_locations
                 %[cells_probabilities_connected, ~] = get_prob_and_size(...
                 %    pi_target_nuclei,trials_locations,trials_powers,...
                 %    stim_unique,prob_trace);
-                [~, handles.data.design.stim_size_connected] = get_prob_and_size(...
+                [~, stim_size_connected] = get_prob_and_size(...
                     pi_target_nuclei,trials_locations,trials_powers,...
                     params.stim_unique,params.template_cell.prob_trace);
 
@@ -6269,6 +6271,7 @@ for i = start_obj_ind:num_map_locations
                 handles.data.design.trials_powers_connected{i}{handles.data.design.iter}=trials_powers;
                 handles.data.design.trials_pockels_ratios_connected{i}{handles.data.design.iter} = pockels_ratio_refs;
                 handles.data.design.trials_locations_connected_key{i}{handles.data.design.iter} = locations_key;
+                handles.data.design.stim_size_connected{i}{handles.data.design.iter} = stim_size_connected;
             end
             
             guidata(hObject,handles)
@@ -6350,7 +6353,7 @@ for i = start_obj_ind:num_map_locations
             disconnected_freq = num_stim/disconnected_freq;
             connected_freq = num_stim/params.design.K_connected;
 
-            stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq 1/.075])
+            stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq params.exp.max_stim_freq])
             set(handles.iti,'String',num2str(1/stim_freq))
 
 
@@ -6366,7 +6369,7 @@ for i = start_obj_ind:num_map_locations
 
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
             guidata(hObject,handles)
-            data = handles.data; save(handles.data.params.fullsavefile,'data')
+            data = handles.data; save(handles.data.params.fullsavefile,'data');
             set(handles.num_stim,'String',num2str(num_stim));
         end
 %         set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
