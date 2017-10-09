@@ -154,6 +154,7 @@ end
 assignin('base','instruction',instruction)
 disp('got info...')
 
+PRINT = 00;
 MOVE_OBJ = 10;
 GET_OBJ_POS_STEP0 = 20;
 GET_OBJ_POS_STEP1 = 21;
@@ -177,7 +178,8 @@ TAKE_SNAP = 91;
 TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
 RUN_VI = 110;
-PRINT = 00;
+DETECT_EVENTS_OASIS_AND_RUN_VI = 200;
+
 
 instruction.type
 return_info = struct();
@@ -296,6 +298,9 @@ if success >= 0
                         handles.data.pockels_ratio_refs(ind)*sequence(i).power);
                 else
                     sequence(i).power = sequence(i).power*100;
+                end
+                if isfield(sequence,'waveform')
+                    sequence(i).waveform = sprintf(sequence(i).waveform,sequence(i).power);
                 end
             end
             %sequence(i).precomputed_target_index
@@ -595,6 +600,45 @@ if success >= 0
               return_info.oasis_data = zeros(size(instruction.traces));
             end
         case RUN_VI
+            return_info.data = run_vi_online(instruction.data);
+        case DETECT_EVENTS_OASIS_AND_RUN_VI
+            
+            cmd = 'python /home/shababo/projects/mapping/code/OASIS/run_oasis_online.py ';
+            if instruction.do_dummy_data
+                instruction.filename = '1120traces_sub';
+            end
+            fullsavepath = ['/media/shababo/data/' instruction.filename '.mat'];
+            oasis_out_path = ['/media/shababo/data/' instruction.filename '_detect.mat'];
+            if ~instruction.do_dummy_data
+                traces = instruction.data;
+            else
+                load('/media/shababo/data/1120traces.mat')
+                traces = traces(1:size(instruction.data,1),:);
+            end
+            save(fullsavepath,'traces')
+            cmd = [cmd ' ' fullsavepath];
+            system(cmd)
+            % Wait for file to be created.
+            maxSecondsToWait = 60*5; % Wait five minutes...?
+            secondsWaitedSoFar  = 0;
+            while secondsWaitedSoFar < maxSecondsToWait 
+              if exist(oasis_out_path, 'file')
+                break;
+              end
+              pause(1); % Wait 1 second.
+              secondsWaitedSoFar = secondsWaitedSoFar + 1;
+            end
+            return_info.time_est = secondsWaitedSoFar;
+            if exist(oasis_out_path, 'file')
+              load(oasis_out_path)
+              handles.data.oasis_data = reshape(event_process,size(instruction.data'))';
+              
+            else
+              fprintf('Warning: x.log never got created after waiting %d seconds', secondsWaitedSoFar);
+%               uiwait(warndlg(warningMessage));
+              handles.data.oasis_data = zeros(size(instruction.traces));
+            end
+
             return_info.data = run_vi_online(instruction.data);
     end
     

@@ -546,6 +546,125 @@ guidata(acq_gui,acq_gui_data)
 
 guidata(hObject,handles)
 
+% --- Executes on button press in build_seq.
+function [handles, acq_gui, acq_gui_data] = build_seq_stp(hObject, eventdata, handles)
+% hObject    handle to build_seq (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% rng(1234)
+num_stim = str2double(get(handles.num_stim,'String'));
+
+sequence_base.start = 0;
+sequence_base.duration = str2double(get(handles.duration,'String'))*1000;
+all_powers = strread(get(handles.target_intensity,'String'));
+sequence_base.power = all_powers(1);
+sequence_base.filter_configuration = 'Femto Phasor';
+sequence_base.precomputed_target_index = 1;
+sequence_base.waveform = '5x[3@%d,22@0]';
+
+sequence(num_stim) = sequence_base;
+start_time = 1.0*1000; % hard set to 1 second for now
+iti = str2double(get(handles.iti,'String'))*1000;
+
+target_power = str2double(get(handles.target_intensity,'String'));
+ind_mult = str2double(get(handles.ind_mult,'String'));
+count = 1;
+ind_offset = str2double(get(handles.ind_offset,'String'));
+repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
+num_repeats = str2double(get(handles.num_repeats,'String'));
+for k = 1:length(all_powers)
+    for i = 1:num_stim
+
+        if i >= repeat_start_ind
+            this_repeat = num_repeats;
+        else
+            this_repeat = 1;
+        end
+        for j = 1:this_repeat
+            sequence(count) = sequence_base;
+            sequence(count).power = all_powers(k);
+            sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
+
+    %             if get(handles.power,'Value')
+    %                 [~, c_i] = min(abs(x_positions(i) - conversion));
+    %                 [~, c_j] = min(abs(y_positions(j) - conversion));
+    %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
+    % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
+    %                 voltage = get_voltage(handles.lut,scaled_power);
+    %                 image_test(i,j) = voltage;
+    %                 sequence(count).power = voltage*100;
+    %             end
+    %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
+    %             sequence(count).power = powers(k)*100;
+
+            count = count + 1;
+        end
+        
+    end
+end
+num_stim = length(sequence);
+
+if num_stim > 1 && get(handles.rand_order,'Value')
+    
+%     order = zeros((num_stim*num_repeats,1);
+%     for i = 1:num_repeats
+%         order((i-1)*num_stim+1:i*num_stim) = randperm(num_stim);
+%     end
+    order = randperm(num_stim);
+    
+else
+    order = 1:num_stim;%repmat(1:num_stim,1,num_repeats);
+    
+end
+
+% precomputed_target = precomputed_target(order);
+sequence = sequence(order);
+
+
+for i = 1:length(sequence)
+    sequence(i).start = start_time + (i-1)*(iti);
+end
+
+time_padding = 5; % in seconds
+total_duration = (sequence(end).start + iti)/1000 + time_padding;
+
+
+instruction.sequence = sequence;
+instruction.tf_flag = get(handles.tf_flag,'Value');
+instruction.total_duration = total_duration;
+% if ~isfield(handles,'close_socket')
+%     handles.close_socket = get(handles.close_socket_check,'Value');
+% end
+guidata(hObject,handles)
+instruction.close_socket = get(handles.close_socket_check,'Value');
+if get(handles.power,'Value')
+    instruction.target_power = target_power;
+else
+    instruction.target_power = NaN;
+end
+
+instruction.type = 30; %SEND SEQ
+handles.sequence = sequence;
+handles.total_duration = total_duration;
+instruction.waittime = total_duration + 120;
+instruction.set_trigger = get(handles.set_seq_trigger,'Value');
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+[acq_gui,acq_gui_data] = get_acq_gui_data();
+acq_gui_data.data.stim_key =  return_info.stim_key;
+acq_gui_data.data.sequence =  return_info.sequence;
+acq_gui = findobj('Tag','acq_gui');
+guidata(acq_gui,acq_gui_data)
+
+if get(handles.set_trial_length,'Value')
+    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+end
+guidata(acq_gui,acq_gui_data)
+
+guidata(hObject,handles)
+% assignin('base','sequence_new',sequence)
 
 function duration_Callback(hObject, eventdata, handles)
 % hObject    handle to durtag (see GCBO)
@@ -6158,7 +6277,6 @@ for i = start_obj_ind:num_map_locations
     
     % Initialize this iteration
     
-    
     init_obj_pos = 1;
     if handles.data.enable_user_breaks
         choice = questdlg('Init design for this location?', ...
@@ -6556,15 +6674,15 @@ for i = start_obj_ind:num_map_locations
             end
         end
         
-        do_oasis = 1;
+        do_oasis_and_vi = 1;
         if handles.data.enable_user_breaks
-            choice = questdlg('Run OASIS?', ...
-                'Run OASIS?', ...
+            choice = questdlg('Run OASIS and VI?', ...
+                'Run OASIS and VI?', ...
                 'Yes','No','Yes');
             % Handle response
             switch choice
                 case 'Yes'
-                    do_oasis = 1;
+                    do_oasis_and_vi = 1;
                     choice = questdlg('Continue user control?',...
                         'Continue user control?', ...
                         'Yes','No','Yes');
@@ -6576,11 +6694,11 @@ for i = start_obj_ind:num_map_locations
                             handles.data.enable_user_breaks = 0;
                     end
                 case 'No'
-                    do_oasis = 0;
+                    do_oasis_and_vi = 0;
             end
         end
         
-        if do_oasis
+        if do_oasis_and_vi
             trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
             [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
             if ~params.design.do_connected_vi
@@ -6588,50 +6706,50 @@ for i = start_obj_ind:num_map_locations
             end
             instruction = struct();
             instruction.data = traces;
-            instruction.type = 100;
+            instruction.type = 200;
             instruction.filename = [handles.data.params.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
 %             save(['X:\shababo\' instruction.filename '.mat'],'traces')
 %             pause(3.0)
             instruction.do_dummy_data = 0;
 
-            [return_info,success,handles] = do_instruction_analysis(instruction,handles);
+%             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
             
-            handles.data.oasis_data = return_info.oasis_data;
+%             handles.data.oasis_data = return_info.oasis_data;
             handles.data.full_seq = full_seq;
-            guidata(hObject,handles)
-            exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
-        end
-        
-        run_vi = 1;
-        if handles.data.enable_user_breaks
-            choice = questdlg('Run VI?', ...
-                'Run OASIS?', ...
-                'Yes','No','Yes');
-            % Handle response
-            switch choice
-                case 'Yes'
-                    run_vi = 1;
-                    choice = questdlg('Continue user control?',...
-                        'Continue user control?', ...
-                        'Yes','No','Yes');
-                    % Handle response
-                    switch choice
-                        case 'Yes'
-                            handles.data.enable_user_breaks = 1;
-                        case 'No'
-                            handles.data.enable_user_breaks = 0;
-                    end
-                case 'No'
-                    run_vi = 0;
-            end
-        end
-        
-        if run_vi
+%             guidata(hObject,handles)
+%             exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+%         end
+%         
+%         run_vi = 1;
+%         if handles.data.enable_user_breaks
+%             choice = questdlg('Run VI?', ...
+%                 'Run OASIS?', ...
+%                 'Yes','No','Yes');
+%             % Handle response
+%             switch choice
+%                 case 'Yes'
+%                     run_vi = 1;
+%                     choice = questdlg('Continue user control?',...
+%                         'Continue user control?', ...
+%                         'Yes','No','Yes');
+%                     % Handle response
+%                     switch choice
+%                         case 'Yes'
+%                             handles.data.enable_user_breaks = 1;
+%                         case 'No'
+%                             handles.data.enable_user_breaks = 0;
+%                     end
+%                 case 'No'
+%                     run_vi = 0;
+%             end
+%         end
+%         
+%         if run_vi
             
             handles.data.design.i = i;
             handles.data.design.n_cell_this_plane = n_cell_this_plane;
             
-            instruction.type = 110;
+%             instruction.type = 110;
             instruction.exp_data = handles.data;
 %             instruction.params = handles.d
             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
@@ -6756,6 +6874,611 @@ for i = start_obj_ind:num_map_locations
             do_cont = 1;
         case 'No'
             do_cont = 0;
+        end
+
+        if ~do_cont   
+            handles.data.design.id_continue{i} = 0;
+        end
+    end
+end    
+
+exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+guidata(hObject,handles)
+
+% --- Executes on button press in map_w_online.
+function map_w_online_Callback(hObject, eventdata, handles)
+% hObject    handle to map_w_online (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.data.enable_user_breaks = 0;
+choice = questdlg('Choose start point?',...
+	'Choose start point?', ...
+	'Yes','No','Yes');
+% Handle response
+switch choice
+    case 'Yes'
+        handles.data.enable_user_breaks = 1;
+    case 'No'
+        handles.data.enable_user_breaks = 0;
+end
+guidata(hObject,handles)
+
+reinit_oed = 0;
+if handles.data.enable_user_breaks
+    choice = questdlg('Initialize OED params?',...
+        'Initialize OED params?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            reinit_oed = 1;
+            choice = questdlg('Continue user control?',...
+                'Continue user control?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    handles.data.enable_user_breaks = 1;
+                case 'No'
+                    handles.data.enable_user_breaks = 0;
+            end
+            guidata(hObject,handles)
+        case 'No'
+            reinit_oed = 0;
+    end
+end
+
+if reinit_oed
+    handles.data.params = init_oed(1);
+    guidata(hObject,handles)
+end
+
+load_exp = 0;
+if handles.data.enable_user_breaks
+    choice = questdlg('Load an experiment?',...
+        'Initialize OED params?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            load_exp = 1;
+        case 'No'
+            load_exp = 0;
+    end
+end
+
+if load_exp
+    [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
+    load(fullfile(data_pathname,data_filename),'data')
+    handles.data = data;
+    params = handles.data.params;
+else
+    params = handles.data.params;
+end
+
+guidata(hObject,handles)
+
+% shift focus
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
+
+set(handles.close_socket_check,'Value',0)
+guidata(hObject,handles);
+
+handles = set_new_ref_pos(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+
+handles = set_cell1_pos(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+handles = set_cell2_pos(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+
+% move obj to ref position (top of slice, centered on map fov)
+set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
+set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
+set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
+
+[handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
+handles = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+handles = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+set_depths = 1;
+choice = questdlg('Set Z-Depths?', ...
+	'Set Cell Pos?', ...
+	'Yes','No','Yes');
+% Handle response
+switch choice
+    case 'Yes'
+        set_depths = 1;
+    case 'No'
+        set_depths = 0;
+end
+
+if set_depths
+    handles.data.z_offsets = inputdlg('Z Locations?',...
+                 'Z Locations?',1,{params.exp.z_depths});
+    handles.data.z_offsets = strread(handles.data.z_offsets{1})';
+    handles.data.obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
+    handles.data.obj_positions = bsxfun(@plus,handles.data.obj_positions,handles.data.obj_position);
+    acq_gui_data.data.obj_positions = handles.data.obj_positions;
+    guidata(hObject,handles);
+    guidata(acq_gui,acq_gui_data)
+    exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+end
+
+% Set power, TODO: add user break
+user_input_powers = inputdlg('Enter desired powers (space-delimited):',...
+             'Powers to run?',1,{params.exp.power_levels});
+user_input_powers = strread(user_input_powers{1});
+handles.data.params.exp.user_power_level = user_input_powers(1);
+params = handles.data.params;
+guidata(hObject,handles)
+
+
+handles = compute_groups_targets(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+handles = setup_patches(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+set(handles.rand_order,'Value',1);
+% set(handles.num_repeats,'String',num2str(10));
+set(handles.duration,'String',num2str(.003));
+% set(handles.iti,'String',num2str(0.075));
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+num_map_locations = size(handles.data.obj_positions,1);
+
+set_obj_pos = 0;
+choice = questdlg('Start at another z-depth?', ...
+	'Start at another z-depth??', ...
+	'Yes','No','Yes');
+% Handle response
+switch choice
+    case 'Yes'
+        set_obj_pos = 1;
+    case 'No'
+        set_obj_pos = 0;
+end
+
+if set_obj_pos
+    prompt = {'Enter obj position index:'};
+    dlg_title = 'Obj Position';
+    num_lines = 1;
+    defaultans = {'2'};
+    answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
+    start_obj_ind = str2double(answer{1});
+else
+    start_obj_ind = 1;
+end
+
+% else set i, other stuff?
+
+for i = start_obj_ind:num_map_locations
+    
+    % move obj
+    set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
+    set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
+    set(handles.thenewz,'String',num2str(handles.data.obj_positions(i,3)))
+    [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+    
+    
+    % SETUP FOR ONLINE DESIGN!!!
+    
+    % get info for this group of cells
+    cell_group_list = handles.data.cells_targets.cell_group_list{i};
+    n_cell_this_plane = length(cell_group_list);
+    cell_locs_this_plane = handles.data.cell_targets.cell_locations(cell_group_list,:);
+    
+    
+    % Initialize this iteration
+    
+    init_obj_pos = 1;
+    if handles.data.enable_user_breaks
+        choice = questdlg('Init design for this location?', ...
+            'Init design for this location?', ...
+            'Yes','No','Yes');
+        % Handle response
+        switch choice
+            case 'Yes'
+                init_obj_pos = 1;
+                choice = questdlg('Continue user control?',...
+                    'Continue user control?', ...
+                    'Yes','No','Yes');
+                % Handle response
+                switch choice
+                    case 'Yes'
+                        handles.data.enable_user_breaks = 1;
+                    case 'No'
+                        handles.data.enable_user_breaks = 0;
+                end
+            case 'No'
+                init_obj_pos = 0;
+        end
+    end
+    
+    if init_obj_pos
+        handles.data.design.iter=1;
+
+        % Initialize the five cell groups
+        handles.data.design.undefined_cells{i}{1}=ones(n_cell_this_plane,1);%A
+        handles.data.design.potentially_connected_cells{i}{1}=zeros(n_cell_this_plane,1);%C
+        handles.data.design.alive_cells{i}{1}=zeros(n_cell_this_plane,1);
+        handles.data.design.dead_cells{i}{1}=zeros(n_cell_this_plane,1);
+        
+        handles.data.design.n_trials{i}=0;
+        handles.data.design.id_continue{i}=1;% an indicator
+
+        % get this z-depth spots
+        handles.data.design.loc_to_cell{i} = 1:size(target_locations_selected,1);
+        
+        guidata(hObject,handles)
+        exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+        
+    end
+        
+    
+    % Online design:
+    while handles.data.design.id_continue{i}
+        % while not exceeding the set threshold of total trials
+        % and there are new cells being excluded
+
+        handles.data.design.iter
+
+        % Conduct random trials
+
+        % INIT ITERATION ON THIS SLICE
+        choose_stim = 1;
+        if handles.data.enable_user_breaks
+            choice = questdlg('Choose stim locations for this iteration?', ...
+                'Choose stim locations for this iteration?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    choose_stim = 1;
+                    choice = questdlg('Continue user control?',...
+                        'Continue user control?', ...
+                        'Yes','No','Yes');
+                    % Handle response
+                    switch choice
+                        case 'Yes'
+                            handles.data.enable_user_breaks = 1;
+                        case 'No'
+                            handles.data.enable_user_breaks = 0;
+                    end
+                case 'No'
+                    choose_stim = 0;
+            end
+        end
+        
+        if choose_stim
+            
+            % On the undefined cells
+            cell_list = find(handles.data.design.undefined_cells{i}{handles.data.design.iter});
+            cell_list = handles.data.cells_targets.cell_group_list{i}(cell_list);
+            handles.data.design.trials_locations_undefined{i}{handles.data.design.iter} = ...
+                [handles.data.cells_targets.cell_locations(cell_list,1:2) ...
+                handles.data.z_offsets(i)*ones(length(cell_list),1)];
+            
+            
+            
+            cell_list = find(handles.data.design.potentially_connected_cells{i}{handles.data.design.iter});
+            cell_list = handles.data.cells_targets.cell_group_list{i}(cell_list);
+            handles.data.design.trials_locations_connected{i}{handles.data.design.iter} = ...
+                handles.data.cells_targets.cell_locations(cell_list,:);
+            if ~params.exp.arbitrary_z
+                handles.data.design.trials_locations_connected{i}{handles.data.design.iter}(:,3) = ...
+                    handles.data.z_offsets(i);
+            end
+            
+            cell_list = find(handles.data.design.alive_cells{i}{handles.data.design.iter});
+            cell_list = handles.data.cells_targets.cell_group_list{i}(cell_list);
+            handles.data.design.trials_locations_alive{i}{handles.data.design.iter} = ...
+                handles.data.cells_targets.cell_locations(cell_list,:);
+            if ~params.exp.arbitrary_z
+                handles.data.design.trials_locations_alive{i}{handles.data.design.iter}(:,3) = ...
+                    handles.data.z_offsets(i);
+            end
+            
+            guidata(hObject,handles)
+            exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+        end
+        
+        %------------------------------------------%
+        % Run the designed trials
+        
+        do_create_stim_phases = 1;
+        if handles.data.enable_user_breaks
+            choice = questdlg('Design targets and compute holo?', ...
+                'Design targets and compute holo?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    do_create_stim_phases = 1;
+                    choice = questdlg('Continue user control?',...
+                        'Continue user control?', ...
+                        'Yes','No','Yes');
+                    % Handle response
+                    switch choice
+                        case 'Yes'
+                            handles.data.enable_user_breaks = 1;
+                        case 'No'
+                            handles.data.enable_user_breaks = 0;
+                    end
+                case 'No'
+                    do_create_stim_phases = 0;
+            end
+        end
+        
+        if do_create_stim_phases
+            
+            multitarg_locs = handles.data.design.trials_locations_undefined{i}{handles.data.design.iter};
+            single_spot_locs = handles.data.design.trials_locations_connected{i}{handles.data.design.iter};
+            stp_spot_locs = handles.data.design.trials_locations_alive{i}{handles.data.design.iter};
+
+            % compute maximal stim freq
+            num_cells = max([size(multitarg_locs,1) size(single_spot_locs,1) size(stp_spot_locs,1)]);
+            
+            switch handles.data.design.iter
+                case 1
+                    max_freq = params.exp.max_stim_freq;
+                case 2
+                    max_freq = params.exp.max_stim_freq;
+                case 3
+                    max_freq = 8; % MAGIC NUMBER - this is to slow down for STP
+            end
+            stim_freq = min([num_cells*params.exp.max_spike_freq max_freq])
+            set(handles.iti,'String',num2str(1/stim_freq))
+            
+
+            % build the holograms
+            instruction = struct();
+            instruction.type = 82;
+            instruction.do_target = 1;
+            instruction.multitarg_locs = multitarg_locs;
+            instruction.single_spot_locs = single_spot_locs;
+            instruction.targs_per_stim = 3;
+            instruction.repeat_target = 10;
+            instruction.num_stim = ...
+                size(instruction.multitarg_locs,1)*ceil(instruction.repeat_target/instruction.targs_per_stim);
+            [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+            set(handles.num_stim,'String',num2str(return_info.num_stim));
+            set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
+            guidata(hObject,handles)
+            exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data');
+        end
+%         set(handles.repeat_start_ind,'String',num2str(return_info.num_stim - size(instruction.single_spot_locs,1)+1));
+        
+        do_run_trials = 1;
+        if handles.data.enable_user_breaks
+            choice = questdlg('Run the trials?', ...
+                'Run the trials?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    do_run_trials = 1;
+                    choice = questdlg('Continue user control?',...
+                        'Continue user control?', ...
+                        'Yes','No','Yes');
+                    % Handle response
+                    switch choice
+                        case 'Yes'
+                            handles.data.enable_user_breaks = 1;
+                        case 'No'
+                            handles.data.enable_user_breaks = 0;
+                    end
+                case 'No'
+                    do_run_trials = 0;
+            end
+        end
+        
+        if do_run_trials
+            set(handles.tf_flag,'Value',1)
+            set(handles.set_seq_trigger,'Value',0)
+            switch handles.data.design.iter == 1
+                case 1 
+                    set(handles.target_intensity,'String','150')
+                    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+                case 2
+                    set(handles.target_intensity,'String','50 75 100')
+                    set(handles.num_repeats,'String',num2str(10));
+                    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+                case 3
+                    set(handles.target_intensity,'String','75 100')
+                    set(handles.num_repeats,'String',num2str(10));
+                    [handles, acq_gui, acq_gui_data] = build_seq_stp(hObject, eventdata, handles);
+            end
+
+            
+        %     handles = guidata(hObject);
+        %     acq_gui_data = get_acq_gui_data();
+            max_seq_length = str2double(get(handles.max_seq_length,'String'));
+            this_seq = acq_gui_data.data.sequence;
+            num_runs = ceil(length(this_seq)/max_seq_length);
+            handles.data.start_trial = acq_gui_data.data.sweep_counter + 1;
+
+            for run_i = 1:num_runs
+
+                this_subseq = this_seq((run_i-1)*max_seq_length+1:min(run_i*max_seq_length,length(this_seq)));
+                time_offset = this_subseq(1).start - 1000;
+                for k = 1:length(this_subseq)
+                    this_subseq(k).start = this_subseq(k).start - time_offset;
+                end
+                total_duration = (this_subseq(end).start + this_subseq(end).duration)/1000 + 5;
+
+                set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+                acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+                instruction = struct();
+                instruction.type = 32; %SEND SEQ
+                handles.sequence = this_subseq;
+                instruction.sequence = this_subseq;
+                handles.total_duration = total_duration;
+                instruction.waittime = total_duration + 120;
+                disp('sending instruction...')
+                [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+        %         acq_gui_data = get_acq_gui_data();
+        %         acq_gui_data.data.stim_key =  return_info.stim_key;
+                acq_gui_data.data.sequence =  this_subseq;
+        %         acq_gui = findobj('Tag','acq_gui');
+                guidata(acq_gui,acq_gui_data)
+
+                set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+                acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+
+                guidata(hObject,handles)
+                exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+        %         guidata(acq_gui,acq_gui_data)
+
+                acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+                waitfor(acq_gui_data.run,'String','Start')
+                guidata(acq_gui,acq_gui_data)
+
+            end
+        end
+        
+        if handles.data.design.iter < 3
+            do_online_analysis = 1;
+            if handles.data.enable_user_breaks
+                choice = questdlg('Run OASIS and VI?', ...
+                    'Run OASIS and VI?', ...
+                    'Yes','No','Yes');
+                % Handle response
+                switch choice
+                    case 'Yes'
+                        do_online_analysis = 1;
+                        choice = questdlg('Continue user control?',...
+                            'Continue user control?', ...
+                            'Yes','No','Yes');
+                        % Handle response
+                        switch choice
+                            case 'Yes'
+                                handles.data.enable_user_breaks = 1;
+                            case 'No'
+                                handles.data.enable_user_breaks = 0;
+                        end
+                    case 'No'
+                        do_online_analysis = 0;
+                end
+            end
+
+            if do_online_analysis
+                trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
+                show_raw_data = 0; do_stdmap = 1; do_corrmap = 0;
+                [~,~,~,~,handles.data.design.stddev_maps{i}{handles.data.design.iter}] = ...
+                    summarize_map(acq_gui_data.data,trials,show_raw_data,do_stdmap,do_corrmap);
+                this_std_map = ...
+                    handles.data.design.stddev_maps{i}{handles.data.design.iter}{end}{1}; % this map location, highest pow, ch 1
+                [sorted_stds,sort_order] = sort(this_std_map(:),1,'descend');
+                sort_order = sort_order(~isnan(sorted_stds));
+                [x_inds, y_inds] = ind2sub(size(this_std_map),sort_order);
+                num_spots = ceil(length(sort_order)*(1 - params.design.std_thresh(handles.data.design.iter)));
+                num_spots = max(params.design.min_targs,num_spots);
+                good_locations = [x_inds(1:num_spots) y_inds(1:num_spots)]*1 - 151;
+                switch handles.data.design.iter
+                    case 1
+                        nuclear_locs = handles.data.design.trials_locations_undefined{i}{handles.data.design.iter};
+                    case 2
+                        nuclear_locs = handles.data.design.trials_locations_connected{i}{handles.data.design.iter};
+                    case 3
+                        nuclear_locs = handles.data.design.trials_locations_alive{i}{handles.data.design.iter};
+                end
+                dist_mat = squareform(pdist([nuclear_locs(:,[1 2]); good_locations]));
+                dist_mat = dist_mat(1:size(nuclear_locs,1),size(nuclear_locs,1)+1:end);
+                handles.data.response_locs = any(dist_mat < 5*sqrt(2),2);
+                handles.data.design.selected_locs{i}{handles.data.design.iter}= nuclear_locs(handles.data.response_locs,:);
+
+                guidata(hObject,handles)
+                exp_data = handles.data;
+                save(handles.data.params.fullsavefile,'exp_data')
+
+            end    
+
+            regroup_cells = 1;
+            if handles.data.enable_user_breaks
+                choice = questdlg('Regroup cells?', ...
+                'Regroup cells?', ...
+                'Yes','No','Yes');
+                % Handle response
+                switch choice
+                case 'Yes'
+                    regroup_cells = 1;
+                    choice = questdlg('Continue user control?',...
+                        'Continue user control?', ...
+                        'Yes','No','Yes');
+                    % Handle response
+                    switch choice
+                        case 'Yes'
+                            handles.data.enable_user_breaks = 1;
+                        case 'No'
+                            handles.data.enable_user_breaks = 0;
+                    end
+                case 'No'
+                    regroup_cells = 0;
+                end
+            end
+
+            if regroup_cells
+                
+                handles.data.design.undefined_cells{i}{handles.data.design.iter + 1}(:) = 0;
+                switch handles.data.design.iter
+                    case 1
+                        handles.data.design.potentially_connected_cells{i}{handles.data.design.iter + 1} = ...
+                            handles.data.design.undefined_cells{i}{handles.data.design.iter + 1};
+                        handles.data.design.potentially_connected_cells{i}{handles.data.design.iter + 1}(handles.data.response_locs) = 1;
+                        handles.data.design.alive_cells{i}{handles.data.design.iter + 1} = ...
+                            handles.data.design.undefined_cells{i}{handles.data.design.iter + 1};
+                    case 2
+                        handles.data.design.potentially_connected_cells{i}{handles.data.design.iter + 1} = ...
+                            handles.data.design.undefined_cells{i}{handles.data.design.iter + 1};
+                        handles.data.design.alive_cells{i}{handles.data.design.iter + 1} = ...
+                            handles.data.design.undefined_cells{i}{handles.data.design.iter + 1};
+                        handles.data.design.alive_cells{i}{handles.data.design.iter + 1}(handles.data.response_locs) = 1;
+                end
+                        
+                assignin('base','undefined_cells',data.design.undefined_cells{i})
+                assignin('base','potentially_disconnected_cells',data.design.potentially_connected_cells{i})
+                assignin('base','potentially_connected_cells',data.design.alive_cells{i})
+            end
+        end
+
+        handles.data.design.iter = data.design.iter + 1
+        handles.data.design.id_continue{i} = data.design.iter < 4;
+        guidata(hObject,handles)
+        exp_data = handles.data;
+        save(handles.data.params.fullsavefile,'exp_data')
+        
+        
+        
+        do_cont = 0;
+        choice = questdlg('Continue Plane?', ...
+        'Continue Plane?', ...
+        'Yes','No','Yes');
+        % Handle response
+        switch choice
+            case 'Yes'
+                do_cont = 1;
+            case 'No'
+                do_cont = 0;
         end
 
         if ~do_cont   
