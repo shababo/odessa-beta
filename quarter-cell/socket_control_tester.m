@@ -312,8 +312,8 @@ num_stim = str2double(get(handles.num_stim,'String'));
 
 sequence_base.start = 0;
 sequence_base.duration = str2double(get(handles.duration,'String'))*1000;
-all_powers = strread(get(handles.target_intensity,'String'));
-sequence_base.power = all_powers(1);
+handles.data.group_powers = strread(get(handles.target_intensity,'String'));
+sequence_base.power = handles.data.group_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
 
@@ -327,7 +327,7 @@ count = 1;
 ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 num_repeats = str2double(get(handles.num_repeats,'String'));
-for k = 1:length(all_powers)
+for k = 1:length(handles.data.group_powers)
     for i = 1:num_stim
 
         if i >= repeat_start_ind
@@ -337,7 +337,7 @@ for k = 1:length(all_powers)
         end
         for j = 1:this_repeat
             sequence(count) = sequence_base;
-            sequence(count).power = all_powers(k);
+            sequence(count).power = handles.data.group_powers(k);
             sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
 
     %             if get(handles.power,'Value')
@@ -434,12 +434,13 @@ sequence_base.start = 0;
  
 
 sequence_base.duration = str2double(get(handles.duration,'String'))*1000;
-all_powers = strread(get(handles.target_intensity,'String'));
-sequence_base.power = all_powers(1);
+handles.data.group_powers = handles.data.target_powers;%strread(get(handles.target_intensity,'String'));
+sequence_base.power = handles.data.group_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
 sequence_base.group = 1;
 sequence_base.group_target_index = 1;
+sequence_base.group_multi_flag = 0;
 
 sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
@@ -452,38 +453,46 @@ count_ind = 1;
 % ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 % num_repeats = str2double(get(handles.num_repeats,'String'));
-for k = 1:length(all_powers)
-    for ii = 1:params.design.num_groups
-        this_group_num = diff(handles.data.sequence_groups(ii,:))+1;
-        this_repeat = handles.data.group_repeats(ii);
-        group_count_ind = 1;
-        for i = 1:this_group_num
 
-            for j = 1:this_repeat
-                sequence(count) = sequence_base;
-                sequence(count).power = all_powers(k);
-                sequence(count).precomputed_target_index = count_ind;
-                sequence(count).group = ii;
-                sequence(count).group_target_index = group_count_ind;
-        %             if get(handles.power,'Value')
-        %                 [~, c_i] = min(abs(x_positions(i) - conversion));
-        %                 [~, c_j] = min(abs(y_positions(j) - conversion));
-        %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
-        % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
-        %                 voltage = get_voltage(handles.lut,scaled_power);
-        %                 image_test(i,j) = voltage;
-        %                 sequence(count).power = voltage*100;
-        %             end
-        %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
-        %             sequence(count).power = powers(k)*100;
+for ii = 1:params.design.num_groups
+    this_group_num = diff(handles.data.sequence_groups(ii,:))+1;
+    this_repeat = handles.data.group_repeats(ii);
+    group_count_ind = 1;
+    these_powers = handles.data.group_powers{ii};
 
-                count = count + 1;
+    for i = 1:this_group_num
+
+        for j = 1:this_repeat
+            sequence(count) = sequence_base;
+            sequence(count).multi_flag = handles.data.group_multi_flag(ii);
+            if length(these_powers) > 1
+                sequence(count).power = these_powers(i);
+                
+            else
+                sequence(count).power = these_powers;
             end
-            count_ind = count_ind + 1;
-            group_count_ind = group_count_ind + 1;
-        end    
-    end
+            sequence(count).precomputed_target_index = count_ind;
+            sequence(count).group = ii;
+            sequence(count).group_target_index = group_count_ind;
+    %             if get(handles.power,'Value')
+    %                 [~, c_i] = min(abs(x_positions(i) - conversion));
+    %                 [~, c_j] = min(abs(y_positions(j) - conversion));
+    %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
+    % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
+    %                 voltage = get_voltage(handles.lut,scaled_power);
+    %                 image_test(i,j) = voltage;
+    %                 sequence(count).power = voltage*100;
+    %             end
+    %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
+    %             sequence(count).power = powers(k)*100;
+
+            count = count + 1;
+        end
+        count_ind = count_ind + 1;
+        group_count_ind = group_count_ind + 1;
+    end    
 end
+
 num_stim = length(sequence);
 
 if num_stim > 1 && get(handles.rand_order,'Value')
@@ -557,8 +566,8 @@ num_stim = str2double(get(handles.num_stim,'String'));
 
 sequence_base.start = 0;
 sequence_base.duration = str2double(get(handles.duration,'String'))*1000;
-all_powers = strread(get(handles.target_intensity,'String'));
-sequence_base.power = all_powers(1);
+handles.data.group_powers = strread(get(handles.target_intensity,'String'));
+sequence_base.power = handles.data.group_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
 sequence_base.waveform = '5x[3@%d,22@0]';
@@ -573,7 +582,7 @@ count = 1;
 ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 num_repeats = str2double(get(handles.num_repeats,'String'));
-for k = 1:length(all_powers)
+for k = 1:length(handles.data.group_powers)
     for i = 1:num_stim
 
         if i >= repeat_start_ind
@@ -583,7 +592,7 @@ for k = 1:length(all_powers)
         end
         for j = 1:this_repeat
             sequence(count) = sequence_base;
-            sequence(count).power = all_powers(k);
+            sequence(count).power = handles.data.group_powers(k);
             sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
 
     %             if get(handles.power,'Value')
@@ -6267,14 +6276,10 @@ for i = start_obj_ind:num_map_locations
     pi_target_selected = handles.data.cells_targets.pi_target_selected{i};
     inner_normalized_products = handles.data.cells_targets.inner_normalized_products{i};
     target_locations_selected = handles.data.cells_targets.target_locations_selected{i};
-    power_selected = handles.data.cells_targets.power_selected{i};
-    target_locations_all = handles.data.cells_targets.target_locations_all{i};
-    cell_neighbours = handles.data.cells_targets.cell_neighbours{i};
     target_locations_nuclei = handles.data.cells_targets.target_locations_nuclei{i};
-    power_nuclei = handles.data.cells_targets.power_nuclei{i};
     pi_target_nuclei = handles.data.cells_targets.pi_target_nuclei{i};
     loc_to_cell_nuclei = handles.data.cells_targets.loc_to_cell_nuclei{i};
-    
+    loc_to_cell = handles.data.cells_targets.loc_to_cell{i};
     % Initialize this iteration
     
     init_obj_pos = 1;
@@ -6387,6 +6392,13 @@ for i = start_obj_ind:num_map_locations
         
         if choose_stim
             
+            variational_params=struct([]);
+            variational_params(1).alpha = handles.data.design.variational_params_path{i}.alpha(:,iter);
+            variational_params(1).beta = handles.data.design.variational_params_path{i}.beta(:,iter);
+            variational_params(1).alpha_gain = handles.data.design.variational_params_path{i}.alpha_gain(:,iter);
+            variational_params(1).beta_gain = handles.data.design.variational_params_path{i}.beta_gain(:,iter);
+            gamma_current=handles.data.design.gamma_path{i}(:,iter);
+
             % On the undefined cells
             handles.data.design.trials_locations_undefined{i}{handles.data.design.iter}=[];
             handles.data.design.trials_powers_undefined{i}{handles.data.design.iter}=[];
@@ -6400,25 +6412,40 @@ for i = start_obj_ind:num_map_locations
             if sum(handles.data.design.undefined_cells{i}{handles.data.design.iter})>0
                 disp('designing undefined stim')
                 cell_list= find(handles.data.design.undefined_cells{i}{handles.data.design.iter});
-                gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
+%                 gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
+                if length(cell_list) > params.design.single_spot_threshold
+                    
+                    [trials_locations, trials_powers,target_locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
+                        target_locations_selected,params.power_level,...
+                        pi_target_selected, inner_normalized_products,params.design.single_spot_threshold,...
+                        variational_params,n_MC_samples,params.design.gain_bound,params.template_cell.prob_trace_full,...
+                        gamma_current,  params.fire_stim_threshold,params.stim_scale,...
+                        loc_to_cell,...
+                        cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
+                        1,handles.data.params.exp.ratio_map,params.exp.max_power_ref,0);
+                    [~, stim_size] = get_prob_and_size(...
+                        pi_target_selected,trials_locations,trials_powers,params.stim_unique,params.template_cell.prob_trace);
+                else
+                    [trials_locations,  trials_powers,target_locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
+                        target_locations_nuclei,params.power_level,...
+                        pi_target_nuclei, inner_normalized_products,params.design.single_spot_threshold,...
+                        variational_params,params.design.n_MC_samples,params.design.gain_bound,...
+                        params.template_cell.prob_trace_full,gamma_current,  params.fire_stim_threshold,params.stim_scale,...
+                        loc_to_cell_nuclei,...
+                        cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
+                        1,handles.data.params.exp.ratio_map,params.exp.max_power_ref,0);
 
-                [trials_locations, trials_powers, locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
-                    target_locations_selected,power_selected,...
-                    inner_normalized_products,params.design.single_spot_threshold,...
-                    gamma_estimates,params.design.prob_weight,...
-                    params.design.id_notconnected, handles.data.design.loc_to_cell{i},... 
-                    cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
-                    1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
-                [cells_probabilities_undefined, ~] = get_prob_and_size(...
-                    pi_target_selected,trials_locations,trials_powers,...
-                    params.stim_unique,params.template_cell.prob_trace);
+                    [~, stim_size] = get_prob_and_size(...
+                        pi_target_nuclei,trials_locations,trials_powers,params.stim_unique,params.template_cell.prob_trace);
+
+                end
 
                 handles.data.design.trials_locations_undefined{i}{handles.data.design.iter}=trials_locations;
                 handles.data.design.trials_powers_undefined{i}{handles.data.design.iter}=trials_powers;
                 handles.data.design.trials_pockels_ratios_undefined{i}{handles.data.design.iter} = pockels_ratio_refs;
-                handles.data.design.trials_locations_undefined_key{i}{handles.data.design.iter} = locations_key;
+                handles.data.design.trials_locations_undefined_key{i}{handles.data.design.iter} = target_locations_key;
                 handles.data.design.trials_pockels_ratios_multi_undefined{i}{handles.data.design.iter} = pockels_ratios;
-                handles.data.design.cells_probabilities_undefined{i}{handles.data.design.iter} = cells_probabilities_undefined;
+                handles.data.design.stim_size_undefined{i}{handles.data.design.iter} = stim_size;
             end
 
             %-------
@@ -6431,25 +6458,41 @@ for i = start_obj_ind:num_map_locations
             if sum(handles.data.design.potentially_disconnected_cells{i}{handles.data.design.iter})>0
                 disp('designing disconnected stim')
                 % Find cells with close to zero gammas
-                cell_list= find(handles.data.design.potentially_disconnected_cells{i}{handles.data.design.iter});
-                gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
-                [trials_locations,  trials_powers, locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
-                    target_locations_selected,power_selected,...
-                    inner_normalized_products,params.design.single_spot_threshold,...
-                    gamma_estimates_confirm,0,...
-                     params.design.id_notconnected, handles.data.design.loc_to_cell{i},... 
-                    cell_list,params.design.n_spots_per_trial,params.design.K_disconnected,params.design.n_replicates,...
-                    1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
-                [cells_probabilities_disconnected, ~] = get_prob_and_size(...
-                    pi_target_selected,trials_locations,trials_powers,...
-                    params.stim_unique,params.template_cell.prob_trace);
+                cell_list= find(handles.data.design.disconnected_cells{i}{handles.data.design.iter});
+%                 gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
+                if length(cell_list) > params.design.single_spot_threshold
+                    
+                    [trials_locations, trials_powers,target_locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
+                        target_locations_selected,params.power_level,...
+                        pi_target_selected, inner_normalized_products,params.design.single_spot_threshold,...
+                        variational_params,n_MC_samples,params.design.gain_bound,params.template_cell.prob_trace_full,...
+                        gamma_current,  params.fire_stim_threshold,params.stim_scale,...
+                        loc_to_cell,...
+                        cell_list,params.design.n_spots_per_trial,params.design.K_disconnected,params.design.n_replicates,...
+                        1,handles.data.params.exp.ratio_map,params.exp.max_power_ref,0);
+                    [~, stim_size] = get_prob_and_size(...
+                        pi_target_selected,trials_locations,trials_powers,params.stim_unique,params.template_cell.prob_trace);
+                else
+                    [trials_locations,  trials_powers,target_locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
+                        target_locations_nuclei,params.power_level,...
+                        pi_target_nuclei, inner_normalized_products,params.design.single_spot_threshold,...
+                        variational_params,params.design.n_MC_samples,params.design.gain_bound,...
+                        params.template_cell.prob_trace_full,gamma_current,  params.fire_stim_threshold,params.stim_scale,...
+                        loc_to_cell_nuclei,...
+                        cell_list,params.design.n_spots_per_trial,params.design.K_disconnected,params.design.n_replicates,...
+                        1,handles.data.params.exp.ratio_map,params.exp.max_power_ref,0);
+
+                    [~, stim_size] = get_prob_and_size(...
+                        pi_target_nuclei,trials_locations,trials_powers,params.stim_unique,params.template_cell.prob_trace);
+
+                end
 
                 handles.data.design.trials_locations_disconnected{i}{handles.data.design.iter}=trials_locations;
                 handles.data.design.trials_powers_disconnected{i}{handles.data.design.iter}=trials_powers;
-                handles.data.design.trials_pockels_ratios_disconnected{i}{handles.data.design.iter}=pockels_ratio_refs;
-                handles.data.design.trials_locations_disconnected_key{i}{handles.data.design.iter} = locations_key;
+                handles.data.design.trials_pockels_ratios_disconnected{i}{handles.data.design.iter} = pockels_ratio_refs;
+                handles.data.design.trials_locations_disconnected_key{i}{handles.data.design.iter} = target_locations_key;
                 handles.data.design.trials_pockels_ratios_multi_disconnected{i}{handles.data.design.iter} = pockels_ratios;
-                handles.data.design.cells_probabilities_disconnected{i}{handles.data.design.iter} = cells_probabilities_disconnected;
+                handles.data.design.stim_size_disconnected{i}{handles.data.design.iter} = stim_size;
             end
 
             %-------
@@ -6462,26 +6505,27 @@ for i = start_obj_ind:num_map_locations
                 disp('designing connected stim')
                 % Find cells with close to zero gammas
                 cell_list= find(handles.data.design.potentially_connected_cells{i}{handles.data.design.iter});
-                gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
-                [trials_locations,  trials_powers, locations_key, pockels_ratio_refs] = random_design(...
-                    target_locations_nuclei,power_nuclei,...
-                    inner_normalized_products,params.design.single_spot_threshold,...
-                    gamma_estimates_confirm,0,...
-                    params.design.connected,  loc_to_cell_nuclei,... 
-                    cell_list,1,params.design.K_connected,params.design.n_replicates,...
-                    1,handles.data.params.exp.ratio_map,params.exp.max_ratio_ref,0);
+%                 gamma_estimates_confirm = 0.5*ones(length(cell_list),1);% for drawing samples...
+                [trials_locations,  trials_powers,target_locations_key, pockels_ratio_refs] = random_design(...
+                    target_locations_nuclei,params.power_level,...
+                    pi_target_nuclei, inner_normalized_products,Inf,...
+                    variational_params,params.design.n_MC_samples,params.design.gain_bound,...
+                    params.template_cell.prob_trace_full,gamma_current,  params.fire_stim_threshold,params.stim_scale,...
+                    loc_to_cell_nuclei,...
+                    cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
+                    1,handles.data.params.exp.ratio_map,params.exp.max_power_ref,0);
                 %[cells_probabilities_connected, ~] = get_prob_and_size(...
                 %    pi_target_nuclei,trials_locations,trials_powers,...
                 %    stim_unique,prob_trace);
-                [~, stim_size_connected] = get_prob_and_size(...
+                [~, stim_size] = get_prob_and_size(...
                     pi_target_nuclei,trials_locations,trials_powers,...
                     params.stim_unique,params.template_cell.prob_trace);
 
                 handles.data.design.trials_locations_connected{i}{handles.data.design.iter}=trials_locations;
                 handles.data.design.trials_powers_connected{i}{handles.data.design.iter}=trials_powers;
                 handles.data.design.trials_pockels_ratios_connected{i}{handles.data.design.iter} = pockels_ratio_refs;
-                handles.data.design.trials_locations_connected_key{i}{handles.data.design.iter} = locations_key;
-                handles.data.design.stim_size_connected{i}{handles.data.design.iter} = stim_size_connected;
+                handles.data.design.trials_locations_connected_key{i}{handles.data.design.iter} = target_locations_key;
+                handles.data.design.stim_size_connected{i}{handles.data.design.iter} = stim_size;
             end
             
             guidata(hObject,handles)
@@ -6522,7 +6566,8 @@ for i = start_obj_ind:num_map_locations
             pockels_ratios = [];
             single_spot_targs = [];
             single_spot_pockels_refs = [];
-
+            handles.data.group_powers = cell(0);
+            
             num_stim = 0;
 
             handles.data.sequence_groups = zeros(3,2);
@@ -6536,12 +6581,16 @@ for i = start_obj_ind:num_map_locations
                     params.design.n_spots_per_trial/length(handles.data.design.undefined_cells{i}{handles.data.design.iter});
                 handles.data.group_repeats(1) = 1;
                 num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_undefined{i}{handles.data.design.iter});
+                handles.data.group_powers{1} = params.exp.max_power_ref;
+                handles.data.group_multi_flag(1) = 1;
             else
                 single_spot_targs = cat(1,single_spot_targs,handles.data.design.trials_locations_undefined_key{i}{handles.data.design.iter});
                 single_spot_pockels_refs = [single_spot_pockels_refs handles.data.design.trials_pockels_ratios_undefined{i}{handles.data.design.iter}];
                 undefined_freq = params.design.K_undefined;
                 handles.data.group_repeats(1) = params.design.reps_undefined_single;
                 num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_undefined{i}{handles.data.design.iter})*params.design.reps_undefined_single;
+                handles.data.group_powers{1} = handles.data.design.trials_powers_undefined{i}{handles.data.design.iter};
+                handles.data.group_multi_flag(1) = 0;
             end
 
             % add disconnected targets
@@ -6555,12 +6604,16 @@ for i = start_obj_ind:num_map_locations
                     params.design.n_spots_per_trial/length(handles.data.design.potentially_disconnected_cells{i}{handles.data.design.iter});
                 handles.data.group_repeats(2) = 1;
                 num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_disconnected{i}{handles.data.design.iter});
+                handles.data.group_powers{2} = params.exp.max_power_ref;
+                handles.data.group_multi_flag(2) = 1;
             else
                 single_spot_targs = cat(1,single_spot_targs,handles.data.design.trials_locations_disconnected_key{i}{handles.data.design.iter});
                 single_spot_pockels_refs = [single_spot_pockels_refs handles.data.design.trials_pockels_ratios_disconnected{i}{handles.data.design.iter}];
                 disconnected_freq = params.design.K_disconnected;
                 handles.data.group_repeats(2) = params.design.reps_disconnected_single;
                 num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_disconnected{i}{handles.data.design.iter})*params.design.reps_disconnected_single;
+                handles.data.group_powers{2} = handles.data.design.trials_powers_disconnected{i}{handles.data.design.iter};
+                handles.data.group_multi_flag(2) = 0;
             end
 
             % add connected targets
@@ -6570,6 +6623,8 @@ for i = start_obj_ind:num_map_locations
                 single_spot_pockels_refs = [single_spot_pockels_refs handles.data.design.trials_pockels_ratios_connected{i}{handles.data.design.iter}];
             handles.data.group_repeats(3) = params.design.reps_connected;%params.design.K_connected;
             num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_connected{i}{handles.data.design.iter})*params.design.reps_connected;
+            handles.data.group_powers{3} = handles.data.design.trials_powers_disconnected{i}{handles.data.design.iter};
+            handles.data.group_multi_flag(2) = 0;
     %         num_stim_check = size(multi_spot_targs,1)+size(single_spot_targs,1)
 
             % compute maximal stim freq
@@ -6577,10 +6632,11 @@ for i = start_obj_ind:num_map_locations
             disconnected_freq = num_stim/disconnected_freq;
             connected_freq = num_stim/params.design.K_connected;
 
-            stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq params.exp.max_stim_freq])
-            set(handles.iti,'String',num2str(1/stim_freq))
+            handles.data.stim_freq = min([[undefined_freq disconnected_freq connected_freq]*params.exp.max_spike_freq params.exp.max_stim_freq])
+            set(handles.iti,'String',num2str(1/handles.data.stim_freq))
 
-
+            guidata(hObject,handles)
+            
             % build the holograms
             instruction = struct();
             instruction.type = 83;
@@ -6891,7 +6947,7 @@ instruction.string = 'done';
 guidata(hObject,handles)
 
 % --- Executes on button press in map_w_online.
-function map_w_online_Callback(hObject, eventdata, handles)
+function map_w_online_std_dev_Callback(hObject, eventdata, handles)
 % hObject    handle to map_w_online (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
