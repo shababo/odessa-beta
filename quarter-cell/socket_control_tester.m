@@ -7453,14 +7453,14 @@ for i = start_obj_ind:num_map_locations
                 switch handles.data.design.iter
                     case 1
                         nuclear_locs = handles.data.design.trials_locations_undefined{i}{handles.data.design.iter};
+                        nuc_inds = find(handles.data.design.undefined_cells{i}{handles.data.design.iter});
                     case 2
                         nuclear_locs = handles.data.design.trials_locations_connected{i}{handles.data.design.iter};
-                    case 3
-                        nuclear_locs = handles.data.design.trials_locations_alive{i}{handles.data.design.iter};
+                        nuc_inds = find(handles.data.design.potentially_connected_cells{i}{handles.data.design.iter});
                 end
                 dist_mat = squareform(pdist([nuclear_locs(:,[1 2]); good_locations]));
                 dist_mat = dist_mat(1:size(nuclear_locs,1),size(nuclear_locs,1)+1:end);
-                handles.data.response_locs = any(dist_mat < 5*sqrt(2),2);
+                handles.data.response_locs = nuc_inds(any(dist_mat < 5*sqrt(2),2));
                 handles.data.design.selected_locs{i}{handles.data.design.iter}= nuclear_locs(handles.data.response_locs,:);
 
                 guidata(hObject,handles)

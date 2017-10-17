@@ -27,7 +27,7 @@ end
 if length(varargin) > 4 && ~isempty(varargin{5})
     fluor_min = varargin{5};
 else
-    fluor_min = 40;
+    fluor_min = 0;
 end
 
 if do_detect
@@ -82,14 +82,15 @@ plane_fit(3) = plane_fit(3) - Z_offset;
 nuclear_locs(:,4) = nuclear_locs(:,3) - (plane_fit(1)*nuclear_locs(:,1) + plane_fit(2)*nuclear_locs(:,2) + plane_fit(3));
 
 figure; 
-subplot(121)
-mesh(X,Y,-Z,'facealpha',0,'Cdata',repmat(reshape([0 0 1],1,1,3),31,31,1));
-hold on; 
-scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,3),fluor_vals/6,'filled')
-subplot(122)
+% subplot(121)
+% mesh(X,Y,-Z,'facealpha',0,'Cdata',repmat(reshape([0 0 1],1,1,3),31,31,1));
+% hold on; 
+scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,3),5,'filled')
+xlabel('x (um)'); ylabel('y (um)'); zlabel('depth (um)')
+% subplot(122)
 % mesh(X,Y,Z,'facealpha',0,'Cdata',repmat(reshape([0 0 1],1,1,3),31,31,1));
 % hold on; 
-scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,4),fluor_vals/6,'filled')
+% scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,4),min(fluor_vals/6),'filled')
 
 
 % end
