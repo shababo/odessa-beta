@@ -43,7 +43,7 @@ if detect_nucs
     instruction.stack_um_per_slice = handles.data.stack_um_per_slice;
     
     instruction.dummy_targs = 0;
-    instruction.num_dummy_targs = 500;
+    instruction.num_dummy_targs = 200;
     
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
 

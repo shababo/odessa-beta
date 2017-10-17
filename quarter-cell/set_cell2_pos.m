@@ -1,18 +1,18 @@
-function handles = set_cell2_pos(hObject,handles,acq_gui,acq_gui_data,params)
+function handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params)
 
-set_cell2_pos = 0;
-choice = questdlg('Set Patched Cell 1 Pos?', ...
+handles.data.set_cell2_pos = 0;
+choice = questdlg('Set Patched Cell 2 Pos?', ...
 	'Set Cell Pos?', ...
 	'Yes','No','Yes');
 % Handle response
 switch choice
     case 'Yes'
-        set_cell2_pos = 1;
+        handles.data.set_cell2_pos = 1;
     case 'No'
-        set_cell2_pos = 0;
+        handles.data.set_cell2_pos = 0;
 end
 
-if set_cell2_pos
+if handles.data.set_cell2_pos
     
     % confirm everything ready
     user_confirm = msgbox('Z-plane aligned with patched cell 2?');

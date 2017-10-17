@@ -1,4 +1,4 @@
-function handles = take_slidebook_stack(hObject,eventdata,handles,acq_gui,acq_gui_data,params)
+function handles = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,params)
 
 take_new_stack = 1;
 if handles.data.enable_user_breaks

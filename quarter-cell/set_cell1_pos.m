@@ -1,4 +1,4 @@
-function handles = set_cell1_pos(hObject,handles,acq_gui,acq_gui_data,params)
+function handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params)
 
 set_cell_pos = 0;
 choice = questdlg('Set Patched Cell 1 Pos?', ...

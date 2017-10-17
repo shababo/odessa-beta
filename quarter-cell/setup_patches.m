@@ -24,7 +24,7 @@ switch clamp_choice1
         whole_cell1 = 0;
 end
 
-if set_cell2_pos
+if handles.data.set_cell2_pos
     clamp_choice2 = questdlg('Cell 2 Patch Type?', ...
         'Patch type?', ...
         'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
