@@ -1986,7 +1986,7 @@ for i = 1:length(amps)
         for k = 1:length(numpulses)
             for l = 1:length(freqs)
                 for m = 1:length(starttimes)
-                    if isfield(handles.data,'lut') && get(handles.use_lut,'Value')
+                    if isfield(handles.data,'lut') && get(handles.use_lut,'Value') && get(handles.use_2P,'Value')
                         if get(handles.tf_on,'Value')
                             amplitude = get_voltage(handles.data.lut_tf,amps(i))
                         else

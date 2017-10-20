@@ -2,7 +2,7 @@ function [defaults, s, data] = load_defaults(Fs)
 
 
 %%--set Rig Defaults Values here----%%
-run_type = 'loop'; % loop or sequence or conditions
+run_type = 'conditions'; % loop or sequence or conditions
 
 % set default path for saving files here
 save_path='C:\data\Shababo\';
@@ -19,10 +19,10 @@ end
 
 % set default inter-stimulus-interval; this is the total time between
 % successive trigers from the timer fcn, not the time between trials
-intertrial_interval = 1.0; %in sec
+intertrial_interval = 4.0; %in sec
 
 % set default sweep duration (in seconds)
-trial_length = 0.1;
+trial_length = 1.0;
 
 % set default state for saving after each trial, 0 for no saving, 1 for saving after each trial
 % may want no saving if will hang up computer on long experiments with long
@@ -39,7 +39,7 @@ CCexternalcommandsensitivity = 400;%400;  % for multiclamp
 
 % set default type of output for each analog output channel
 AO0 = 'ch1_out'; 
-AO1 = 'ch2_out';
+AO1 = 'LED';
 AO2 = '2P';
 AO3 = 'SHUTTER';
 
@@ -72,11 +72,11 @@ running = [];
 spatial_layout = 'grid';
 roi_id = 'roi1';
 
-lut_file1 = 'C:\data\Shababo\03172017-notf-lut.mat';
+lut_file1 = 'C:\data\Shababo\lut_10182017.mat';
 % lut_file2 = 'C:\data\Shababo\lut_063016_roi1_2p_notf.mat';
 % lut_file3 = 'C:\data\Shababo\lut_063016_roi1_2p_notf.mat';
 
-lut_tf_file = 'C:\data\Shababo\03172017-tf-lut.mat';
+lut_tf_file = 'C:\data\Shababo\lut_10182017.mat';
 
 comnum = 9;
 
