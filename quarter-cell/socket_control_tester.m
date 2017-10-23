@@ -5858,8 +5858,11 @@ for i = start_obj_ind:num_map_locations
 
         handles.data.design.mean_gamma_current{i}=zeros(n_cell_this_plane,1);
         handles.data.design.mean_gain_current{i}=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
-        handles.data.design.gamma_path{i}=zeros(n_cell_this_plane,1);handles.data.design.var_gamma_path=zeros(n_cell_this_plane,1);
-
+        handles.data.design.gamma_path{i}=zeros(n_cell_this_plane,1);
+        handles.data.design.var_gamma_path=zeros(n_cell_this_plane,1);
+        handles.data.design.gain_path=zeros(n_cell_this_plane,1);
+        handles.data.design.var_gain_path=zeros(n_cell_this_plane,1);
+        
         handles.data.design.n_trials{i}=0;
         handles.data.design.id_continue{i}=1;% an indicator
 
@@ -6280,50 +6283,17 @@ for i = start_obj_ind:num_map_locations
             instruction.data = traces;
             instruction.type = 200;
             instruction.filename = [handles.data.params.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
-%             save(['X:\shababo\' instruction.filename '.mat'],'traces')
-%             pause(3.0)
+
             instruction.do_dummy_data = 0;
 
-%             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
-            
-%             handles.data.oasis_data = return_info.oasis_data;
+
             handles.data.full_seq = full_seq;
-%             guidata(hObject,handles)
-%             exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
-%         end
-%         
-%         run_vi = 1;
-%         if handles.data.enable_user_breaks
-%             choice = questdlg('Run VI?', ...
-%                 'Run OASIS?', ...
-%                 'Yes','No','Yes');
-%             % Handle response
-%             switch choice
-%                 case 'Yes'
-%                     run_vi = 1;
-%                     choice = questdlg('Continue user control?',...
-%                         'Continue user control?', ...
-%                         'Yes','No','Yes');
-%                     % Handle response
-%                     switch choice
-%                         case 'Yes'
-%                             handles.data.enable_user_breaks = 1;
-%                         case 'No'
-%                             handles.data.enable_user_breaks = 0;
-%                     end
-%                 case 'No'
-%                     run_vi = 0;
-%             end
-%         end
-%         
-%         if run_vi
+
             
             handles.data.design.i = i;
             handles.data.design.n_cell_this_plane = n_cell_this_plane;
             
-%             instruction.type = 110;
             instruction.exp_data = handles.data;
-%             instruction.params = handles.d
             [return_info,success,handles] = do_instruction_analysis(instruction,handles);
             
             handles.data = return_info.data; 
@@ -6358,33 +6328,33 @@ for i = start_obj_ind:num_map_locations
         end
 
         if regroup_cells
-            exp_data = handles.data;
+            data = handles.data;
             undefined_to_disconnected = ...
                 intersect(find(data.design.mean_gamma_undefined<params.design.disconnected_threshold),find( data.design.undefined_cells{i}{data.design.iter}));
             undefined_to_connected = ...
                 intersect(find(data.design.mean_gamma_undefined>params.design.connected_threshold),find( data.design.undefined_cells{i}{data.design.iter}));
             % cells move together with their neighbours
-            undefined_to_disconnected=find(sum(cell_neighbours(undefined_to_disconnected,:),1)>0)';
-            undefined_to_connected =find(sum(cell_neighbours(undefined_to_connected,:),1)>0);
-            % if there are conflicts, move them to the potentially connected cells
-            undefined_to_disconnected=setdiff(undefined_to_disconnected,undefined_to_connected);
+%             undefined_to_disconnected=find(sum(cell_neighbours(undefined_to_disconnected,:),1)>0)';
+%             undefined_to_connected =find(sum(cell_neighbours(undefined_to_connected,:),1)>0);
+%             % if there are conflicts, move them to the potentially connected cells
+%             undefined_to_disconnected=setdiff(undefined_to_disconnected,undefined_to_connected);
 
             disconnected_to_undefined = intersect(find(data.design.mean_gamma_disconnected>params.design.disconnected_confirm_threshold),...
                 find(data.design.potentially_disconnected_cells{i}{data.design.iter}));
             disconnected_to_dead = intersect(find(data.design.mean_gamma_disconnected<params.design.disconnected_confirm_threshold),...
                 find(data.design.potentially_disconnected_cells{i}{data.design.iter}));
 
-            disconnected_to_undefined=find(sum(cell_neighbours(disconnected_to_undefined,:),1)>0);
-            % if there are conflicts, move them to the potentially connected cells
-            disconnected_to_dead=setdiff(disconnected_to_dead,disconnected_to_undefined);
+%             disconnected_to_undefined=find(sum(cell_neighbours(disconnected_to_undefined,:),1)>0);
+%             % if there are conflicts, move them to the potentially connected cells
+%             disconnected_to_dead=setdiff(disconnected_to_dead,disconnected_to_undefined);
 
 
             connected_to_dead = intersect(find(data.design.mean_gamma_connected<params.design.disconnected_confirm_threshold),...
                 find(data.design.potentially_connected_cells{i}{data.design.iter}));
             connected_to_alive = intersect(find(data.design.mean_gamma_connected>params.design.connected_confirm_threshold),...
                 find(data.design.potentially_connected_cells{i}{data.design.iter}));
-            change_gamma =abs(data.design.gamma_path{i}(:,data.design.iter+1)-data.design.gamma_path{i}(:,data.design.iter));
-            connected_to_alive = intersect(find(change_gamma<params.design.change_threshold),...
+%             change_gamma =abs(data.design.gamma_path{i}(:,data.design.iter+1)-data.design.gamma_path{i}(:,data.design.iter));
+            connected_to_alive = intersect(find(data.design.change_gamma<params.design.change_threshold),...
                 connected_to_alive);
 
             % Eliminate the weakly identifiable pairs if they are both assign to a
@@ -6415,6 +6385,7 @@ for i = start_obj_ind:num_map_locations
 
             data.design.alive_cells{i}{data.design.iter+1}=data.design.alive_cells{i}{data.design.iter};
             data.design.alive_cells{i}{data.design.iter+1}(connected_to_alive)=1;
+            
             assignin('base','undefined_cells',data.design.undefined_cells{i})
             assignin('base','potentially_disconnected_cells',data.design.potentially_disconnected_cells{i})
             assignin('base','potentially_connected_cells',data.design.potentially_connected_cells{i})
