@@ -5980,7 +5980,7 @@ for i = start_obj_ind:num_map_locations
             if sum(handles.data.design.potentially_disconnected_cells{i}{handles.data.design.iter})>0
                 disp('designing disconnected stim')
                 % Find cells with close to zero gammas
-                cell_list= find(handles.data.design.disconnected_cells{i}{handles.data.design.iter});
+                cell_list= find(handles.data.design.potentially_disconnected_cells{i}{handles.data.design.iter});
 %                 gamma_estimates = 0.5*ones(length(cell_list),1);% for drawing samples...
                 if length(cell_list) > params.design.single_spot_threshold
                     
@@ -6146,7 +6146,7 @@ for i = start_obj_ind:num_map_locations
             handles.data.group_repeats(3) = params.design.reps_connected;%params.design.K_connected;
             num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_connected{i}{handles.data.design.iter})*params.design.reps_connected;
             handles.data.group_powers{3} = handles.data.design.trials_powers_connected{i}{handles.data.design.iter};
-            handles.data.group_multi_flag(2) = 0;
+            handles.data.group_multi_flag(3) = 0;
     %         num_stim_check = size(multi_spot_targs,1)+size(single_spot_targs,1)
 
             % compute maximal stim freq
