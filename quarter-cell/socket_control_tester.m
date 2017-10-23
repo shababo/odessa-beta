@@ -436,13 +436,14 @@ sequence_base.start = 0;
  
 
 sequence_base.duration = str2double(get(handles.duration,'String'))*1000;
-handles.data.group_powers = handles.data.target_powers;%strread(get(handles.target_intensity,'String'));
-sequence_base.power = handles.data.group_powers(1);
+% handles.data.group_powers = handles.data.target_powers;%strread(get(handles.target_intensity,'String'));
+sequence_base.power = 0;
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
 sequence_base.group = 1;
 sequence_base.group_target_index = 1;
 sequence_base.group_multi_flag = 0;
+sequence_base.multi_flag = 0;
 
 sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
@@ -465,6 +466,8 @@ for ii = 1:params.design.num_groups
     for i = 1:this_group_num
 
         for j = 1:this_repeat
+            assignin('base','sequence',sequence)
+            assignin('base','sequence_base',sequence_base)
             sequence(count) = sequence_base;
             sequence(count).multi_flag = handles.data.group_multi_flag(ii);
             if length(these_powers) > 1
@@ -5859,9 +5862,9 @@ for i = start_obj_ind:num_map_locations
         handles.data.design.mean_gamma_current{i}=zeros(n_cell_this_plane,1);
         handles.data.design.mean_gain_current{i}=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
         handles.data.design.gamma_path{i}=zeros(n_cell_this_plane,1);
-        handles.data.design.var_gamma_path=zeros(n_cell_this_plane,1);
-        handles.data.design.gain_path=zeros(n_cell_this_plane,1);
-        handles.data.design.var_gain_path=zeros(n_cell_this_plane,1);
+        handles.data.design.var_gamma_path{i}=zeros(n_cell_this_plane,1);
+        handles.data.design.gain_path{i}=zeros(n_cell_this_plane,1);
+        handles.data.design.var_gain_path{i}=zeros(n_cell_this_plane,1);
         
         handles.data.design.n_trials{i}=0;
         handles.data.design.id_continue{i}=1;% an indicator
@@ -5912,11 +5915,11 @@ for i = start_obj_ind:num_map_locations
         if choose_stim
             
             variational_params=struct([]);
-            variational_params(1).alpha = handles.data.design.variational_params_path{i}.alpha(:,iter);
-            variational_params(1).beta = handles.data.design.variational_params_path{i}.beta(:,iter);
-            variational_params(1).alpha_gain = handles.data.design.variational_params_path{i}.alpha_gain(:,iter);
-            variational_params(1).beta_gain = handles.data.design.variational_params_path{i}.beta_gain(:,iter);
-            gamma_current=handles.data.design.gamma_path{i}(:,iter);
+            variational_params(1).alpha = handles.data.design.variational_params_path{i}.alpha(:,handles.data.design.iter);
+            variational_params(1).beta = handles.data.design.variational_params_path{i}.beta(:,handles.data.design.iter);
+            variational_params(1).alpha_gain = handles.data.design.variational_params_path{i}.alpha_gain(:,handles.data.design.iter);
+            variational_params(1).beta_gain = handles.data.design.variational_params_path{i}.beta_gain(:,handles.data.design.iter);
+            gamma_current=handles.data.design.gamma_path{i}(:,handles.data.design.iter);
 
             % On the undefined cells
             handles.data.design.trials_locations_undefined{i}{handles.data.design.iter}=[];
@@ -5937,7 +5940,7 @@ for i = start_obj_ind:num_map_locations
                     [trials_locations, trials_powers,target_locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
                         target_locations_selected,params.power_level,...
                         pi_target_selected, inner_normalized_products,params.design.single_spot_threshold,...
-                        variational_params,n_MC_samples,params.design.gain_bound,params.template_cell.prob_trace_full,...
+                        variational_params,params.design.n_MC_samples,params.design.gain_bound,params.template_cell.prob_trace_full,...
                         gamma_current,  params.fire_stim_threshold,params.stim_scale,...
                         loc_to_cell,...
                         cell_list,params.design.n_spots_per_trial,params.design.K_undefined,params.design.n_replicates,...
@@ -5984,7 +5987,7 @@ for i = start_obj_ind:num_map_locations
                     [trials_locations, trials_powers,target_locations_key, pockels_ratio_refs, pockels_ratios] = random_design(...
                         target_locations_selected,params.power_level,...
                         pi_target_selected, inner_normalized_products,params.design.single_spot_threshold,...
-                        variational_params,n_MC_samples,params.design.gain_bound,params.template_cell.prob_trace_full,...
+                        variational_params,params.design.n_MC_samples,params.design.gain_bound,params.template_cell.prob_trace_full,...
                         gamma_current,  params.fire_stim_threshold,params.stim_scale,...
                         loc_to_cell,...
                         cell_list,params.design.n_spots_per_trial,params.design.K_disconnected,params.design.n_replicates,...
@@ -6142,7 +6145,7 @@ for i = start_obj_ind:num_map_locations
                 single_spot_pockels_refs = [single_spot_pockels_refs handles.data.design.trials_pockels_ratios_connected{i}{handles.data.design.iter}];
             handles.data.group_repeats(3) = params.design.reps_connected;%params.design.K_connected;
             num_stim = num_stim + length(handles.data.design.trials_pockels_ratios_connected{i}{handles.data.design.iter})*params.design.reps_connected;
-            handles.data.group_powers{3} = handles.data.design.trials_powers_disconnected{i}{handles.data.design.iter};
+            handles.data.group_powers{3} = handles.data.design.trials_powers_connected{i}{handles.data.design.iter};
             handles.data.group_multi_flag(2) = 0;
     %         num_stim_check = size(multi_spot_targs,1)+size(single_spot_targs,1)
 
@@ -6284,7 +6287,7 @@ for i = start_obj_ind:num_map_locations
             instruction.type = 200;
             instruction.filename = [handles.data.params.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
 
-            instruction.do_dummy_data = 0;
+            instruction.do_dummy_data = 1;
 
 
             handles.data.full_seq = full_seq;

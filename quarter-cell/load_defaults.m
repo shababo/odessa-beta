@@ -2,7 +2,7 @@ function [defaults, s, data] = load_defaults(Fs)
 
 
 %%--set Rig Defaults Values here----%%
-run_type = 'conditions'; % loop or sequence or conditions
+run_type = 'loop'; % loop or sequence or conditions
 
 % set default path for saving files here
 save_path='C:\data\Shababo\';
@@ -39,9 +39,9 @@ CCexternalcommandsensitivity = 400;%400;  % for multiclamp
 
 % set default type of output for each analog output channel
 AO0 = 'ch1_out'; 
-AO1 = 'LED';
-AO2 = '2P';
-AO3 = 'SHUTTER';
+AO1 = 'ch2_out';
+AO2 = 'SEQ_TRIGGER';
+AO3 = 'LED';
 
 stim_type = '2P';
 
