@@ -638,8 +638,8 @@ if success >= 0
 %               uiwait(warndlg(warningMessage));
               handles.data.oasis_data = zeros(size(instruction.traces));
             end
-
-            return_info.data = run_vi_online(instruction.data);
+            instruction.exp_data.oasis_data = handles.data.oasis_data;
+            return_info.data = run_vi_online(instruction.exp_data);
     end
     
     

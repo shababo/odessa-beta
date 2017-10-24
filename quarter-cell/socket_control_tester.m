@@ -5859,9 +5859,9 @@ for i = start_obj_ind:num_map_locations
         handles.data.design.mean_gamma_current{i}=zeros(n_cell_this_plane,1);
         handles.data.design.mean_gain_current{i}=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
         handles.data.design.gamma_path{i}=zeros(n_cell_this_plane,1);
-        handles.data.design.var_gamma_path=zeros(n_cell_this_plane,1);
-        handles.data.design.gain_path=zeros(n_cell_this_plane,1);
-        handles.data.design.var_gain_path=zeros(n_cell_this_plane,1);
+        handles.data.design.var_gamma_path{i}=zeros(n_cell_this_plane,1);
+        handles.data.design.gain_path{i}=zeros(n_cell_this_plane,1);
+        handles.data.design.var_gain_path{i}=zeros(n_cell_this_plane,1);
         
         handles.data.design.n_trials{i}=0;
         handles.data.design.id_continue{i}=1;% an indicator
