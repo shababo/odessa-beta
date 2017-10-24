@@ -42,7 +42,7 @@ if detect_nucs
     instruction.image_um_per_px = handles.data.image_um_per_px;
     instruction.stack_um_per_slice = handles.data.stack_um_per_slice;
     
-    instruction.dummy_targs = 0;
+    instruction.dummy_targs = 1;
     instruction.num_dummy_targs = 200;
     
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
