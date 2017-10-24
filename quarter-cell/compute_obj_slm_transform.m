@@ -19,6 +19,7 @@ obj_image = temp;
 % calib_image_adj = calib_image/max(calib_image(:))*5000;
 % [objPoints,slmPoints] = cpselect(obj_image_adj,slm_image_adj,'wait',true);
 % points(:,7) = [];
+% points(:,end) = [];
 figure; imagesc(obj_image)
 [x, y] = ginput(size(points,2));
 slmPoints = [x y];
@@ -135,7 +136,37 @@ points - full_trans*test_mat'
 
 % full_trans = inv(slm_cam_trans)
 
+%%
+test_spots = test_spots';
+num_points = size(test_spots,2);
 
+slm_cam_points = [];
+test_mat = [];
+% obj_cam_points = [];
+for i = 1:num_points
+    slm_cam_points = [slm_cam_points;
+                      slmPointsPointsFlip(i,1) slmPointsPointsFlip(i,2) 1 0 0 0;
+                      0 0 0 slmPointsPointsFlip(i,1) slmPointsPointsFlip(i,2) 1];
+    test_mat(i,:) = [slmPointsPointsFlip(i,1) slmPointsPointsFlip(i,2) 1]';
+
+%     obj_cam_points = [obj_cam_points;
+%                       objPointsFlipCenter(i,1) objPointsFlipCenter(i,2) 0 0;
+%                       0 0 objPointsFlipCenter(i,1) objPointsFlipCenter(i,2)];
+              
+end
+
+% full_trans_bu = full_trans
+% full_trans = slm_cam_points\points_vec;
+% full_trans = reshape(full_trans,3,2)'         
+% 
+% image_zero_order_coord = inv(full_trans(:,[1 2]))*-full_trans(:,3)
+% 
+% full_trans_bu*test_mat' - full_trans*test_mat'
+
+test_holes_px = bsxfun(@minus,slmPointsPointsFlip,image_zero_order_coord')'
+test_holes_um = test_holes_px*1.89
+
+test_spots - test_holes_um'
 
 %%
 

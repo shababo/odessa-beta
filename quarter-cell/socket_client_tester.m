@@ -294,8 +294,11 @@ if success >= 0
                 if sequence(i).power > 2
                     ind = sequence(i).precomputed_target_index;
                     sequence(i).target_power = sequence(i).power;
-                    sequence(i).power = 100*get_voltage(handles.data.lut,...
-                        handles.data.pockels_ratio_refs(ind)*sequence(i).power);
+                    sequence(i).power = round(100*get_voltage(handles.data.lut,...
+                        handles.data.pockels_ratio_refs(ind)*sequence(i).power));
+                    if isfield(sequence,'waveform')
+                        sequence(i).waveform = sprintf(sequence(i).waveform,sequence(i).power);
+                    end
                 else
                     sequence(i).power = sequence(i).power*100;
                 end
@@ -552,8 +555,8 @@ if success >= 0
             return_info.snap_image = evalin('base','temp');
             return_info.success = 1;
         case TAKE_STACK
-            evalin('base','take_stack_prep')
-            pause(.1)
+%             evalin('base','take_stack_prep')
+%             pause(.1)
             evalin('base','take_stack')
             image_all_ch = evalin('base','acquiredImage');
             return_info.image = image_all_ch(:,:,:,1)/9999*2^16; % scale to 16-bit
