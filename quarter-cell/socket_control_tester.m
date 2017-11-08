@@ -5597,18 +5597,22 @@ function map_w_online_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.data.enable_user_breaks = 0;
-choice = questdlg('Choose start point?',...
-	'Choose start point?', ...
-	'Yes','No','Yes');
-% Handle response
-switch choice
-    case 'Yes'
-        handles.data.enable_user_breaks = 1;
-    case 'No'
-        handles.data.enable_user_breaks = 0;
+
+if handles.data.params.is_sim
+    handles.data.enable_user_breaks = 0;
+else
+    choice = questdlg('Choose start point?',...
+        'Choose start point?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            handles.data.enable_user_breaks = 1;
+        case 'No'
+            handles.data.enable_user_breaks = 0;
+    end
+    guidata(hObject,handles)
 end
-guidata(hObject,handles)
 
 reinit_oed = 0;
 if handles.data.enable_user_breaks
@@ -5636,7 +5640,8 @@ if handles.data.enable_user_breaks
 end
 
 if reinit_oed
-    handles.data.params = init_oed(1);
+    load_map = 1;
+    handles.data.params = init_oed(load_map);
     guidata(hObject,handles)
 end
 
@@ -5656,8 +5661,8 @@ end
 
 if load_exp
     [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
-    load(fullfile(data_pathname,data_filename),'data')
-    handles.data = data;
+    load(fullfile(data_pathname,data_filename),'exp_data')
+    handles.data = exp_data;
     params = handles.data.params;
 else
     params = handles.data.params;
