@@ -37,8 +37,8 @@ for i = 1:length(x_pos)
 %     end
 end
 
-bad_phase = all(tf_all_spots_phase == 0,3);
-find(bad_phase)
+% bad_phase = all(tf_all_spots_phase == 0,3);
+% find(bad_phase)
 
 %% 10um shift
 
@@ -183,6 +183,89 @@ clear tf_phase
 %%
 stim_id = find(tf_disk_key(:,1) == 30 & tf_disk_key(:,2) == 30)
 target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
+
+isTargetPatternReady = 1;
+
+
+%% keep grid structure
+
+% tf_phase = tf_x_spots;
+% notf_phase = notf_all_spots_phase;
+% diskPhaseLocal = diskPhase(:,:,1);
+tic
+target_base_fast.mode = 'Phase';
+target_base_fast.pattern = 1040;
+% num_spots = size(tf_phase,3);
+% clear tf_precomputed_target
+clear tf_coarse_spot_grid
+clear tf_coarse_spot_key
+% x_pos = -150:10:150;
+num_spots = length(x_pos)
+tf_coarse_spot_grid = zeros(600,792,num_spots*num_spots);
+% center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
+% steps_from_center = center-1;
+% linear_ind = find(tf_spots_key(:,1) == 60 & tf_spots_key(:,2) == 60);
+% [center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
+% steps_from_center = 4;
+% spacing = 20;
+
+
+order = [];
+% tf_disk_precomputed_target(size(tf_all_spots_phase,3)) = struct();
+tf_coarse_spot_key = zeros(num_spots*num_spots,3);
+count = 1;
+
+for i = 1:num_spots
+    for j = 1:num_spots
+
+    convP = tf_x_spots(:,:,i) + tf_y_spots(:,:,j);
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+    tf_coarse_spot_grid(:,:,count) = convP;
+    tf_coarse_spot_key(count,1) = x_pos(i);
+    tf_coarse_spot_key(count,2) = x_pos(j);
+    count = count+1;
+    end
+end
+
+
+toc
+
+
+%%
+
+test_spots = [randi(300,10,1) randi(300,10,1)] - 150
+
+
+for i = 1:size(test_spots,1)
+    
+    fullF = zeros(600,792);
+    
+    this_loc = test_spots(i,:);
+
+    decval = round(this_loc,-1);
+    unitval = round(this_loc - decval);
+%             dec_ind = find();
+    convP = tf_coarse_spot_grid(:,:,tf_coarse_spot_key(:,1) == decval(1) & tf_coarse_spot_key(:,2) == decval(2)) + ...
+        tf_fine_grid_spots_phase(:,:,tf_fine_grid_spots_key(:,1) == unitval(1) & tf_fine_grid_spots_key(:,2) == unitval(2));
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+
+    target.pattern = convP;
+    target.mode = 'Phase';
+    
+     isTargetPatternReady = 1;
+%     pause(3)
+%     isSnapImage = 1;
+%     pause(1)
+    wrndlg = warndlg('Hole made?');
+    pos = get(wrndlg,'position');
+    set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
+    waitfor(wrndlg)
+    isSnapImage = 1
+    pause(1)
+    
+end
 
 isTargetPatternReady = 1;
 

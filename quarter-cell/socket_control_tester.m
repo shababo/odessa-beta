@@ -5732,7 +5732,7 @@ end
 user_input_powers = inputdlg('Enter desired powers (space-delimited):',...
              'Powers to run?',1,{params.exp.power_levels});
 user_input_powers = strread(user_input_powers{1});
-handles.data.params.exp.user_power_level = user_input_powers(1);
+handles.data.params.exp.user_power_level = user_input_powers;
 params = handles.data.params;
 guidata(hObject,handles)
 
@@ -5865,7 +5865,7 @@ for i = start_obj_ind:num_map_locations
         handles.data.design.variational_params_path{i}.beta_gain=handles.data.params.design.var_beta_gain_initial*ones(n_cell_this_plane,1);
 
         handles.data.design.mean_gamma_current{i}=zeros(n_cell_this_plane,1);
-        handles.data.design.mean_gain_current{i}=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
+%         handles.data.design.mean_gain_current{i}=handles.data.params.template_cell.gain_template*ones(n_cell_this_plane,1);
         handles.data.design.gamma_path{i}=zeros(n_cell_this_plane,1);
         handles.data.design.var_gamma_path{i}=zeros(n_cell_this_plane,1);
         handles.data.design.gain_path{i}=zeros(n_cell_this_plane,1);
@@ -6292,7 +6292,7 @@ for i = start_obj_ind:num_map_locations
             instruction.type = 200;
             instruction.filename = [handles.data.params.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
 
-            instruction.do_dummy_data = 1;
+            instruction.do_dummy_data = 0;
 
 
             handles.data.full_seq = full_seq;
