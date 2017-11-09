@@ -35,7 +35,8 @@ if get(handles.test_pulse,'Value')
 else
     pulse_over_sample = 1;
 end
-timebase = handles.data.timebase;
+%timebase = handles.data.timebase;
+timebase = (0:length(handles.data.ch1sweep)-1)/handles.defaults.Fs;
 
 stim_sweep = handles.data.stim_sweep;
 

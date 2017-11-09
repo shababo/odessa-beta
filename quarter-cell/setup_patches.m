@@ -1,4 +1,4 @@
-function handles = setup_patches(hObject,handles,acq_gui,acq_gui_data,params)
+function handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,params)
 
 
 % whole cell or cell-attached?

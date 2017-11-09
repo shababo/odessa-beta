@@ -5682,14 +5682,6 @@ eventdata = [];
 handles = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-
-handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-
 % move obj to ref position (top of slice, centered on map fov)
 set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
 set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
@@ -5698,10 +5690,6 @@ set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
 handles = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,params);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-
-handles = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
 set_depths = 1;
@@ -5736,11 +5724,24 @@ handles.data.params.exp.user_power_level = user_input_powers;
 params = handles.data.params;
 guidata(hObject,handles)
 
-
-handles = compute_groups_targets(hObject,handles,acq_gui,acq_gui_data,params);
+handles = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-handles = setup_patches(hObject,handles,acq_gui,acq_gui_data,params);
+% handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+% [acq_gui, acq_gui_data] = get_acq_gui_data;
+% 
+% handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+% [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+
+
+handles = create_neighbourhoods_caller(hObject,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,params);
+
+eventdata = [];
+handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
 
