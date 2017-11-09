@@ -27,6 +27,7 @@ end
 
 if build_first_batch_stim
     
+   
    instruction.type = 300; 
     
     
