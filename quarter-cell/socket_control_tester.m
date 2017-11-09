@@ -5597,18 +5597,21 @@ function map_w_online_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.data.enable_user_breaks = 0;
-choice = questdlg('Choose start point?',...
-	'Choose start point?', ...
-	'Yes','No','Yes');
-% Handle response
-switch choice
-    case 'Yes'
-        handles.data.enable_user_breaks = 1;
-    case 'No'
-        handles.data.enable_user_breaks = 0;
+if handles.data.params.is_sim
+    handles.data.enable_user_breaks = 0;
+else
+    choice = questdlg('Choose start point?',...
+        'Choose start point?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            handles.data.enable_user_breaks = 1;
+        case 'No'
+            handles.data.enable_user_breaks = 0;
+    end
+    guidata(hObject,handles)
 end
-guidata(hObject,handles)
 
 reinit_oed = 0;
 if handles.data.enable_user_breaks
@@ -5636,7 +5639,8 @@ if handles.data.enable_user_breaks
 end
 
 if reinit_oed
-    handles.data.params = init_oed(1);
+    load_map = 1;
+    handles.data.params = init_oed(load_map);
     guidata(hObject,handles)
 end
 
@@ -5656,8 +5660,8 @@ end
 
 if load_exp
     [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
-    load(fullfile(data_pathname,data_filename),'data')
-    handles.data = data;
+    load(fullfile(data_pathname,data_filename),'exp_data')
+    handles.data = exp_data;
     params = handles.data.params;
 else
     params = handles.data.params;
@@ -5677,14 +5681,6 @@ eventdata = [];
 handles = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-
-handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-
 % move obj to ref position (top of slice, centered on map fov)
 set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
 set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
@@ -5693,10 +5689,6 @@ set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
 handles = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,params);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-
-handles = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
 set_depths = 1;
@@ -5731,13 +5723,24 @@ handles.data.params.exp.user_power_level = user_input_powers;
 params = handles.data.params;
 guidata(hObject,handles)
 
-
-handles = compute_groups_targets(hObject,handles,acq_gui,acq_gui_data,params);
+handles = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-handles = setup_patches(hObject,handles,acq_gui,acq_gui_data,params);
+handles = create_neighbourhoods_caller(hObject,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
+handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,params);
+
+
+% get info on patched cells while first batches prep
+handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
 
 
 set(handles.rand_order,'Value',1);

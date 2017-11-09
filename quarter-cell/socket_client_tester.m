@@ -179,6 +179,7 @@ TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
 RUN_VI = 110;
 DETECT_EVENTS_OASIS_AND_RUN_VI = 200;
+QUEUE_FULL_ONLINE_PIPELINE = 300;
 
 
 instruction.type
@@ -643,7 +644,21 @@ if success >= 0
             end
             instruction.exp_data.oasis_data = handles.data.oasis_data;
             return_info.data = run_vi_online(instruction.exp_data);
-    end
+        case QUEUE_FULL_ONLINE_PIPELINE
+            
+            for i = 1:length(instruction.neighbourhoods)
+                neighbourhood = instruction.neighbourhoods(i);
+                experiment_query = instruction.experiment_query(i);
+                fullpathname = ['/media/shababo/data/' handles.data.experiment_setup.exp_id ...
+                    '_n' num2str(neighbourhood.neighbourhood_id)...
+                    '_b' num2str(experiment_query.batch_info.batch_id) '_to_analysis.mat'];
+                save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
+                cmd = ['matlab -nojvm -nodisplay -nosplash '...
+                    '"run_online_pipeline(' fullpathname ')"';];
+                system(cmd)
+            end
+            
+    end 
     
     
 end
@@ -672,23 +687,23 @@ guidata(hObject,handles)
 
 % pause(10);
 
-if isfield(instruction,'close_socket') && instruction.close_socket
-    disp('closing socket')
-    msclose(handles.sock)
-%     handles.sock = -1;
-    handles = rmfield(handles,'sock');
-elseif ~isfield(instruction,'close_socket')
+if ~isfield(instruction,'close_socket') || ...
+        (isfield(instruction,'close_socket') && instruction.close_socket)
+        
     disp('closing socket')
     msclose(handles.sock)
     handles = rmfield(handles,'sock');
-else
-    disp('socket open')
+    dont_close_restart = 0;
+elseif isfield(instruction,'close_socket')
+    dont_close_restart = 1;
+end
+
+if (isfield(instruction,'restart_socket') && instruction.restart_socket) || ...
+        dont_close_restart
     
+    disp('socket open')
     start_Callback(hObject, eventdata, handles)
-%     warndlg('restart socket!')
-%     set(handles.start,'BackgroundColor','Red')
-%     
-%     drawnow
+
 end
 guidata(hObject,handles)
 
