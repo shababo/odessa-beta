@@ -62,8 +62,11 @@ for i = 1:length(group_names)
     
     batch_id = this_exp_query.batch_info.batch_id + 1;
     
+    group_profile=experiment_setup.groups.(this_group);
+
+    
     experiment_query.(this_group) = ...
-        experiment_setup.groups.(this_group).design_function(neighbourhood,experiment_setup);
+        experiment_setup.groups.(this_group).design_function(neighbourhood,group_profile);
     experiment_query.(this_group).batch_info.batch_id = batch_id;
     
 end
