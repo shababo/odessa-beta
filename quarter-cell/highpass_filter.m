@@ -1,3 +1,4 @@
+
 function [ filtered_sweep ] = highpass_filter(inputsweep,Fs)
 % This function implements a forwards and backwards butterwoth filter
 % following UltraMegaSort2000 (Kleinfeld lab)
