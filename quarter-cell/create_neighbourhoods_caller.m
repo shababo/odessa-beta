@@ -36,11 +36,9 @@ if do_build_neighbourhooods
     % handles.data.cells_targets = return_info.cells_targets;
 
     % z_slice_width = 30;
-    handles.data.neighbourhoods = create_neighbourhoods(...
-                    handles.data.nuclear_locs(:,1:3), handles.data.params,...
-                    handles.data.z_offsets);
+    handles.data.neighbourhoods = create_neighbourhoods(handles.data.experiment_setup);
 
-    acq_gui_data.data.cell_neighbourhood = handles.data.cell_neighbourhood;
+    acq_gui_data.data.neighbourhoods = handles.data.neighbourhoods;
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)

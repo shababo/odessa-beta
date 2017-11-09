@@ -5597,7 +5597,6 @@ function map_w_online_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
 if handles.data.params.is_sim
     handles.data.enable_user_breaks = 0;
 else
@@ -5727,23 +5726,21 @@ guidata(hObject,handles)
 handles = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-% handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
-% [acq_gui, acq_gui_data] = get_acq_gui_data;
-% 
-% handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
-% [acq_gui, acq_gui_data] = get_acq_gui_data;
-
-
-
 handles = create_neighbourhoods_caller(hObject,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
 handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,params);
 
-eventdata = [];
-handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+
+% get info on patched cells while first batches prep
+handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
+handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,params);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
 
 
 set(handles.rand_order,'Value',1);

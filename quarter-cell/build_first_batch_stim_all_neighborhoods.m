@@ -32,12 +32,10 @@ if build_first_batch_stim
     instruction.experiment_query = struct();
     for i = 1:length(handles.data.neighbourhoods)
         instruction.experiment_query(i) = empty_design(handles.data.neighbourhoods(i));
-    endN
+    end
     instruction.neighbourhoods = handles.data.neighbourhoods;
-    
-    
-    
-    
-    
+    instruction.get_return = 0;
+    instruction.exp_id = handles.data.experiment_setup.exp_id;
+    [return_info, success, handles] = do_instruction_analysis(instruction, handles);
     
 end
