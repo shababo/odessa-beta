@@ -5640,7 +5640,7 @@ end
 
 if reinit_oed
     load_map = 1;
-    handles.data.params = init_oed(load_map);
+    handles.data.experiment_setup = get_experiment_setup(load_map);
     guidata(hObject,handles)
 end
 
