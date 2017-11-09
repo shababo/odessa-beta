@@ -1,7 +1,7 @@
 function [return_info, success, handles] = ...
     do_instruction_analysis(instruction, handles)
 
-instruction.close_socket = 1;%get(handles.close_socket_check,'Value');
+instruction.close_socket = get(handles.close_socket_check,'Value');
 
 if ~isfield(handles,'sock_analysis')
     disp('opening socket...')
