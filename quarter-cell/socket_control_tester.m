@@ -5597,7 +5597,7 @@ function map_w_online_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.data.params.is_sim
+if handles.data.experiment_setup.is_sim
     handles.data.enable_user_breaks = 0;
 else
     choice = questdlg('Choose start point?',...
