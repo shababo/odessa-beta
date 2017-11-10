@@ -177,12 +177,12 @@ while not_terminated
     
         % check for holograms to do
         
-        if experiemnt_setup.is_exp
-            % move obj
-            set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
-            set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
-            set(handles.thenewz,'String',num2str(handles.data.obj_positions(i,3)))
-            [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+%         if experiemnt_setup.is_exp
+%             % move obj
+%             set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
+%             set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
+%             set(handles.thenewz,'String',num2str(handles.data.obj_positions(i,3)))
+%             [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
     
     
     
@@ -267,179 +267,36 @@ while not_terminated
             end
         end
         
-        do_oasis_and_vi = 1;
-        if experiment_setup.enable_user_breaks
-            choice = questdlg('Run OASIS and VI?', ...
-                'Run OASIS and VI?', ...
-                'Yes','No','Yes');
-            % Handle response
-            switch choice
-                case 'Yes'
-                    do_oasis_and_vi = 1;
-                    choice = questdlg('Continue user control?',...
-                        'Continue user control?', ...
-                        'Yes','No','Yes');
-                    % Handle response
-                    switch choice
-                        case 'Yes'
-                            experiment_setup.enable_user_breaks = 1;
-                        case 'No'
-                            experiment_setup.enable_user_breaks = 0;
-                    end
-                case 'No'
-                    do_oasis_and_vi = 0;
-            end
-        end
-        
-        if do_oasis_and_vi
-            trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
-            [traces, ~, full_seq] = get_traces(acq_gui_data.data,trials);
-            if ~experiment_setup.design.do_connected_vi
-                traces = traces([full_seq.group] ~= 3,:);
-            end
-            instruction = struct();
-            instruction.data = traces;
-            instruction.type = 200;
-            instruction.filename = [handles.data.experiment_setup.map_id '_z' num2str(i) '_iter' num2str(handles.data.design.iter)];
-
-            instruction.do_dummy_data = 0;
-
-
-            handles.data.full_seq = full_seq;
-
+        % RUN ONLINE MAPPING PIPELINE HERE
+        if experiment_setup.is_exp
+            % send to analysis computer
+        else
+            % save out file first
             
-            handles.data.design.i = i;
-            handles.data.design.n_cell_this_plane = n_cell_this_plane;
-            
-            instruction.exp_data = handles.data;
-            [return_info,success,handles] = do_instruction_analysis(instruction,handles);
-            
-            handles.data = return_info.data; 
-            guidata(hObject,handles)
-            exp_data = handles.data;
-            save(handles.data.experiment_setup.fullsavefile,'exp_data')
-            
-        end    
-            
-        regroup_cells = 1;
-        if experiment_setup.enable_user_breaks
-            choice = questdlg('Regroup cells?', ...
-            'Regroup cells?', ...
-            'Yes','No','Yes');
-            % Handle response
-            switch choice
-            case 'Yes'
-                regroup_cells = 1;
-                choice = questdlg('Continue user control?',...
-                    'Continue user control?', ...
-                    'Yes','No','Yes');
-                % Handle response
-                switch choice
-                    case 'Yes'
-                        experiment_setup.enable_user_breaks = 1;
-                    case 'No'
-                        experiment_setup.enable_user_breaks = 0;
-                end
-            case 'No'
-                regroup_cells = 0;
-            end
-        end
-
-        if regroup_cells
-            data = handles.data;
-            undefined_to_disconnected = ...
-                intersect(find(data.design.mean_gamma_undefined<experiment_setup.design.disconnected_threshold),find( data.design.undefined_cells{i}{data.design.iter}));
-            undefined_to_connected = ...
-                intersect(find(data.design.mean_gamma_undefined>experiment_setup.design.connected_threshold),find( data.design.undefined_cells{i}{data.design.iter}));
-            % cells move together with their neighbours
-%             undefined_to_disconnected=find(sum(cell_neighbours(undefined_to_disconnected,:),1)>0)';
-%             undefined_to_connected =find(sum(cell_neighbours(undefined_to_connected,:),1)>0);
-%             % if there are conflicts, move them to the potentially connected cells
-%             undefined_to_disconnected=setdiff(undefined_to_disconnected,undefined_to_connected);
-
-            disconnected_to_undefined = intersect(find(data.design.mean_gamma_disconnected>experiment_setup.design.disconnected_confirm_threshold),...
-                find(data.design.potentially_disconnected_cells{i}{data.design.iter}));
-            disconnected_to_dead = intersect(find(data.design.mean_gamma_disconnected<experiment_setup.design.disconnected_confirm_threshold),...
-                find(data.design.potentially_disconnected_cells{i}{data.design.iter}));
-
-%             disconnected_to_undefined=find(sum(cell_neighbours(disconnected_to_undefined,:),1)>0);
-%             % if there are conflicts, move them to the potentially connected cells
-%             disconnected_to_dead=setdiff(disconnected_to_dead,disconnected_to_undefined);
-
-
-            connected_to_dead = intersect(find(data.design.mean_gamma_connected<experiment_setup.design.disconnected_confirm_threshold),...
-                find(data.design.potentially_connected_cells{i}{data.design.iter}));
-            connected_to_alive = intersect(find(data.design.mean_gamma_connected>experiment_setup.design.connected_confirm_threshold),...
-                find(data.design.potentially_connected_cells{i}{data.design.iter}));
-%             change_gamma =abs(data.design.gamma_path{i}(:,data.design.iter+1)-data.design.gamma_path{i}(:,data.design.iter));
-            connected_to_alive = intersect(find(data.design.change_gamma<experiment_setup.design.change_threshold),...
-                connected_to_alive);
-
-            % Eliminate the weakly identifiable pairs if they are both assign to a
-            % group:
-            %moved_cells = [connected_to_dead; connected_to_alive]';
-            %cells_and_neighbours=find(sum(cell_neighbours(moved_cells,:),1)>0);
-            %neighbours_not_included=intersect(find(data.design.potentially_connected_cells{i}{data.design.iter}), setdiff(cells_and_neighbours,moved_cells));
-            %blacklist=find(sum(cell_neighbours(neighbours_not_included,:),1)>0);
-            %connected_to_dead=setdiff(connected_to_dead ,blacklist);
-            %connected_to_alive=setdiff(connected_to_alive,blacklist);
-
-            % Update the cell lists:
-            data.design.undefined_cells{i}{data.design.iter+1}=data.design.undefined_cells{i}{data.design.iter};
-            data.design.undefined_cells{i}{data.design.iter+1}(undefined_to_disconnected)=0;data.design.undefined_cells{i}{data.design.iter+1}(undefined_to_connected)=0;
-            data.design.undefined_cells{i}{data.design.iter+1}(disconnected_to_undefined)=1;
-
-            data.design.potentially_disconnected_cells{i}{data.design.iter+1}=data.design.potentially_disconnected_cells{i}{data.design.iter};
-            data.design.potentially_disconnected_cells{i}{data.design.iter+1}(disconnected_to_dead)=0;data.design.potentially_disconnected_cells{i}{data.design.iter+1}(disconnected_to_undefined)=0;
-            data.design.potentially_disconnected_cells{i}{data.design.iter+1}(undefined_to_disconnected)=1;
-
-
-            data.design.potentially_connected_cells{i}{data.design.iter+1}=data.design.potentially_connected_cells{i}{data.design.iter};
-            data.design.potentially_connected_cells{i}{data.design.iter+1}(connected_to_dead)=0;data.design.potentially_connected_cells{i}{data.design.iter+1}(connected_to_alive)=0;
-            data.design.potentially_connected_cells{i}{data.design.iter+1}(undefined_to_connected)=1;
-
-            data.design.dead_cells{i}{data.design.iter+1}=data.design.dead_cells{i}{data.design.iter};
-            data.design.dead_cells{i}{data.design.iter+1}(disconnected_to_dead)=1;data.design.dead_cells{i}{data.design.iter+1}(connected_to_dead)=1;
-
-            data.design.alive_cells{i}{data.design.iter+1}=data.design.alive_cells{i}{data.design.iter};
-            data.design.alive_cells{i}{data.design.iter+1}(connected_to_alive)=1;
-            
-            assignin('base','undefined_cells',data.design.undefined_cells{i})
-            assignin('base','potentially_disconnected_cells',data.design.potentially_disconnected_cells{i})
-            assignin('base','potentially_connected_cells',data.design.potentially_connected_cells{i})
-            
-            %
-            if sum(data.design.dead_cells{i}{data.design.iter}+data.design.alive_cells{i}{data.design.iter})==n_cell_this_plane
-                data.design.id_continue{i}=0;% terminate
-            else
-                data.design.id_continue{i}=1;
-            end
-            data.design.iter = data.design.iter + 1
-            handles.data = data;
-            guidata(hObject,handles)
-            save(handles.data.experiment_setup.fullsavefile,'exp_data')
+            % then run pipeline
+            run_online_pipeline(exp_query_filename)
         end
         
         
         
         % Plot the progress
-        fprintf('Number of trials so far: %d; number of cells killed: %d\n',handles.data.design.n_trials{i}, sum(handles.data.design.dead_cells{i}{handles.data.design.iter}+handles.data.design.alive_cells{i}{handles.data.design.iter}))
+%         fprintf('Number of trials so far: %d; number of cells killed: %d\n',handles.data.design.n_trials{i}, sum(handles.data.design.dead_cells{i}{handles.data.design.iter}+handles.data.design.alive_cells{i}{handles.data.design.iter}))
         
-        do_cont = 0;
-        choice = questdlg('Continue Plane?', ...
-        'Continue Plane?', ...
-        'Yes','No','Yes');
-        % Handle response
-        switch choice
-        case 'Yes'
-            do_cont = 1;
-        case 'No'
-            do_cont = 0;
-        end
-
-        if ~do_cont   
-            handles.data.design.id_continue{i} = 0;
-        end
+%         do_cont = 0;
+%         choice = questdlg('Continue Plane?', ...
+%         'Continue Plane?', ...
+%         'Yes','No','Yes');
+%         % Handle response
+%         switch choice
+%         case 'Yes'
+%             do_cont = 1;
+%         case 'No'
+%             do_cont = 0;
+%         end
+% 
+%         if ~do_cont   
+%             handles.data.design.id_continue{i} = 0;
+%         end
     end
 end    
 
