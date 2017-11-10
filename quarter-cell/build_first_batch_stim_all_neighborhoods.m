@@ -1,7 +1,7 @@
-function handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,params)
+function handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
 
 build_first_batch_stim = 1;
-if handles.data.enable_user_breaks
+if experiment_setup.enable_user_breaks
     choice = questdlg('Build stim and phase masks for first batch?', ...
         'Build stim and phase masks for first batch?', ...
         'Yes','No','Yes');
@@ -15,9 +15,9 @@ if handles.data.enable_user_breaks
             % Handle response
             switch choice
                 case 'Yes'
-                    handles.data.enable_user_breaks = 1;
+                    experiment_setup.enable_user_breaks = 1;
                 case 'No'
-                    handles.data.enable_user_breaks = 0;
+                    experiment_setup.enable_user_breaks = 0;
             end
         case 'No'
             build_first_batch_stim = 0;
@@ -35,6 +35,10 @@ if build_first_batch_stim
     instruction.neighbourhoods = handles.data.neighbourhoods;
     instruction.get_return = 0;
     instruction.exp_id = handles.data.experiment_setup.exp_id;
-    [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+    if experiment_setup.is_exp
+        [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+    else
+        [return_info, success, handles] = do_instruction_local(instruction, handles);
+    end
     
 end

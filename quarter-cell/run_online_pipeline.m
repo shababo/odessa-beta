@@ -71,6 +71,9 @@ for i = 1:length(group_names)
     
 end
 
+% compute holograms
+
+
 fullpathname = ['/media/shababo/data/' experiment_setup.exp_id ...
                     '_n' num2str(neighbourhood.neighbourhood_id)...
                     '_b' num2str(experiment_query.batch_info.batch_id) '_to_acquisition.mat'];

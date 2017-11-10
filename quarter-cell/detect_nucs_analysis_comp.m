@@ -1,7 +1,9 @@
-function handles = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,params)
+function [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
+
+% THIS FUNCTION DOES NOT SUBSCRIBE TO NEW DATA STRUCTURES YET
 
 detect_nucs = 1;
-if handles.data.enable_user_breaks
+if experiment_setup.enable_user_breaks
     choice = questdlg('Detect Nuclei?', ...
         'Detect Nuclei?', ...
         'Yes','No','Yes');
@@ -15,9 +17,9 @@ if handles.data.enable_user_breaks
             % Handle response
             switch choice
                 case 'Yes'
-                    handles.data.enable_user_breaks = 1;
+                    experiment_setup.enable_user_breaks = 1;
                 case 'No'
-                    handles.data.enable_user_breaks = 0;
+                    experiment_setup.enable_user_breaks = 0;
             end
         case 'No'
             detect_nucs = 0;
@@ -29,12 +31,12 @@ if detect_nucs
     instruction = struct();
     instruction.type = 75;
 
-    instruction.filename = [handles.data.params.map_id '_stack'];
+    instruction.filename = [experiment_setup.map_id '_stack'];
     instruction.stackmat = acq_gui_data.data.stack;
 %     imagemat = handles.data.stack;
-%     save(['C:\data\Shababo\' handles.data.params.map_id '.mat'],'imagemat')
+%     save(['C:\data\Shababo\' handles.data.experiment_setup.map_id '.mat'],'imagemat')
 %     pause(5)
-%     copyfile(['C:\data\Shababo\' handles.data.params.map_id '.mat'], ['X:\shababo\' handles.data.params.map_id '.mat']);
+%     copyfile(['C:\data\Shababo\' handles.data.experiment_setup.map_id '.mat'], ['X:\shababo\' handles.data.experiment_setup.map_id '.mat']);
 %     pause(5)
     
 %     instruction.stackmat = 0;
@@ -54,6 +56,6 @@ if detect_nucs
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
-    exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+    exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
 %     assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 end
