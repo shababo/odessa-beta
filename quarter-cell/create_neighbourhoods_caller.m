@@ -26,16 +26,9 @@ end
 
 
 if do_build_neighbourhooods
-    disp('computing cell groups...')
-    % instruction.type = 76;
-    % instruction.nuclear_locs = handles.data.nuclear_locs;
-    % instruction.z_locs = handles.data.z_offsets;
-    % instruction.z_slice_width = handles.data.experiment_setup.exp.z_slice_width;
-    % 
-    % [return_info,success,handles] = do_instruction_analysis(instruction,handles);
-    % handles.data.cells_targets = return_info.cells_targets;
 
-    % z_slice_width = 30;
+    disp('computing cell groups...')
+
     neighbourhoods = create_neighbourhoods(experiment_setup);
 
 end

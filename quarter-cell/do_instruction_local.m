@@ -1,5 +1,5 @@
-function [return_info, success, handles] = ...
-    do_instruction_local(instruction, handles)
+function [return_info, success] = ...
+    do_instruction_local(instruction)
 
-[return_info,handles] = do_instruction(instruction,handles);
+[return_info] = do_instruction(instruction);
 success = 1;
