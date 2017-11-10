@@ -140,7 +140,7 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 else
-    experiment_setup = sim_cells(experiment_setup);
+    experiment_setup = sim_cells(experiment_setup); % we need to write this
 end
 
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
@@ -153,9 +153,7 @@ if experiment_setup.is_exp
     guidata(hObject,handles)
     exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
     [acq_gui, acq_gui_data] = get_acq_gui_data;
-
-else
-    neighbourhoods = create_neighbourhoods(experiment_setup);   
+ 
 end
 
 handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,experiment_setup);

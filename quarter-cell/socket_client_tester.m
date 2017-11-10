@@ -251,48 +251,48 @@ end
 
 set(handles.socket_status,'String','Socket: Closed')
 
-function [return_info, success, handles] = do_instruction(instruction, handles)
-
-instruction.close_socket = 1;
-% if instruction.type == 21
-%     handles.sock
+% function [return_info, success, handles] = do_instruction(instruction, handles)
+% 
+% instruction.close_socket = 1;
+% % if instruction.type == 21
+% %     handles.sock
+% % end
+% if ~isfield(handles,'sock_out')
+%     disp('opening socket...')
+%     srvsock = mslisten(handles.client_port);
+% %     handles.sock = -1;
+%     handles.sock_out = msaccept(srvsock);
+%     disp('socket open..')
+%     msclose(srvsock);
 % end
-if ~isfield(handles,'sock_out')
-    disp('opening socket...')
-    srvsock = mslisten(handles.client_port);
-%     handles.sock = -1;
-    handles.sock_out = msaccept(srvsock);
-    disp('socket open..')
-    msclose(srvsock);
-end
-% if isfield(handles,'close_socket')
-%     instruction.close_socket = get(handles.close_socket_check,'Value');
+% % if isfield(handles,'close_socket')
+% %     instruction.close_socket = get(handles.close_socket_check,'Value');
+% % else
+% %     instruction.close_socket = 1;
+% % end
+% if isfield(instruction,'get_return')
+%     get_return = instruction.get_return;
 % else
-%     instruction.close_socket = 1;
+%     get_return = 1;
 % end
-if isfield(instruction,'get_return')
-    get_return = instruction.get_return;
-else
-    get_return = 1;
-end
-pause(.1)
-disp('sending instruction...')
-mssend(handles.sock_out,instruction);
-if get_return
-    disp('getting return info...')
-    pause(.1)
-    return_info = [];
-    while isempty(return_info)
-        [return_info, success] = msrecv(handles.sock_out,5);
-    end
-    assignin('base','return_info',return_info)
-else
-    return_info = [];
-end
-% success = 1;
-
-if instruction.close_socket
-    disp('closing socket')
-    msclose(handles.sock_out)
-    handles = rmfield(handles,'sock_out');
-end
+% pause(.1)
+% disp('sending instruction...')
+% mssend(handles.sock_out,instruction);
+% if get_return
+%     disp('getting return info...')
+%     pause(.1)
+%     return_info = [];
+%     while isempty(return_info)
+%         [return_info, success] = msrecv(handles.sock_out,5);
+%     end
+%     assignin('base','return_info',return_info)
+% else
+%     return_info = [];
+% end
+% % success = 1;
+% 
+% if instruction.close_socket
+%     disp('closing socket')
+%     msclose(handles.sock_out)
+%     handles = rmfield(handles,'sock_out');
+% end
