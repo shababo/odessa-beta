@@ -142,9 +142,6 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 else
-    experiment_setup.patched_neuron=struct;
-    experiment_setup.patched_neuron.background_rate=1e-4;
-    experiment_setup.patched_neuron.cell_type=[];
     simulation_setup=get_simulation_setup();
     experiment_setup.neurons=generate_neurons(simulation_setup);
 end
@@ -186,6 +183,9 @@ if experiment_setup.is_exp
     set(acq_gui_data.loop_count,'String',num2str(1))
 else
     % simulate bg rate
+    experiment_setup.patched_neuron=struct;
+    experiment_setup.patched_neuron.background_rate=1e-4;
+    experiment_setup.patched_neuron.cell_type=[];
 end
 num_map_locations = length(neighbourhoods);
 
@@ -286,6 +286,14 @@ while not_terminated
             end
         else
             % simulate this batch data
+            switch experiment_setup.experiment_type
+                case 'simulation'
+                    % simulate data 
+                    i_neighbourhood=i;
+                    experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhoods(i_neighbourhood));
+                case 'reproduction'
+                    % read data from files
+            end
             
         end
         
@@ -294,9 +302,7 @@ while not_terminated
         if experiment_setup.is_exp
             % send to analysis computer
         else
-            % save out file first
-            
-            % then run pipeline
+            % run online pipeline with data in RAM
             run_online_pipeline(exp_query_filename)
         end
         
