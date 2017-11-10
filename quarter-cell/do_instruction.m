@@ -31,7 +31,8 @@ TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
 RUN_VI = 110;
 DETECT_EVENTS_OASIS_AND_RUN_VI = 200;
-QUEUE_FULL_ONLINE_PIPELINE = 300;
+RUN_FULL_ONLINE_PIPELINE = 300;
+CHECK_FOR_BATCH = 401;
 
 success = 1;
 
@@ -497,7 +498,7 @@ if success >= 0
             end
             instruction.exp_data.oasis_data = handles.data.oasis_data;
             return_info.data = run_vi_online(instruction.exp_data);
-        case QUEUE_FULL_ONLINE_PIPELINE
+        case RUN_FULL_ONLINE_PIPELINE
             
             for i = 1:length(instruction.neighbourhoods)
                 neighbourhood = instruction.neighbourhoods(i);
@@ -510,6 +511,42 @@ if success >= 0
                     '"run_online_pipeline(' fullpathname ')"';];
                 system(cmd)
             end
+        case QUEUE_FULL_ONLINE_PIPELINE
+            
+            for i = 1:length(instruction.neighbourhoods)
+                neighbourhood = instruction.neighbourhoods(i);
+                experiment_query = instruction.experiment_query(i);
+                fullpathname = [instruction.experiment_setup.analysis_root instruction.experiment_setup.exp_id ...
+                    '_n' num2str(neighbourhood.neighbourhood_id)...
+                    '_b' num2str(experiment_query.batch_info.batch_id) '_to_analysis.mat'];
+                save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
+
+            end
+        case CHECK_FOR_BATCH
+            
+            files = dir(instruction.dir);
+            matchfile_ind = find(cellfun(@(x) ~isempty(x),...
+                regexp({files.name},instruction.matchstr)));
+            if length(matchfile_ind) > 1
+                warndlg('more than one file found that matches :(')
+            end
+            if ~isempty(matchfile_ind)
+                filename = files(matchfile_ind(1)).name;
+                load([instruction.dir filename])
+                return_info.batch_found = 1;
+                return_info.experiment_query = experiment_query;
+                return_info.neighbourhood = neighbourhood;
+            else
+                return_info.batch_found = 0;
+            end
+           
+            
+        case CHECK_FOR_ANALYSIS
+                
+            % CHECK FOR FILE
+            cmd = ['matlab -nojvm -nodisplay -nosplash '...
+                '"run_online_pipeline(' fullpathname ')"';];
+            system(cmd)
             
     end 
     

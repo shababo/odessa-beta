@@ -185,28 +185,37 @@ if experiment_setup.is_exp
 else
     % simulate bg rate
 end
-num_map_locations = length(neighbourhoods);
+num_neighbourhoods = length(neighbourhoods);
 
 not_terminated = 1;
 while not_terminated
-    for i = 1:num_map_locations
-    
-        % check for holograms to do
+    for i = 1:num_neighbourhoods
         
-%         if experiemnt_setup.experiment_setup.is_exp
-%             % move obj
-%             set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
-%             set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
-%             set(handles.thenewz,'String',num2str(handles.data.obj_positions(i,3)))
-%             [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-    
-    
-    
-        %------------------------------------------%
-        % Run the designed trials
+        neighbourhood = neighbourhoods(i);
+        % check for batch on this neighborhood
+        instruction.type = 401;
+        instruction.dir = experiment_setup.analysis_root;        
+        instruction.matchstr = [experiment_setup.exp_id ...
+                    '_n' num2str(neighbourhood.neighbourhood_id)...
+                    '_b' num2str(neighbourhood.batch_ID + 1) '_to_acquisition'];
+        if experiment_setup.is_exp
+            [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+        else
+            [return_info, success] = do_instruction_local(instruction);
+        end
+        
+        if ~return_info.batch_found
+            continue
+        end
         
         
         if experiment_setup.is_exp
+            
+            set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
+            set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
+            set(handles.thenewz,'String',num2str(handles.data.obj_positions(i,3)))
+            [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+
             do_run_trials = 1;
             if experiment_setup.enable_user_breaks
                 choice = questdlg('Run the trials?', ...
@@ -232,11 +241,9 @@ while not_terminated
             end
 
             if do_run_trials
-                set(handles.tf_flag,'Value',1)
-                set(handles.set_seq_trigger,'Value',0)
-                set(handles.target_intensity,'String',user_input_powers)
-
-                [handles, acq_gui, acq_gui_data] = build_seq_groups(hObject, eventdata, handles);
+                
+                
+                
             %     handles = guidata(hObject);
             %     acq_gui_data = get_acq_gui_data();
                 max_seq_length = str2double(get(handles.max_seq_length,'String'));
@@ -284,18 +291,21 @@ while not_terminated
             end
         else
             % simulate this batch data
+            experiment_query = sim_batch(experiment_query,neighbourhood,experiment_setup);
             
         end
         
         
         % RUN ONLINE MAPPING PIPELINE HERE
+        instruction.type = 300; 
+        instruction.experiment_query = experiment_query;
+        instruction.neighbourhoods = neighbourhood;
+        instruction.get_return = 0;
+        instruction.exp_id = experiment_setup.exp_id;
         if experiment_setup.is_exp
-            % send to analysis computer
+            [return_info, success, handles] = do_instruction_analysis(instruction, handles);
         else
-            % save out file first
-            
-            % then run pipeline
-            run_online_pipeline(exp_query_filename)
+            [return_info, success] = do_instruction_local(instruction);
         end
         
         
