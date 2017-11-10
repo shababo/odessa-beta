@@ -1,7 +1,6 @@
 function run_mapping_experiment(experiment_setup,varargin)
 
 switch experiment_setup.experiment_type
-    
     case 'experiment'
     
         experiment_setup.is_exp = 1;
@@ -84,6 +83,7 @@ switch experiment_setup.experiment_type
     case {'simulation','reproduction'}
         experiment_setup.is_exp = 0;
         experiment_setup.enable_user_breaks = 0;
+        handles = [];
 end
 
 
@@ -140,7 +140,13 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 else
-    experiment_setup = sim_cells(experiment_setup); % we need to write this
+
+    experiment_setup.patched_neuron=struct;
+    experiment_setup.patched_neuron.background_rate=1e-4;
+    experiment_setup.patched_neuron.cell_type=[];
+    experiment_setup.sim=get_simulation_setup();
+    experiment_setup.neurons=generate_neurons(experiment_setup);
+    
 end
 
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
@@ -156,7 +162,7 @@ if experiment_setup.is_exp
  
 end
 
-handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+build_first_batch_stim_all_neighborhoods(experiment_setup,handles);
 
 if experiment_setup.is_exp
     % get info on patched cells while first batches prep
