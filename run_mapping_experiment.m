@@ -159,7 +159,7 @@ if experiment_setup.is_exp
     guidata(hObject,handles)
     exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
     [acq_gui, acq_gui_data] = get_acq_gui_data;
- 
+
 end
 
 build_first_batch_stim_all_neighborhoods(experiment_setup,handles);
