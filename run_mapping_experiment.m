@@ -1,93 +1,95 @@
 function run_mapping_experiment(experiment_setup,varargin)
 
-if strcmp(experiment_setup.experiment_type,'experiment')
+switch experiment_setup.experiment_type
     
-    is_exp = 1;
-    handles = varargin{1};
-    hObject = varargin{2};
+    case 'experiment'
     
-    choice = questdlg('Choose start point?',...
-        'Choose start point?', ...
-        'Yes','No','Yes');
-    % Handle response
-    switch choice
-        case 'Yes'
-            experiment_setup.enable_user_breaks = 1;
-        case 'No'
-            experiment_setup.enable_user_breaks = 0;
-    end
-    guidata(hObject,handles)
-    
-    reinit_oed = 0;
-    if experiment_setup.enable_user_breaks
-        choice = questdlg('Initialize OED experiment_setup?',...
-            'Initialize OED experiment_setup?', ...
+        experiment_setup.is_exp = 1;
+        handles = varargin{1};
+        hObject = varargin{2};
+
+        choice = questdlg('Choose start point?',...
+            'Choose start point?', ...
             'Yes','No','Yes');
         % Handle response
         switch choice
             case 'Yes'
-                reinit_oed = 1;
-                choice = questdlg('Continue user control?',...
-                    'Continue user control?', ...
-                    'Yes','No','Yes');
-                % Handle response
-                switch choice
-                    case 'Yes'
-                        experiment_setup.enable_user_breaks = 1;
-                    case 'No'
-                        experiment_setup.enable_user_breaks = 0;
-                end
-                guidata(hObject,handles)
+                experiment_setup.enable_user_breaks = 1;
             case 'No'
-                reinit_oed = 0;
+                experiment_setup.enable_user_breaks = 0;
         end
-    end
-
-    if reinit_oed
-        load_map = 1;
-        experiment_setup = get_experiment_setup(load_map);
         guidata(hObject,handles)
-    end
 
-    load_exp = 0;
-    if experiment_setup.enable_user_breaks
-        choice = questdlg('Load an experiment?',...
-            'Initialize OED experiment_setup?', ...
-            'Yes','No','Yes');
-        % Handle response
-        switch choice
-            case 'Yes'
-                load_exp = 1;
-            case 'No'
-                load_exp = 0;
+        reinit_oed = 0;
+        if experiment_setup.enable_user_breaks
+            choice = questdlg('Initialize OED experiment_setup?',...
+                'Initialize OED experiment_setup?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    reinit_oed = 1;
+                    choice = questdlg('Continue user control?',...
+                        'Continue user control?', ...
+                        'Yes','No','Yes');
+                    % Handle response
+                    switch choice
+                        case 'Yes'
+                            experiment_setup.enable_user_breaks = 1;
+                        case 'No'
+                            experiment_setup.enable_user_breaks = 0;
+                    end
+                    guidata(hObject,handles)
+                case 'No'
+                    reinit_oed = 0;
+            end
         end
-    end
 
-    if load_exp
-        [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
-        load(fullfile(data_pathname,data_filename),'exp_data')
-        handles.data = exp_data;
-        experiment_setup = handles.data.experiment_setup;
-    end
+        if reinit_oed
+            load_map = 1;
+            experiment_setup = get_experiment_setup(load_map);
+            guidata(hObject,handles)
+        end
 
-    guidata(hObject,handles)
+        load_exp = 0;
+        if experiment_setup.enable_user_breaks
+            choice = questdlg('Load an experiment?',...
+                'Initialize OED experiment_setup?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    load_exp = 1;
+                case 'No'
+                    load_exp = 0;
+            end
+        end
 
-    % shift focus
-    [acq_gui, acq_gui_data] = get_acq_gui_data;
-    figure(acq_gui)
+        if load_exp
+            [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
+            load(fullfile(data_pathname,data_filename),'exp_data')
+            handles.data = exp_data;
+            experiment_setup = handles.data.experiment_setup;
+        end
 
-    set(handles.close_socket_check,'Value',0)
-    guidata(hObject,handles);
+        guidata(hObject,handles)
+
+        % shift focus
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
+        figure(acq_gui)
+
+        set(handles.close_socket_check,'Value',0)
+        guidata(hObject,handles);
     
-else
-    is_exp = 0;
-    experiment_setup.enable_user_breaks = 0;
+    case {'simulation','reproduction'}
+        experiment_setup.is_exp = 0;
+        experiment_setup.enable_user_breaks = 0;
 end
 
 
 
 % get cell locations or simulate
-if is_exp && ~experiment_setup.exp.sim_locs
+if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     
     eventdata = [];
     handles = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
@@ -141,11 +143,15 @@ else
     experiment_setup = sim_cells(experiment_setup);
 end
 
-
+neighbourhoods = create_neighbourhoods_caller(experiment_setup);
 
 if experiment_setup.is_exp
-    handles = create_neighbourhoods_caller(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-    neighbourhoods = handles.data.neighbourhoods;
+    
+    handles.data.neighbourhoods = neighbourhoods;
+    acq_gui_data.data.neighbourhoods = handles.data.neighbourhoods;
+    guidata(acq_gui,acq_gui_data)
+    guidata(hObject,handles)
+    exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 
 else
@@ -183,7 +189,7 @@ while not_terminated
     
         % check for holograms to do
         
-%         if experiemnt_setup.is_exp
+%         if experiemnt_setup.experiment_setup.is_exp
 %             % move obj
 %             set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
 %             set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
@@ -196,7 +202,7 @@ while not_terminated
         % Run the designed trials
         
         
-        if is_exp
+        if experiment_setup.is_exp
             do_run_trials = 1;
             if experiment_setup.enable_user_breaks
                 choice = questdlg('Run the trials?', ...

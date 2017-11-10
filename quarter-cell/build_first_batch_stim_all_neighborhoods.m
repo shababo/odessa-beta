@@ -1,10 +1,14 @@
-function handles = build_first_batch_stim_all_neighborhoods(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
+function handles = build_first_batch_stim_all_neighborhoods(experiment_setup,varargin)
+
+if ~isempty(varargin} && ~isempty(varargin{1})
+    handles = varargin{1};
+end
 
 build_first_batch_stim = 1;
 if experiment_setup.enable_user_breaks
     choice = questdlg('Build stim and phase masks for first batch?', ...
         'Build stim and phase masks for first batch?', ...
-        'Yes','No','Yes');
+        'Yes','No','Yes');do_instruction_local
     % Handle response
     switch choice
         case 'Yes'
@@ -34,11 +38,11 @@ if build_first_batch_stim
     end
     instruction.neighbourhoods = handles.data.neighbourhoods;
     instruction.get_return = 0;
-    instruction.exp_id = handles.data.experiment_setup.exp_id;
+    instruction.exp_id = experiment_setup.exp_id;
     if experiment_setup.is_exp
         [return_info, success, handles] = do_instruction_analysis(instruction, handles);
     else
-        [return_info, success, handles] = do_instruction_local(instruction, handles);
+        [return_info, success, handles] = do_instruction_local(instruction);
     end
     
 end

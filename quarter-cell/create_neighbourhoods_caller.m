@@ -1,4 +1,4 @@
-function handles = create_neighbourhoods_caller(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
+function neighbourhoods = create_neighbourhoods_caller(experiment_setup)
 
 do_build_neighbourhooods = 1;
 if experiment_setup.enable_user_breaks
@@ -26,7 +26,7 @@ end
 
 
 if do_build_neighbourhooods
-    disp('computing optimal locations and cell groups...')
+    disp('computing cell groups...')
     % instruction.type = 76;
     % instruction.nuclear_locs = handles.data.nuclear_locs;
     % instruction.z_locs = handles.data.z_offsets;
@@ -36,11 +36,6 @@ if do_build_neighbourhooods
     % handles.data.cells_targets = return_info.cells_targets;
 
     % z_slice_width = 30;
-    handles.data.neighbourhoods = create_neighbourhoods(experiment_setup);
+    neighbourhoods = create_neighbourhoods(experiment_setup);
 
-    acq_gui_data.data.neighbourhoods = handles.data.neighbourhoods;
-
-    guidata(acq_gui,acq_gui_data)
-    guidata(hObject,handles)
-    exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
 end
