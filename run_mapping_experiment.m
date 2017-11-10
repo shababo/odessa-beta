@@ -290,7 +290,6 @@ while not_terminated
             end
         else
             % simulate this batch data
-<<<<<<< HEAD
             switch experiment_setup.experiment_type
                 case 'simulation'
                     % simulate data 
@@ -299,10 +298,6 @@ while not_terminated
                 case 'reproduction'
                     % read data from files
             end
-=======
-            experiment_query = sim_batch(experiment_query,neighbourhood,experiment_setup);
->>>>>>> origin/slidebook-slm-control
-            
         end
         
         
@@ -315,12 +310,8 @@ while not_terminated
         if experiment_setup.is_exp
             [return_info, success, handles] = do_instruction_analysis(instruction, handles);
         else
-<<<<<<< HEAD
-            % run online pipeline with data in RAM
-            run_online_pipeline(exp_query_filename)
-=======
+
             [return_info, success] = do_instruction_local(instruction);
->>>>>>> origin/slidebook-slm-control
         end
         
         
