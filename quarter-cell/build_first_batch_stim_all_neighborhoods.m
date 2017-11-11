@@ -1,4 +1,4 @@
-function build_first_batch_stim_all_neighborhoods(experiment_setup,varargin)
+function experiment_query = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,varargin)
 
 if ~isempty(varargin) && ~isempty(varargin{1})
     handles = varargin{1};
@@ -32,19 +32,29 @@ end
 
 
 if build_first_batch_stim
-     
-    instruction.type = 300; 
-    instruction.experiment_query = struct();
-    for i = 1:length(handles.data.neighbourhoods)
-        instruction.experiment_query(i) = empty_design(handles.data.neighbourhoods(i));
-    end
-    instruction.neighbourhoods = handles.data.neighbourhoods;
-    instruction.get_return = 0;
-    instruction.exp_id = experiment_setup.exp_id;
-    if experiment_setup.is_exp
-        [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+    
+    
+    if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+        for i = 1:length(neighbourhoods)
+            [experiment_query(i), neighbourhoods(i)] = run_online_pipeline(neighbourhoods(i),...
+                empty_design(neighbourhoods(i)),...
+                experiment_setup);
+        end
     else
-        [return_info, success] = do_instruction_local(instruction);
+        instruction.type = 300; 
+        instruction.experiment_query = struct();
+        for i = 1:length(neighbourhoods)
+            instruction.experiment_query(i) = empty_design(neighbourhoods(i));
+        end
+        instruction.neighbourhoods = neighbourhoods;
+        instruction.get_return = 0;
+        instruction.exp_id = experiment_setup.exp_id;
+        if experiment_setup.is_exp
+            [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+        else
+            [return_info, success] = do_instruction_local(instruction);
+        end
+        experiment_query = [];
     end
     
 end

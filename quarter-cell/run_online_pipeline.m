@@ -1,9 +1,14 @@
-function run_online_pipeline(exp_query_filename)
+function [experiment_query, neighbourhood] = run_online_pipeline(varargin)
 
-
-load(exp_query_filename)
-% neighbourhood, experiment_query, experiment_setup
-
+if length(varargin) == 1
+    
+    exp_query_filename
+    load(exp_query_filename)% neighbourhood, experiment_query, experiment_setup
+elseif length(varargin) == 3
+    neighbourhood = varargin{1};
+    experiment_query = varargin{2};
+    experiment_setup = varargin{3};
+end
 group_names = fieldnames(experiment_query);
 
 % for i = 1:length(group_names)

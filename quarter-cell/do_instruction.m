@@ -508,7 +508,7 @@ if success >= 0
                     '_b' num2str(experiment_query.batch_info.batch_id) '_to_analysis.mat'];
                 save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
                 cmd = ['matlab -nojvm -nodisplay -nosplash '...
-                    '"run_online_pipeline(' fullpathname ')"';];
+                    '"run_online_pipeline(' fullpathname ');"';];
                 system(cmd)
             end
         case QUEUE_FULL_ONLINE_PIPELINE
