@@ -220,7 +220,6 @@ while not_terminated
                 experiment_query = return_info.experiment_query;
             end
         end
-        
         if experiment_setup.is_exp
             
             set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))

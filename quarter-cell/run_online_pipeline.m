@@ -60,6 +60,7 @@ if num_trials
             end
         end
     end
+
 end
 
 % AT THIS POINT WRITE OUT TO EXPERIMENT RECORD
