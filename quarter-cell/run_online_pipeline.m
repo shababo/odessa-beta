@@ -52,29 +52,31 @@ if num_trials
 end
 
 % AT THIS POINT WRITE OUT TO EXPERIMENT RECORD
-experiment_query_pre = experiment_query;
-clear experiment_query
+
+
 
 % CHECK FOR NEW MEMBERS
 
 
-
+batch_ID = experiment_query.batch_info.batch_ID + 1;
+clear experiment_query
 % design trials
 for i = 1:length(group_names)
     this_group = group_names{i};
     if any(get_group_inds(neighbourhood,this_group))
         
-        batch_ID = experiment_query_pre.(this_group).batch_info.batch_ID + 1;
+        
 
         group_profile=experiment_setup.groups.(this_group);
 
 
         experiment_query.(this_group) = ...
             experiment_setup.groups.(this_group).design_function(neighbourhood,group_profile);
-        experiment_query.(this_group).batch_info.batch_ID = batch_ID;
+        
     end
     
 end
+experiment_query.batch_info.batch_ID = batch_ID;
 
 % compute holograms
 % create_holograms_and_batch_seq
@@ -82,7 +84,7 @@ neighbourhood.batch_ID = batch_ID;
 
 fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
                     '_n' num2str(neighbourhood.neighbourhood_id)...
-                    '_b' num2str(experiment_query.batch_info.batch_ID) '_to_acquisition.mat'];
+                    '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
                 
 save(fullpathname,'experiment_query','neighbourhood')
 

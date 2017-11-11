@@ -42,13 +42,15 @@ if build_first_batch_stim
         end
     else
         instruction.type = 300; 
-        instruction.experiment_query = struct();
+%         instruction.experiment_query = struct();
         for i = 1:length(neighbourhoods)
-            instruction.experiment_query(i) = empty_design(neighbourhoods(i));
+            instruction.experiment_query(i) = ...
+                empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group));
         end
         instruction.neighbourhoods = neighbourhoods;
         instruction.get_return = 0;
-        instruction.exp_id = experiment_setup.exp_id;
+        instruction.experiment_setup = experiment_setup;
+        
         if experiment_setup.is_exp
             [return_info, success, handles] = do_instruction_analysis(instruction, handles);
         else

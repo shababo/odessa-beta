@@ -500,28 +500,30 @@ if success >= 0
             return_info.data = run_vi_online(instruction.exp_data);
         case RUN_FULL_ONLINE_PIPELINE
             
+            experiment_setup = instruction.experiment_setup;
             for i = 1:length(instruction.neighbourhoods)
                 neighbourhood = instruction.neighbourhoods(i);
                 experiment_query = instruction.experiment_query(i);
-                fullpathname = [instruction.experiment_setup.analysis_root instruction.experiment_setup.exp_id ...
-                    '_n' num2str(neighbourhood.neighbourhood_id)...
-                    '_b' num2str(experiment_query.batch_info.batch_id) '_to_analysis.mat'];
+                
+                fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
+                    '_n' num2str(neighbourhood.neighbourhood_ID)...
+                    '_b' num2str(experiment_query.batch_ID) '_to_analysis.mat'];
                 save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
-                cmd = ['matlab -nojvm -nodisplay -nosplash '...
-                    '"run_online_pipeline(' fullpathname ');"';];
+                cmd = ['matlab -nodesktop -nodisplay -nosplash -r '...
+                    'run_online_pipeline(''' fullpathname '''); &'];
                 system(cmd)
             end
-        case QUEUE_FULL_ONLINE_PIPELINE
-            
-            for i = 1:length(instruction.neighbourhoods)
-                neighbourhood = instruction.neighbourhoods(i);
-                experiment_query = instruction.experiment_query(i);
-                fullpathname = [instruction.experiment_setup.analysis_root instruction.experiment_setup.exp_id ...
-                    '_n' num2str(neighbourhood.neighbourhood_id)...
-                    '_b' num2str(experiment_query.batch_info.batch_id) '_to_analysis.mat'];
-                save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
-
-            end
+%         case QUEUE_FULL_ONLINE_PIPELINE
+%             
+%             for i = 1:length(instruction.neighbourhoods)
+%                 neighbourhood = instruction.neighbourhoods(i);
+%                 experiment_query = instruction.experiment_query(i);
+%                 fullpathname = [instruction.experiment_setup.analysis_root instruction.experiment_setup.exp_id ...
+%                     '_n' num2str(neighbourhood.neighbourhood_ID)...
+%                     '_b' num2str(experiment_query.batch_ID) '_to_analysis.mat'];
+%                 save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
+% 
+%             end
         case CHECK_FOR_BATCH
             
             files = dir(instruction.dir);
