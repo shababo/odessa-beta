@@ -31,27 +31,34 @@ for i = 1:length(group_names)
     if any(get_group_inds(neighbourhood,this_group)) && ~isempty(experiment_query.(this_group).trials)
         this_exp_query = experiment_query.(this_group);
         group_profile=experiment_setup.groups.(this_group);
-        if experiment_setup.is_exp || experiment_setup.sim.sim_vclmap
-            experiment_query.(this_group) = ...
-                experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
-        end
+%         if experiment_setup.is_exp || experiment_setup.sim.sim_vclamp
+        experiment_query.(this_group) = ...
+            experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
+%         end
         num_trials = num_trials + length(experiment_query.(this_group).trials);
         neighbourhood = ...
-            experiment_setup.groups.(this_group).inference_function(this_exp_query,neighbourhood,group_profile, experiment_setup.prior_info);
+            experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
     end
 end
 
 % regroup cells
 if num_trials
     for i = 1:length(group_names)
-        %for j = setdiff(1:length(group_names),i)
+
+        
         this_group = group_names{i};
-        %         to_group = group_names{j};
         to_groups=setdiff(group_names,this_group);
         group_profile=experiment_setup.groups.(this_group);
-        %   regroup_func = experiment_setup.groups.(this_group).regroup_functions(to_group);
-        neighbourhood  = experiment_setup.groups.(this_group).regroup_functions(neighbourhood,to_groups,group_profile);
-    %     end
+        
+        if isfield(group_profile,'regroup_function')
+            for j = 1:length(to_groups)
+                to_group = to_groups{j};
+                if isfield(group_profile.regroup_function,to_group)
+                    regroup_func = group_profile.regroup_function.(to_group);
+                    neighbourhood  = regroup_func(neighbourhood,group_profile);
+                end
+            end
+        end
     end
 end
 

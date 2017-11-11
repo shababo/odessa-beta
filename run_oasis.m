@@ -1,6 +1,6 @@
 function experiment_query = run_oasis(experiment_query,neighbourhood,group_profile,experiment_setup)
 
-if strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.sim_vlcamp
+if strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.sim_vclamp
     
     for i = 1:length(experiment_query.trials)
         experiment_query.trials(i).event_times = ...
