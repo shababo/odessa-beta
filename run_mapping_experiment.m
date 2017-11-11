@@ -141,8 +141,8 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 else
-    simulation_setup=get_simulation_setup();
-    experiment_setup.neurons=generate_neurons(simulation_setup);
+
+    experiment_setup.neurons=generate_neurons(experiment_setup);
 end
 
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
@@ -158,8 +158,11 @@ if experiment_setup.is_exp
  
 end
 
-build_first_batch_stim_all_neighborhoods(experiment_setup,handles);
-
+if experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+    build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
+else
+    [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
+end
 if experiment_setup.is_exp
     % get info on patched cells while first batches prep
     handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
@@ -187,24 +190,34 @@ end
 num_neighbourhoods = length(neighbourhoods);
 
 not_terminated = 1;
+loop_count = 1;
 while not_terminated
     for i = 1:num_neighbourhoods
         
         neighbourhood = neighbourhoods(i);
-        % check for batch on this neighborhood
-        instruction.type = 401;
-        instruction.dir = experiment_setup.analysis_root;        
-        instruction.matchstr = [experiment_setup.exp_id ...
-                    '_n' num2str(neighbourhood.neighbourhood_id)...
-                    '_b' num2str(neighbourhood.batch_ID + 1) '_to_acquisition'];
-        if experiment_setup.is_exp
-            [return_info, success, handles] = do_instruction_analysis(instruction, handles);
-        else
-            [return_info, success] = do_instruction_local(instruction);
-        end
         
-        if ~return_info.batch_found
-            continue
+        if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+            experiment_query = experiment_query_full(i,loop_count);
+        else
+            % check for batch on this neighborhood
+            instruction.type = 401;
+            instruction.dir = experiment_setup.analysis_root;        
+            instruction.matchstr = [experiment_setup.exp_id ...
+                        '_n' num2str(neighbourhood.neighbourhood_ID)...
+                        '_b' num2str(neighbourhood.batch_ID + 1) '_to_acquisition'];
+            if experiment_setup.is_exp
+                [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+            else
+                [return_info, success] = do_instruction_local(instruction);
+            end
+
+            if ~return_info.batch_found
+                continue
+            else
+                neighbourhoods(i) = return_info.neighbourhood;
+                neighbourhood = neighbourhoods(i);
+                experiment_query = return_info.experiment_query;
+            end
         end
         if experiment_setup.is_exp
             
@@ -239,10 +252,6 @@ while not_terminated
 
             if do_run_trials
                 
-                
-                
-            %     handles = guidata(hObject);
-            %     acq_gui_data = get_acq_gui_data();
                 max_seq_length = str2double(get(handles.max_seq_length,'String'));
                 this_seq = acq_gui_data.data.sequence;
                 num_runs = ceil(length(this_seq)/max_seq_length);
@@ -300,16 +309,20 @@ while not_terminated
         
         
         % RUN ONLINE MAPPING PIPELINE HERE
-        instruction.type = 300; 
-        instruction.experiment_query = experiment_query;
-        instruction.neighbourhoods = neighbourhood;
-        instruction.get_return = 0;
-        instruction.exp_id = experiment_setup.exp_id;
-        if experiment_setup.is_exp
-            [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+        if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+            [experiment_query_full(i,loop_count+1), neighbourhoods(i)] = run_online_pipeline(neighbourhood,...
+                experiment_query,experiment_setup);
         else
-
-            [return_info, success] = do_instruction_local(instruction);
+            instruction.type = 300; 
+            instruction.experiment_query = experiment_query;
+            instruction.neighbourhoods = neighbourhood;
+            instruction.get_return = 0;
+            instruction.exp_id = experiment_setup.exp_id;
+            if experiment_setup.is_exp
+                [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+            else
+                [return_info, success] = do_instruction_local(instruction);
+            end
         end
         
         
