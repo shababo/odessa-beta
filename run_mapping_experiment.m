@@ -206,8 +206,6 @@ while not_terminated
         if ~return_info.batch_found
             continue
         end
-        
-        
         if experiment_setup.is_exp
             
             set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))

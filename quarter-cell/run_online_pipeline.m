@@ -37,7 +37,7 @@ for i = 1:length(group_names)
     %         to_group = group_names{j};
     to_groups=setdiff(group_names,this_group);
     group_profile=experiment_setup.groups.(this_group);
-    %   regroup_func = experiment_setup.groups.(this_group).regroup_functions(to_group);
+    %   regroup_func = experiment_setup.groups.(this_group).regroup_functions.(to_group);
     neighbourhood  = experiment_setup.groups.(this_group).regroup_functions(neighbourhood,to_groups,group_profile);
 %     end
 end
