@@ -36,11 +36,11 @@ CHECK_FOR_BATCH = 401;
 
 success = 1;
 
-instruction.type
+% instruction.type
 return_info = struct();
 if success >= 0
-    disp('doing something...')
-    instruction.type
+%     disp('doing something...')
+%     instruction.type
     switch instruction.type
         case PRINT
             disp(instruction.string)
@@ -510,8 +510,8 @@ if success >= 0
                     '_b' num2str(experiment_query.batch_ID) '_to_analysis.mat'];
                 save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
                 cmd = ['matlab -nodesktop -nodisplay -nosplash -r '...
-                    'run_online_pipeline(''' fullpathname '''); &'];
-                system(cmd)
+                    '"run_online_pipeline(''' fullpathname ''');" &'];
+                system(cmd);
             end
 %         case QUEUE_FULL_ONLINE_PIPELINE
 %             

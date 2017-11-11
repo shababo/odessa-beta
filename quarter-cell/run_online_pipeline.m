@@ -1,9 +1,11 @@
 function [experiment_query, neighbourhood] = run_online_pipeline(varargin)
 
+disp('running online pipe')
+
 if length(varargin) == 1
     
-    exp_query_filename
-    load(exp_query_filename)% neighbourhood, experiment_query, experiment_setup
+    exp_query_filename = varargin{1};
+    load(exp_query_filename) % neighbourhood, experiment_query, experiment_setup
 elseif length(varargin) == 3
     neighbourhood = varargin{1};
     experiment_query = varargin{2};
@@ -29,8 +31,10 @@ for i = 1:length(group_names)
     if any(get_group_inds(neighbourhood,this_group)) && ~isempty(experiment_query.(this_group).trials)
         this_exp_query = experiment_query.(this_group);
         group_profile=experiment_setup.groups.(this_group);
-        experiment_query.(this_group) = ...
-            experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
+        if experiment_setup.is_exp || experiment_setup.sim.sim_vclmap
+            experiment_query.(this_group) = ...
+                experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
+        end
         num_trials = num_trials + length(experiment_query.(this_group).trials);
         neighbourhood = ...
             experiment_setup.groups.(this_group).inference_function(this_exp_query,neighbourhood,group_profile, experiment_setup.prior_info);
@@ -76,15 +80,18 @@ for i = 1:length(group_names)
     end
     
 end
-experiment_query.batch_info.batch_ID = batch_ID;
+experiment_query.batch_ID = batch_ID;
 
 % compute holograms
 % create_holograms_and_batch_seq
 neighbourhood.batch_ID = batch_ID;
 
-fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
-                    '_n' num2str(neighbourhood.neighbourhood_ID)...
-                    '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
-                
-save(fullpathname,'experiment_query','neighbourhood')
+if experiment_setup.is_exp || experiment_setup.sim.do_instructions
+    fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
+                        '_n' num2str(neighbourhood.neighbourhood_ID)...
+                        '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
 
+    save(fullpathname,'experiment_query','neighbourhood')
+end
+
+disp('done online pipe')
