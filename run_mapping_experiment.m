@@ -158,7 +158,7 @@ if experiment_setup.is_exp
  
 end
 
-if experiment_setup.is_exp
+if experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
     build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
 else
     [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);

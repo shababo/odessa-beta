@@ -58,7 +58,7 @@ end
 % CHECK FOR NEW MEMBERS
 
 
-batch_ID = experiment_query.batch_info.batch_ID + 1;
+batch_ID = experiment_query.batch_ID + 1;
 clear experiment_query
 % design trials
 for i = 1:length(group_names)
@@ -71,7 +71,7 @@ for i = 1:length(group_names)
 
 
         experiment_query.(this_group) = ...
-            experiment_setup.groups.(this_group).design_function(neighbourhood,group_profile);
+            experiment_setup.groups.(this_group).design_function(neighbourhood,group_profile,experiment_setup);
         
     end
     
@@ -83,7 +83,7 @@ experiment_query.batch_info.batch_ID = batch_ID;
 neighbourhood.batch_ID = batch_ID;
 
 fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
-                    '_n' num2str(neighbourhood.neighbourhood_id)...
+                    '_n' num2str(neighbourhood.neighbourhood_ID)...
                     '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
                 
 save(fullpathname,'experiment_query','neighbourhood')
