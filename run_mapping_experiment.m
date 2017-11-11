@@ -141,9 +141,8 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 else
-    simulation_setup=get_simulation_setup();% we can do this line and the one below within get_experiment_setup
-    experiment_setup.sim = simulation_setup;
-    experiment_setup.neurons=generate_neurons(simulation_setup);
+
+    experiment_setup.neurons=generate_neurons(experiment_setup);
 end
 
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
@@ -159,8 +158,11 @@ if experiment_setup.is_exp
  
 end
 
-[experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
-
+if experiment_setup.is_exp
+    build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
+else
+    [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
+end
 if experiment_setup.is_exp
     % get info on patched cells while first batches prep
     handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);

@@ -1,4 +1,4 @@
-function experiment_query = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,varargin)
+function [experiment_query, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,varargin)
 
 if ~isempty(varargin) && ~isempty(varargin{1})
     handles = varargin{1};
@@ -37,7 +37,7 @@ if build_first_batch_stim
     if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
         for i = 1:length(neighbourhoods)
             [experiment_query(i), neighbourhoods(i)] = run_online_pipeline(neighbourhoods(i),...
-                empty_design(neighbourhoods(i)),...
+                empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group)),...
                 experiment_setup);
         end
     else
