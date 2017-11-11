@@ -27,7 +27,7 @@ end
 
 if do_build_neighbourhooods
 
-    disp('computing cell groups...')
+    disp('computing neighbourhoods...')
 
     neighbourhoods = create_neighbourhoods(experiment_setup);
 

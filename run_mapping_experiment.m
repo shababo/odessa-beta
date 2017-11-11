@@ -146,7 +146,8 @@ else
 end
 
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
-
+% assignin('base','neighborhoods',neighbourhoods)
+% return
 if experiment_setup.is_exp
     
     handles.data.neighbourhoods = neighbourhoods;
@@ -158,7 +159,7 @@ if experiment_setup.is_exp
  
 end
 
-if experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+if experiment_setup.is_exp || experiment_setup.sim.do_instructions
     build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
 else
     [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
@@ -317,7 +318,8 @@ while not_terminated
             instruction.experiment_query = experiment_query;
             instruction.neighbourhoods = neighbourhood;
             instruction.get_return = 0;
-            instruction.exp_id = experiment_setup.exp_id;
+            instruction.experiment_setup = experiment_setup;
+            
             if experiment_setup.is_exp
                 [return_info, success, handles] = do_instruction_analysis(instruction, handles);
             else
