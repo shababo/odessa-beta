@@ -2,9 +2,11 @@ function run_mapping_experiment(experiment_setup,varargin)
 
 switch experiment_setup.experiment_type
     case 'pilot'
+        
     case 'experiment'
     
         experiment_setup.is_exp = 1;
+        
         handles = varargin{1};
         hObject = varargin{2};
 
@@ -101,9 +103,9 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
     set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 
-    [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+    [handles,acq_gui,acq_gui_data] = obj_go_to(handles,hObject);
 
-    handles = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+    [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 
     set_depths = 1;

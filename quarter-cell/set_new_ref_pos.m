@@ -1,4 +1,4 @@
-function handles = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,params)
+function handles = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup)
 
 take_new_ref = 0;
 choice = questdlg('Set Reference Position for Objective/SLM Zero-Order?',...
@@ -21,5 +21,5 @@ if take_new_ref
     handles.data.ref_obj_position = handles.data.obj_position;
     guidata(acq_gui, acq_gui_data);
     guidata(hObject,handles)
-    exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+    exp_data = handles.data; save(experiment_setup.fullsavefile,'exp_data')
 end

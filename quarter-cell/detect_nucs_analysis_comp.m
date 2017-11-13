@@ -31,7 +31,7 @@ if detect_nucs
     instruction = struct();
     instruction.type = 75;
 
-    instruction.filename = [experiment_setup.map_id '_stack'];
+    instruction.filename = [experiment_setup.exp_id '_stack'];
     instruction.stackmat = acq_gui_data.data.stack;
 %     imagemat = handles.data.stack;
 %     save(['C:\data\Shababo\' handles.data.experiment_setup.map_id '.mat'],'imagemat')
