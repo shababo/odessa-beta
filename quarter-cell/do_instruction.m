@@ -250,8 +250,13 @@ if success >= 0
                 nuclear_locs = [randi([-150 150],[num_targs 1]) randi([-150 150],[num_targs 1]) randi([0 100],[num_targs 1])];
                 fluor_vals = zeros(num_targs,1);
             end
+            if instruction.make_neurons_struct
+                neurons = build_neurons_struct(nuclear_locs,fluor_vals,instruction.experiment_setup);
+                return_info.neurons = neurons;
+            end
             return_info.nuclear_locs = nuclear_locs;
             return_info.fluor_vals = fluor_vals;
+            
 %             return_info.detect_img = detect_img;
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_LOCAL;
