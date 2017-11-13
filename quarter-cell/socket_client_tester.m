@@ -199,11 +199,7 @@ guidata(hObject,handles)
 % end
 
 
-function assignin_base(names,vars)
 
-for i = 1:length(names)
-    assignin('base',names{i},vars{i});
-end
 
 % function vname_string = vname(var)
 % 
