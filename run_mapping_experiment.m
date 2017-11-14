@@ -166,6 +166,7 @@ if experiment_setup.is_exp || experiment_setup.sim.do_instructions
 else
     [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
 end
+
 if experiment_setup.is_exp
     % get info on patched cells while first batches prep
     handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
