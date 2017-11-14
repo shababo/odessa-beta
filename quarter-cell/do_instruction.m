@@ -503,6 +503,7 @@ if success >= 0
             for i = 1:length(instruction.neighbourhoods)
                 neighbourhood = instruction.neighbourhoods(i);
                 experiment_query = instruction.experiment_query(i);
+                experiment_setup = instruction.experiment_setup;
                 fullpathname = [instruction.experiment_setup.analysis_root instruction.experiment_setup.exp_id ...
                     '_n' num2str(neighbourhood.neighbourhood_id)...
                     '_b' num2str(experiment_query.batch_info.batch_id) '_to_analysis.mat'];
