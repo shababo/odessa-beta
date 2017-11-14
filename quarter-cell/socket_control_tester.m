@@ -23,7 +23,7 @@
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 09-Oct-2017 15:05:47
+% Last Modified by GUIDE v2.5 13-Nov-2017 13:09:07
 
 
 % Begin initialization code - DO NOT EDIT
@@ -56,7 +56,8 @@ function socket_control_tester_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for socket_control_tester
 load_power_info = 1;
-handles.data.params = init_oed(load_power_info);
+% handles.data.params = init_oed(load_power_info);
+handles.data.experiment_setup = get_experiment_setup;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -1416,19 +1417,51 @@ function close_sock_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-wdlg = warndlg('Are you sure?');
-waitfor(wdlg)
-
-
-if isfield(handles,'sock')
-    disp('closing socket')
-    msclose(handles.sock);
-    handles = rmfield(handles,'sock');
-    guidata(hObject,handles)
-else
-    disp('no socket')
+close_sb_socket = 0;
+choice = questdlg('Close SlideBook socket?',...
+	'Close SlideBook socket?', ...
+	'Yes','No','No');
+% Handle response
+switch choice
+    case 'Yes'
+        close_sb_socket = 1;
+    case 'No'
+        close_sb_socket = 0;
 end
 
+if close_sb_socket
+    if isfield(handles,'sock')
+        disp('closing socket')
+        msclose(handles.sock);
+        handles = rmfield(handles,'sock');
+        guidata(hObject,handles)
+    else
+        disp('no slidebook socket')
+    end
+end
+
+close_analysis_socket = 0;
+choice = questdlg('Close analysis socket?',...
+	'Close analysis socket?', ...
+	'Yes','No','No');
+% Handle response
+switch choice
+    case 'Yes'
+        close_analysis_socket = 1;
+    case 'No'
+        close_analysis_socket = 0;
+end
+
+if close_analysis_socket
+    if isfield(handles,'sock_analysis')
+        disp('closing socket')
+        msclose(handles.sock_analysis);
+        handles = rmfield(handles,'sock_analysis');
+        guidata(hObject,handles)
+    else
+        disp('no analysis socket')
+    end
+end
 
 
 function tf_test_num_repeats_Callback(hObject, eventdata, handles)
@@ -7067,3 +7100,12 @@ instruction.type = 00;
 instruction.string = 'done';
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
+
+
+% --- Executes on button press in mapper.
+function mapper_Callback(hObject, eventdata, handles)
+% hObject    handle to mapper (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+run_mapping_experiment(handles.data.experiment_setup,handles,hObject);

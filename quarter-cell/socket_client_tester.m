@@ -81,7 +81,7 @@ switch client_location
         handles.data = struct();
     case 'analysis'
         handles.port_num = 3001;
-        handles.data.params = init_oed(0);
+%         handles.data.params = init_oed(0);
 end
 
 
@@ -199,11 +199,7 @@ guidata(hObject,handles)
 % end
 
 
-function assignin_base(names,vars)
 
-for i = 1:length(names)
-    assignin('base',names{i},vars{i});
-end
 
 % function vname_string = vname(var)
 % 

@@ -1,7 +1,7 @@
-function handles = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,params)
+function [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
 
 take_new_stack = 1;
-if handles.data.enable_user_breaks
+if experiment_setup.enable_user_breaks
     choice = questdlg('Take a stack?', ...
         'Take a stack?', ...
         'Yes','No','Yes');
@@ -15,9 +15,9 @@ if handles.data.enable_user_breaks
             % Handle response
             switch choice
                 case 'Yes'
-                    handles.data.enable_user_breaks = 1;
+                    experiment_setup.enable_user_breaks = 1;
                 case 'No'
-                    handles.data.enable_user_breaks = 0;
+                    experiment_setup.enable_user_breaks = 0;
             end
         case 'No'
             take_new_stack = 0;
@@ -42,5 +42,5 @@ if take_new_stack
     
     guidata(hObject,handles);
     guidata(acq_gui, acq_gui_data);
-    exp_data = handles.data; save(handles.data.params.fullsavefile,'exp_data')
+    exp_data = handles.data; save(experiment_setup.fullsavefile,'exp_data')
 end
