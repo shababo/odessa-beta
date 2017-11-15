@@ -27,7 +27,9 @@ group_names = experiment_setup.group_names;
 % CONNECTIVITY INF
 num_trials = 0;
 for i = 1:length(group_names)
-    
+    % initialize parameters for all neurons in this neighbourhood for this
+    % batch 
+     neighbourhood =initialize_neurons_new_batch(neighbourhood);
     this_group = group_names{i};
 
     if any(get_group_inds(neighbourhood,this_group)) && ~isempty(experiment_query.(this_group).trials)
@@ -77,8 +79,11 @@ batch_ID = experiment_query.batch_ID + 1;
 % DESIGN NEXT BATCH OF TRIALS
 clear experiment_query
 % design trials
+% Alwasy initialize all groups in experiment_query for a consistent format
+
 for i = 1:length(group_names)
     this_group = group_names{i};
+    experiment_query.(this_group)=struct([]);
     if any(get_group_inds(neighbourhood,this_group))
         
         group_profile=experiment_setup.groups.(this_group);
