@@ -26,6 +26,7 @@ COMPUTE_GROUPS_AND_OPTIM_LOCS = 76;
 PRECOMPUTE_PHASE_NUCLEAR = 81;
 PRECOMPUTE_PHASE_MULTI_W_COMBO_SELECT = 82;
 PRECOMPUTE_PHASE_MULTI = 83;
+PRECOMPUTE_PHASE_ON_EXP_QUERY = 84;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
@@ -408,7 +409,39 @@ if success >= 0
                 assignin_base(names,vars);
             end
             return_info.num_stim = size(stim_key,1);
-            clear phase_masks_target    
+            clear phase_masks_target 
+        case PRECOMPUTE_PHASE_ON_EXP_QUERY
+%             ratio_map = evalin('base','power_map_upres');
+            coarse_disks = evalin('base','tf_disk_grid');
+            disk_key = evalin('base','tf_disk_key');
+            fine_spot_grid = evalin('base','tf_fine_grid_spots_phase');
+            fine_spot_key = evalin('base','tf_fine_grid_spots_key');
+            do_target = instruction.do_target;
+%             [phase_masks_target, dec_ind] = ...
+%                 build_single_loc_phases(instruction.target_locs,coarse_disks,disk_key,...
+%                 fine_spot_grid,fine_spot_key,do_target);
+            [phase_masks_target,stim_key,pockels_ratio_refs_multi] = ...
+                build_multi_loc_phases(instruction.multi_spot_targs,instruction.multi_spot_pockels,...
+                    instruction.pockels_ratios, instruction.single_spot_targs, ...
+                    instruction.single_spot_pockels_refs,...
+                    coarse_disks,disk_key,fine_spot_grid,fine_spot_key,instruction.do_target);
+            pockels_ratio_refs_tf = pockels_ratio_refs_multi;
+            vars{1} = pockels_ratio_refs_tf;
+            names{1} = 'pockels_ratio_refs_tf';
+            vars{2} = stim_key;
+            names{2} = 'tf_stim_key';
+            if do_target
+                vars{3} = phase_masks_target;
+                names{3} = 'precomputed_target';
+                assignin_base(names,vars);
+                evalin('base','set_precomp_target_ready')
+            else
+                vars{3} = phase_masks_target;
+                names{3} = 'phase_masks_target';
+                assignin_base(names,vars);
+            end
+            return_info.num_stim = size(stim_key,1);
+            clear phase_masks_target 
         case TAKE_SNAP
             evalin('base','take_snap')
             handles.snap_image = evalin('base','temp');

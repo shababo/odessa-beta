@@ -6,18 +6,18 @@ function [handles,acq_gui,acq_gui_data] = obj_go_to(handles,hObject)
 
 disp('moving obj')
 instruction.type = 60; %MOVE_OBJ
-instruction.theNewX = str2double(get(handles.thenewx,'String'));
-instruction.theNewY = str2double(get(handles.thenewy,'String'));
-instruction.theNewZ = str2double(get(handles.thenewz,'String'));
+instruction.theNewX = handles.data.obj_go_to_pos(1);
+instruction.theNewY = handles.data.obj_go_to_pos(2);
+instruction.theNewZ = handles.data.obj_go_to_pos(3);
 
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles) ;
 guidata(hObject,handles)
 
-disp('operation done, setting fields...')
-set(handles.currX,'String',num2str(return_info.currX));
-set(handles.currY,'String',num2str(return_info.currY));
-set(handles.currZ,'String',num2str(return_info.currZ));
+% disp('operation done, setting fields...')
+% set(handles.currX,'String',num2str(return_info.currX));
+% set(handles.currY,'String',num2str(return_info.currY));
+% set(handles.currZ,'String',num2str(return_info.currZ));
 
 disp('sending to acq gui')
 acq_gui = findobj('Tag','acq_gui');

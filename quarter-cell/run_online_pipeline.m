@@ -91,12 +91,11 @@ for i = 1:length(group_names)
 end
 experiment_query.batch_ID = batch_ID;
 
-% compute holograms
+% COMPUTE HOLOGRAMS
 % create_holograms_and_batch_seq
-
-
-
-
+if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
+    experiment_query = compute_multispot_phase_masks(experiment_query, experiment_setup);
+end
 neighbourhood.batch_ID = batch_ID;
 
 if experiment_setup.is_exp || experiment_setup.sim.do_instructions

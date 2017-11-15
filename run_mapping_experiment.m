@@ -99,9 +99,10 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 
     % move obj to ref position (top of slice, centered on map fov)
-    set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
-    set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
-    set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
+    handles.data.obj_go_to_pos = handles.data.ref_obj_position;
+%     set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
+%     set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
+%     set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 
     [handles,acq_gui,acq_gui_data] = obj_go_to(handles,hObject);
 
@@ -145,6 +146,7 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
 else
 
     experiment_setup.neurons=generate_neurons(experiment_setup);
+    
 end
 
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
@@ -196,6 +198,7 @@ num_neighbourhoods = length(neighbourhoods);
 not_terminated = 1;
 loop_count = 1;
 while not_terminated
+    
     for i = 1:num_neighbourhoods
         
         neighbourhood = neighbourhoods(i);
@@ -225,10 +228,8 @@ while not_terminated
         end
         if experiment_setup.is_exp
             
-            set(handles.thenewx,'String',num2str(handles.data.obj_positions(i,1)))
-            set(handles.thenewy,'String',num2str(handles.data.obj_positions(i,2)))
-            set(handles.thenewz,'String',num2str(handles.data.obj_positions(i,3)))
-            [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+            handles.data.obj_go_to_pos = handles.data.ref_obj_position;
+            [handles,acq_gui,acq_gui_data] = obj_go_to(handles,hObject);
 
             do_run_trials = 1;
             if experiment_setup.enable_user_breaks
@@ -314,8 +315,14 @@ while not_terminated
         
         % RUN ONLINE MAPPING PIPELINE HERE
         if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
-            [experiment_query_full(i,loop_count+1), neighbourhoods(i)] = run_online_pipeline(neighbourhood,...
+            neighbourhood_tmp = struct();
+            [experiment_query_full(i,loop_count+1), neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
                 experiment_query,experiment_setup);
+            neighbourhoods(i) = neighbourhood_tmp;
+            
+%             assignin('base','neighbourhoods',neighbourhoods)
+%             assignin('base','neighbourhoods_new',neighbourhoods_new)
+
         else
             instruction.type = 300; 
             instruction.experiment_query = experiment_query;
