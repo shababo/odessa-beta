@@ -2,7 +2,6 @@ function run_mapping_experiment(experiment_setup,varargin)
 
 switch experiment_setup.experiment_type
     case 'pilot'
-        
     case 'experiment'
     
         experiment_setup.is_exp = 1;
@@ -194,8 +193,9 @@ end
 num_neighbourhoods = length(neighbourhoods);
 
 not_terminated = 1;
-loop_count = 1;
+loop_count = 0;
 while not_terminated
+    loop_count=loop_count+1;
     
     for i = 1:num_neighbourhoods
         
@@ -315,8 +315,9 @@ while not_terminated
         
         % RUN ONLINE MAPPING PIPELINE HERE
         if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
-            [experiment_query_full(i,loop_count+1), neighbourhoods(i)] = run_online_pipeline(neighbourhood,...
+            [experiment_query_temp, neighbourhoods(i)] = run_online_pipeline(neighbourhood,...
                 experiment_query,experiment_setup);
+            experiment_query_full(i,loop_count+1)=experiment_query_temp;
         else
             instruction.type = 300; 
             instruction.experiment_query = experiment_query;
