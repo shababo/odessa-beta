@@ -12,13 +12,23 @@ slm_size = size(experiment_setup.coarse_disks);
 slm_size = slm_size([1 2]);
 
 % get unique stim
-unique_cell_combos = [];
+unique_stim_combos = [];
+unique_stim_ids = [];
+
 for i = 1:length(group_names)
+    
+    these_trials = experiment_query.(group_names{i}).trials;
+    cell_combos = get_rowmat_from_structarray(these_trials,'cell_IDs')
+    [data_unique,~,data_index] = unique(cell_combos, 'rows');
+    data_unique = padarray(data_unique,[max(0,experiment_setup.max_spots_per_trial - size(data_unique,2)),NaN);
+    
+    unique_stim_combos = [unique_stim_combos; data_unique];
+    unique_stim_ids = [unique_stim_ids; data_index];
+    
+end
 
-    [data_unique,~,data_index] = unique(data_matrix, 'rows');
+num_phase_masks = size(unique_stim_combos,1);
 
-num_targets = size(target_locations,1);
-num_holograms = num_multi_spots+num_singles
 if do_target
     phase_masks(num_holograms).mode = 'Phase';
     phase_masks(num_holograms).pattern = zeros(slm_size);
