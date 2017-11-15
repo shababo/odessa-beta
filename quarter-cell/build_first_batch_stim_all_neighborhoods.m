@@ -33,7 +33,6 @@ end
 
 if build_first_batch_stim
     
-    
     if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
         for i = 1:length(neighbourhoods)
             [experiment_query(i,1), neighbourhoods(i)] = run_online_pipeline(neighbourhoods(i),...
