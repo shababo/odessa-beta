@@ -199,9 +199,6 @@ loop_count = 0;
 while not_terminated
     loop_count=loop_count+1;
     
-      
-    
-    
     for i = 1:num_neighbourhoods
         
         neighbourhood = neighbourhoods(i);
