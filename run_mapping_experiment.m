@@ -197,10 +197,10 @@ num_neighbourhoods = length(neighbourhoods);
 not_terminated = 1;
 loop_count = 0;
 while not_terminated
-<<<<<<< HEAD
-=======
     loop_count=loop_count+1;
->>>>>>> 7a93d15c93eb44ece8331456e7bfc85a37e201d0
+    
+      
+    
     
     for i = 1:num_neighbourhoods
         
@@ -340,6 +340,9 @@ while not_terminated
             end
         end
         
+        % check if all cells in this neighbourhood are alive or
+        % disconnected 
+        
         
         
         % Plot the progress
@@ -361,6 +364,9 @@ while not_terminated
 %             handles.data.design.id_continue{i} = 0;
 %         end
     end
+    
+    not_terminated = experiment_setup.terminator(neighbourhoods);
+  
 end    
 
 exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
