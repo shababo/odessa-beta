@@ -26,22 +26,23 @@ group_names = experiment_setup.group_names;
 % RUN ANALYSIS (IN THIS CASE SPECIFICALLY SPLIT AS DETECT PSCS, RUN
 % CONNECTIVITY INF
 num_trials = 0;
+ neighbourhood =initialize_neurons_new_batch(neighbourhood);
 for i = 1:length(group_names)
     % initialize parameters for all neurons in this neighbourhood for this
     % batch 
-     neighbourhood =initialize_neurons_new_batch(neighbourhood);
-    this_group = group_names{i};
+     this_group = group_names{i};
 
-    if any(get_group_inds(neighbourhood,this_group)) && ~isempty(experiment_query.(this_group).trials)
-        this_exp_query = experiment_query.(this_group);
-        group_profile=experiment_setup.groups.(this_group);
-        experiment_query.(this_group) = ...
-            experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
-        num_trials = num_trials + length(experiment_query.(this_group).trials);
-        neighbourhood = ...
-            experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
-    end
-    
+     if any(get_group_inds(neighbourhood,this_group)) && isfield(experiment_query.(this_group),'trials')
+         if ~isempty(experiment_query.(this_group).trials)
+             this_exp_query = experiment_query.(this_group);
+             group_profile=experiment_setup.groups.(this_group);
+             experiment_query.(this_group) = ...
+                 experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
+             num_trials = num_trials + length(experiment_query.(this_group).trials);
+             neighbourhood = ...
+                 experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
+         end
+     end
 end
 
 % regroup cells
@@ -87,10 +88,11 @@ for i = 1:length(group_names)
     if any(get_group_inds(neighbourhood,this_group))
         
         group_profile=experiment_setup.groups.(this_group);
-
+   if isfield(group_profile,'design_function')
+     
         experiment_query.(this_group) = ...
             experiment_setup.groups.(this_group).design_function(neighbourhood,group_profile,experiment_setup);
-        
+   end
     end
     
 end
