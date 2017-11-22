@@ -473,7 +473,6 @@ for ii = 1:params.design.num_groups
             sequence(count).multi_flag = handles.data.group_multi_flag(ii);
             if length(these_powers) > 1
                 sequence(count).power = these_powers(i);
-                
             else
                 sequence(count).power = these_powers;
             end

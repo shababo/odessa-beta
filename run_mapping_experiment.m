@@ -2,6 +2,7 @@ function run_mapping_experiment(experiment_setup,varargin)
 
 switch experiment_setup.experiment_type
     case 'pilot'
+        
     case 'experiment'
     
         experiment_setup.is_exp = 1;
@@ -149,8 +150,8 @@ else
 end
 
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
-% assignin('base','neighborhoods',neighbourhoods)
-% return
+
+
 if experiment_setup.is_exp
     
     handles.data.neighbourhoods = neighbourhoods;

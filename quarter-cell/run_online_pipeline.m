@@ -6,10 +6,13 @@ if length(varargin) == 1
     
     exp_query_filename = varargin{1};
     load(exp_query_filename) % neighbourhood, experiment_query, experiment_setup
+    
 elseif length(varargin) == 3
+    
     neighbourhood = varargin{1};
     experiment_query = varargin{2};
     experiment_setup = varargin{3};
+    
 end
 group_names = experiment_setup.group_names;
 
@@ -29,15 +32,18 @@ num_trials = 0;
 for i = 1:length(group_names)
     % initialize parameters for all neurons in this neighbourhood for this
     % batch 
-     neighbourhood =initialize_neurons_new_batch(neighbourhood);
+%      neighbourhood = n(neighbourhood);
     this_group = group_names{i};
 
     if any(get_group_inds(neighbourhood,this_group)) && ~isempty(experiment_query.(this_group).trials)
+        
         this_exp_query = experiment_query.(this_group);
         group_profile=experiment_setup.groups.(this_group);
         experiment_query.(this_group) = ...
             experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
+        
         num_trials = num_trials + length(experiment_query.(this_group).trials);
+        
         neighbourhood = ...
             experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
     end
@@ -71,7 +77,7 @@ batchsavepath = [experiment_setup.analysis_root experiment_setup.exp_id ...
                     '_b' num2str(experiment_query.batch_ID) '_complete.mat'];
 save(batchsavepath,'neighbourhood', 'experiment_query', 'experiment_setup')
 
-% CHECK FOR NEW MEMBERS
+% CHECK FOR NEW NEIGHBOURHOOD MEMBERS
 
 % INCREMENT BATCH_ID HERE!
 batch_ID = experiment_query.batch_ID + 1; 
@@ -82,6 +88,7 @@ clear experiment_query
 % Alwasy initialize all groups in experiment_query for a consistent format
 
 for i = 1:length(group_names)
+    
     this_group = group_names{i};
     experiment_query.(this_group)=struct([]);
     if any(get_group_inds(neighbourhood,this_group))
@@ -95,11 +102,13 @@ for i = 1:length(group_names)
     
 end
 experiment_query.batch_ID = batch_ID;
+neighbourhood.batch_ID = batch_ID;
 
-% COMPUTE HOLOGRAMS
+
 % create_holograms_and_batch_seq
+
 if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
-    experiment_query = compute_multispot_phase_masks(experiment_query, experiment_setup);
+    experiment_query = compute_phase_masks_build_seq(experiment_query, experiment_setup);
 end
 neighbourhood.batch_ID = batch_ID;
 
