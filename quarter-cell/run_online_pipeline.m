@@ -96,7 +96,7 @@ for i = 1:length(group_names)
     if any(get_group_inds(neighbourhood,this_group))
         
         group_profile=experiment_setup.groups.(this_group);
-   if isfield(group_profile,'design_function')
+    if isfield(group_profile,'design_function')
      
         experiment_query.(this_group) = ...
             experiment_setup.groups.(this_group).design_function(neighbourhood,group_profile,experiment_setup);
@@ -111,7 +111,8 @@ neighbourhood.batch_ID = batch_ID;
 % create_holograms_and_batch_seq
 
 if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
-    experiment_query = compute_phase_masks_build_seq(experiment_query, experiment_setup);
+    experiment_query = ...
+        compute_phase_masks_build_seq(experiment_query, experiment_setup, neighbourhood);
 end
 neighbourhood.batch_ID = batch_ID;
 

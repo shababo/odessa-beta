@@ -1,102 +1,91 @@
-function [experiment_query] = compute_phase_masks_build_seq(experiment_query, experiment_setup)
+function [experiment_query] = compute_phase_masks_build_seq(experiment_query, experiment_setup, neighbourhood)
 
 
+group_names = experiment_setup.group_names;
+phase_mask_id = 0;
 
-tic
-
-slm_size = size(experiment_setup.disk_grid_phase);
-slm_size = slm_size([1 2]);
-
-% get unique stim
-unique_stim_combos = [];
-unique_stim_ids = [];
-
+% build unique phase masks
 for i = 1:length(group_names)
     
+    
     these_trials = experiment_query.(group_names{i}).trials;
-    cell_combos = get_rowmat_from_structarray(these_trials,'cell_IDs')
-    [data_unique,~,data_index] = unique(cell_combos, 'rows');
-    data_unique = padarray(data_unique,[max(0,experiment_setup.max_spots_per_trial - size(data_unique,2)),NaN);
+    % signature is cell/location combos
+    trial_signature = ...
+        [get_rowmat_from_structarray(these_trials,'cell_IDs') ...
+        get_rowmat_from_structarray(these_trials,'location_IDs')];
+    % for multispot we also need to compute unique phase mask for power
+    % combos
+    if experiment_setup.(group_names{i}).design_func_params.trials_params.spots_per_trial > 1
+        trial_signature = [trial_signature get_rowmat_from_structarray(these_trials,'power_levels')];
+    end
     
-    unique_stim_combos = [unique_stim_combos; data_unique];
-    unique_stim_ids = [unique_stim_ids; data_index];
+    [~, unique_trials_ind, trial_index] = ...
+        unique(trial_signature, 'rows');
+    trials_map = unique_trials_ind(trial_index);
     
-end
-
-num_phase_masks = size(unique_stim_combos,1);
-
-if do_target
-    phase_masks(num_holograms).mode = 'Phase';
-    phase_masks(num_holograms).pattern = zeros(slm_size);
-else
-    phase_masks = zeros([slm_size num_holograms]);
-end
-
-targs_per_stim = size(target_locations,3);
-stim_key = NaN*ones(num_holograms,3,targs_per_stim);
-
-pockels_ratio_refs_all = [pockels_refs single_spot_pockels_refs];
-
-for i = 1:num_multi_spots
-
-    fullF = zeros(600,792);
-
-    spot_power_ratios = pockels_ratios(i,:);
+    unique_trials = experiment_query.(group_names{i}).trials(unique_trials_ind);
     
-    dec_ind = zeros(targs_per_stim,1);
-    for k = 1:targs_per_stim
-        this_loc = target_locations(i,:,k);
-
-        if any(isnan(this_loc))
-            continue;
+    for j = 1:length(unique_trials)
+        
+        phase_mask_id = phase_mask_id + 1;
+        
+        fullF = zeros(600,792);            
+        for k =  1:experiment_setup.(group_names{i}).design_func_params.trials_params.spots_per_trial
+            
+            this_loc = unique_trials(j).locations(k,:);
+            if any(isnan(this_loc))
+                continue;
+            end
+            
+            decval = round(this_loc,-1);
+            unitval = round(this_loc - decval);
+            
+            convP = experiment_setup.disk_grid_phase(:,:,experiment_setup.disk_grid_key(:,1) == decval(1) & ...
+                                                         experiment_setup.disk_grid_key(:,2) == decval(2)) + ...
+                    experiment_setup.fine_spot_grid(:,:,experiment_setup.fine_spots_grid_key(:,1) == unitval(1) & ...
+                                                         experiment_setup.fine_spots_grid_ke(:,2) == unitval(2));
+            convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+            convP(convP > pi) = convP(convP > pi) - 2*pi;
+            fullF = fullF + sqrt(unique_trials(j).adj_power_per_spot(k))*exp(1i*convP);
         end
-        decval = round(this_loc,-1);
-        unitval = round(this_loc - decval);
-%             dec_ind = find();
-        convP = coarse_disks(:,:,disk_key(:,1) == decval(1) & disk_key(:,2) == decval(2)) + ...
-            fine_spots(:,:,spot_key(:,1) == unitval(1) & spot_key(:,2) == unitval(2));
+        convP = angle(fullF);
         convP(convP < -pi) = convP(convP < -pi) + 2*pi;
         convP(convP > pi) = convP(convP > pi) - 2*pi;
-        fullF = fullF + sqrt(spot_power_ratios(k))*exp(1i*convP);
-       
-        stim_key(i,:,k) = round(this_loc);
-       
+        
+        if experiment_setup.exp.phase_mask_struct
+            phase_masks(phase_mask_id).mode = 'Phase';
+            phase_masks(phase_mask_id).pattern = convP;
+        else
+            phase_masks(:,:,phase_mask_id) = convP;
+        end
+        
+        matching_trials = find(trials_map == unique_trials(j));
+        for k = matching_trials
+            experiment_query.(group_names{i}).trials(k).batch_phase_mask_id = phase_mask_id;
+        end
+            
     end
-%     spot_ind = spots_key(these_spots(max_spot_ind),[1 2])/20 + 9;
     
-    convP = angle(fullF);% + diskPhase(:,:,2); already starting with disks now
-    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
-    convP(convP > pi) = convP(convP > pi) - 2*pi;
-    phase_masks(i).pattern = convP;
-    phase_masks(i).mode = 'Phase';
-    
+    trials_per_group(i) = length(these_trials);
+    avg_trials_per_cell(i) = trials_per_group(i) * ...
+        experiment_setup.(group_names{i}).design_func_params.trials_params.spots_per_trial/...
+        length(get_group_inds(neighbourhood,group_names{i}));
+      
 end
 
-for i = 1:num_singles
+group_max_trial_rate = sum(trials_per_group)/avg_trials_per_cell * experiment_setup.exp.max_spike_freq;
+batch_trial_rate = min([experiment_setup.exp.max_stim_freq group_max_trial_rate]);
 
-    this_loc = single_spot_targs(i,:);
-    decval = round(this_loc,-1);
-    unitval = round(this_loc - decval);
-    dec_ind = find(disk_key(:,1) == decval(1) & disk_key(:,2) == decval(2));
-    convP = coarse_disks(:,:,dec_ind) + ...
-        fine_spots(:,:,spot_key(:,1) == unitval(1) & spot_key(:,2) == unitval(2));
-    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
-    convP(convP > pi) = convP(convP > pi) - 2*pi;
+% BUILD SEQUENCE
+        
+
+        
+       
 
 
-    if do_target
-%         for j = 1:num_singles_repeats
-            phase_masks(i+num_multi_spots).mode = 'Phase';
-            phase_masks(i+num_multi_spots).pattern = convP;
-            
-%         end
-    else 
-%         for j = 1:num_singles_repeats
-            phase_masks(:,:,i+num_multi_spots) = convP;
-%         end
-    end  
-    stim_key(i+num_multi_spots,:,1) = round(this_loc);
-
-end    
+    
+    
+    
+end   
 
 
