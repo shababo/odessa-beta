@@ -198,7 +198,6 @@ num_neighbourhoods = length(neighbourhoods);
 not_terminated = 1;
 loop_count = 0;
 while not_terminated
-
     loop_count=loop_count+1;
     
     for i = 1:num_neighbourhoods
@@ -319,11 +318,11 @@ while not_terminated
         if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
 
             neighbourhood_tmp = struct();
-            experiment_query_temp = struct();
-            [experiment_query_temp, neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
+            experiment_query_tmp = struct();
+            [experiment_query_tmp, neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
                 experiment_query,experiment_setup);
             neighbourhoods(i) = neighbourhood_tmp;
-            experiment_query_full(i,loop_count+1)=experiment_query_temp;
+            experiment_query_full(i,loop_count+1)=experiment_query_tmp;
 
         else
             instruction.type = 300; 
@@ -338,6 +337,9 @@ while not_terminated
                 [return_info, success] = do_instruction_local(instruction);
             end
         end
+        
+        % check if all cells in this neighbourhood are alive or
+        % disconnected 
         
         
         
@@ -360,6 +362,9 @@ while not_terminated
 %             handles.data.design.id_continue{i} = 0;
 %         end
     end
+    
+    not_terminated = experiment_setup.terminator(neighbourhoods);
+  
 end    
 
 exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
