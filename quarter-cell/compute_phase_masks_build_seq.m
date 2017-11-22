@@ -61,7 +61,20 @@ for i = 1:length(group_names)
         
         matching_trials = find(trials_map == unique_trials(j));
         for k = matching_trials
-            experiment_query.(group_names{i}).trials(k).batch_phase_mask_id = phase_mask_id;
+            experiment_query.(group_names{i}).trials(k).precomputed_target_index = phase_mask_id;
+            experiment_query.(group_names{i}).trials(k).filter_configuration = 'Femto Phasor';
+            experiment_query.(group_names{i}).trials(k).duration = experiment_setup.exp.stim_duration*1000;
+            % will be replaced later when we combine groups into one sequence
+            experiment_query.(group_names{i}).trials(k).start = 0; 
+            % needed later to rebuild
+            experiment_query.(group_names{i}).trials(k).trial_ID = k;
+            if strcmp(experiment_setup.experiment_type,'experiment') || experiment_setup.sim.use_power_calib
+                experiment_query.(group_names{i}).trials(k).power = ...
+                    round(100*get_voltage(experiment_setup.exp.pockels_lut,...
+                        sum(experiment_query_this_group.trials(i_trial).adj_power_per_spot)));
+            else
+                experiment_query.(group_names{i}).trials(k).power = 0;
+            end
         end
             
     end
@@ -76,16 +89,9 @@ end
 group_max_trial_rate = sum(trials_per_group)/avg_trials_per_cell * experiment_setup.exp.max_spike_freq;
 batch_trial_rate = min([experiment_setup.exp.max_stim_freq group_max_trial_rate]);
 
-% BUILD SEQUENCE
-        
-
-        
-       
+experiment_query.phase_masks = phase_masks;
+experiment_query.batch_trial_rate = batch_trial_rate; % in Hz
 
 
-    
-    
-    
-end   
 
 
