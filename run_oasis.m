@@ -16,12 +16,16 @@ cmd = 'python /home/shababo/projects/mapping/code/OASIS/run_oasis_online.py ';
 fullsavepath = [experiment_setup.analysis_root filename '.mat'];
 oasis_out_path = ['/media/shababo/data/' filename '_detect.mat'];
 
-num_trials = length(experiment_query.trials);
-trial_length = length(experiment_query.trials(1).voltage_clamp);
+% trial_count = length(experiment_query.sequence);
+% trial_length = experiment_setup.trials.max_time;
 
-traces = zeros(num_trials,trial_length);
-for i = 1:length(experiment_query.trials)
-    traces(i,:) = experiment_query.trials(i).voltage_clamp;
+% traces = zeros(trial_count,trial_length);
+trial_count = 1;
+for i = 1:length(experiment_query.group_names)
+    for j = 1:length(experiment_query.(experiment_setup.group_names{i}).trials)
+        traces(trial_count,:) = experiment_query.(experiment_setup.group_names{i}).trials(j).voltage_clamp;
+        trial_count = trial_count + 1;
+    end
 end
 save(fullsavepath,'traces')
 cmd = [cmd ' ' fullsavepath];
@@ -46,9 +50,12 @@ else
   oasis_data = zeros(size(instruction.traces));
 end
 
-for i = 1:length(experiment_query.trials)
-    experiment_query.trials(i).event_times = ...
-        find(oasis_data(i,...
-                experiment_setup.trials.min_time:experiment_setup.trials.max_time),1) + ...
-                experiment_setup.trials.min_time - 1;
+trial_count = 1;
+for i = 1:length(experiment_setup.group_names)
+    for j = 1:length(experiment_query.(experiment_setup.group_names{i}).trials)
+        experiment_query.trials(i).event_times = ...
+            find(oasis_data(trial_count,...
+                    experiment_setup.trials.min_time:experiment_setup.trials.max_time),1) + ...
+                    experiment_setup.trials.min_time - 1;
+    end
 end

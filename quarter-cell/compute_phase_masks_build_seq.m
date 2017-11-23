@@ -16,7 +16,8 @@ for i = 1:length(group_names)
     % for multispot we also need to compute unique phase mask for power
     % combos
     if experiment_setup.(group_names{i}).design_func_params.trials_params.spots_per_trial > 1
-        trial_signature = [trial_signature get_rowmat_from_structarray(these_trials,'power_levels')];
+        trial_signature = ...
+            [trial_signature get_rowmat_from_structarray(these_trials,'power_levels')];
     end
     
     [~, unique_trials_ind, trial_index] = ...
@@ -67,7 +68,6 @@ for i = 1:length(group_names)
             % will be replaced later when we combine groups into one sequence
             experiment_query.(group_names{i}).trials(k).start = 0; 
             % needed later to rebuild
-            experiment_query.(group_names{i}).trials(k).trial_ID = k;
             if strcmp(experiment_setup.experiment_type,'experiment') || experiment_setup.sim.use_power_calib
                 experiment_query.(group_names{i}).trials(k).power = ...
                     round(100*get_voltage(experiment_setup.exp.pockels_lut,...

@@ -26,7 +26,7 @@ COMPUTE_GROUPS_AND_OPTIM_LOCS = 76;
 PRECOMPUTE_PHASE_NUCLEAR = 81;
 PRECOMPUTE_PHASE_MULTI_W_COMBO_SELECT = 82;
 PRECOMPUTE_PHASE_MULTI = 83;
-PRECOMPUTE_PHASE_ON_EXP_QUERY = 84;
+LOAD_PRECOMPUTED_TARGET = 84;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
@@ -228,9 +228,10 @@ if success >= 0
 %             filename = ['/media/shababo/data/' instruction.filename '.tif'];
 %             write_tiff_stack(filename,imagemat)
             disp('into main function')
+            experiment_setup = instruction.experiment_setup
             filename = ['/media/shababo/data/' instruction.filename '.tif'];
             disp('writing tif')
-            write_tiff_stack(filename,uint16(instruction.stackmat))
+            write_tiff_stack(filename,uint16(experiment_setup.stackmat))
             if ~isfield(instruction,'dummy_targs')
                 instruction.dummy_target = 0;
             end
@@ -238,8 +239,8 @@ if success >= 0
                 disp('detecting nucs')
                 [nuclear_locs, fluor_vals] = ...
                     detect_nuclei(['/media/shababo/data/' instruction.filename],...
-                    instruction.image_um_per_px,instruction.image_zero_order_coord,...
-                    instruction.stack_um_per_slice);
+                    experiment_setup.image_um_per_px,experiment_setup.image_zero_order_coord,...
+                    experiment_setup.stack_um_per_slice);
             end
             if instruction.dummy_targs || isempty(nuclear_locs) || any(isnan(nuclear_locs(:)))
                 disp('creating dummy nucs')
@@ -251,8 +252,8 @@ if success >= 0
                 nuclear_locs = [randi([-150 150],[num_targs 1]) randi([-150 150],[num_targs 1]) randi([0 100],[num_targs 1])];
                 fluor_vals = zeros(num_targs,1);
             end
-            if instruction.make_neurons_struct
-                neurons = build_neurons_struct(nuclear_locs,fluor_vals,instruction.experiment_setup);
+            if isfield(instruction,'make_neurons_struct') && instruction.make_neurons_struct
+                neurons = build_neurons_struct(nuclear_locs,fluor_vals,experiment_setup);
                 return_info.neurons = neurons;
             end
             return_info.nuclear_locs = nuclear_locs;
@@ -410,38 +411,11 @@ if success >= 0
             end
             return_info.num_stim = size(stim_key,1);
             clear phase_masks_target 
-        case PRECOMPUTE_PHASE_ON_EXP_QUERY
-%             ratio_map = evalin('base','power_map_upres');
-            coarse_disks = evalin('base','tf_disk_grid');
-            disk_key = evalin('base','tf_disk_key');
-            fine_spot_grid = evalin('base','tf_fine_grid_spots_phase');
-            fine_spot_key = evalin('base','tf_fine_grid_spots_key');
-            do_target = instruction.do_target;
-%             [phase_masks_target, dec_ind] = ...
-%                 build_single_loc_phases(instruction.target_locs,coarse_disks,disk_key,...
-%                 fine_spot_grid,fine_spot_key,do_target);
-            [phase_masks_target,stim_key,pockels_ratio_refs_multi] = ...
-                build_multi_loc_phases(instruction.multi_spot_targs,instruction.multi_spot_pockels,...
-                    instruction.pockels_ratios, instruction.single_spot_targs, ...
-                    instruction.single_spot_pockels_refs,...
-                    coarse_disks,disk_key,fine_spot_grid,fine_spot_key,instruction.do_target);
-            pockels_ratio_refs_tf = pockels_ratio_refs_multi;
-            vars{1} = pockels_ratio_refs_tf;
-            names{1} = 'pockels_ratio_refs_tf';
-            vars{2} = stim_key;
-            names{2} = 'tf_stim_key';
-            if do_target
-                vars{3} = phase_masks_target;
-                names{3} = 'precomputed_target';
-                assignin_base(names,vars);
-                evalin('base','set_precomp_target_ready')
-            else
-                vars{3} = phase_masks_target;
-                names{3} = 'phase_masks_target';
-                assignin_base(names,vars);
-            end
-            return_info.num_stim = size(stim_key,1);
-            clear phase_masks_target 
+        case LOAD_PRECOMPUTED_TARGET
+            vars{1} = phase_masks_target;
+            names{1} = 'precomputed_target';
+            assignin_base(names,vars);
+            evalin('base','set_precomp_target_ready')
         case TAKE_SNAP
             evalin('base','take_snap')
             handles.snap_image = evalin('base','temp');
@@ -453,9 +427,12 @@ if success >= 0
             evalin('base','take_stack')
             image_all_ch = evalin('base','acquiredImage');
             return_info.image = image_all_ch(:,:,:,1)/9999*2^16; % scale to 16-bit
-            return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
-            return_info.image_um_per_px = evalin('base','image_um_per_px');
-            return_info.stack_um_per_slice = evalin('base','stack_um_per_slice');
+            try
+                return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
+                return_info.image_um_per_px = evalin('base','image_um_per_px');
+                return_info.stack_um_per_slice = evalin('base','stack_um_per_slice');
+            catch exception
+            end
 %             write_tiff_stack([instruction.filename '.tif'],uint16(image_all_ch(:,:,:,1)));
 %             copyfile([instruction.filename '.tif'], ['Y:\shababo\' instruction.filename '.tif']);
         case DETECT_EVENTS_OASIS

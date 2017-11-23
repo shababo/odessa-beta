@@ -108,8 +108,7 @@ experiment_query.batch_ID = batch_ID;
 neighbourhood.batch_ID = batch_ID;
 
 
-% create_holograms_and_batch_seq
-
+% compute phase masks and other values related to running data acq
 if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
     experiment_query = ...
         compute_phase_masks_build_seq(experiment_query, experiment_setup, neighbourhood);

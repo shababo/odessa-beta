@@ -25,22 +25,27 @@ if experiment_setup.enable_user_breaks
 end
 
 if take_new_stack
+    
     disp('take stack')
     instruction = struct();
     instruction.type = 92;
     
     instruction.filename = [handles.data.params.map_id '_stack'];
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    acq_gui_data.data.stack = return_info.image;
-    acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
-    acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
-    acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
-    handles.data.image_zero_order_coord = return_info.image_zero_order_coord;
-    handles.data.image_um_per_px = return_info.image_um_per_px;
-    handles.data.stack_um_per_slice = return_info.stack_um_per_slice;     
+    experiment_setup.stack = return_info.image;
+    if isfield(return_info,'image_zero_order_coord')
+        acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
+        acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
+        acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
+        handles.data.image_zero_order_coord = return_info.image_zero_order_coord;
+        handles.data.image_um_per_px = return_info.image_um_per_px;
+        handles.data.stack_um_per_slice = return_info.stack_um_per_slice; 
+    end
 %     handles.data.stack = return_info.image;
     
     guidata(hObject,handles);
     guidata(acq_gui, acq_gui_data);
+    handles.data.experiment_setup = experiment_setup;
     exp_data = handles.data; save(experiment_setup.fullsavefile,'exp_data')
+    
 end

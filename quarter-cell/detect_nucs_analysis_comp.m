@@ -32,7 +32,7 @@ if detect_nucs
     instruction.type = 75;
 
     instruction.filename = [experiment_setup.exp_id '_stack'];
-    instruction.stackmat = acq_gui_data.data.stack;
+%     instruction.stackmat = experiment_setup.stack;
 %     imagemat = handles.data.stack;
 %     save(['C:\data\Shababo\' handles.data.experiment_setup.map_id '.mat'],'imagemat')
 %     pause(5)
@@ -40,21 +40,23 @@ if detect_nucs
 %     pause(5)
     
 %     instruction.stackmat = 0;
-    instruction.image_zero_order_coord = handles.data.image_zero_order_coord;
-    instruction.image_um_per_px = handles.data.image_um_per_px;
-    instruction.stack_um_per_slice = handles.data.stack_um_per_slice;
+%     instruction.image_zero_order_coord = experiment_setup.image_zero_order_coord;
+%     instruction.image_um_per_px = experiment_setup.image_um_per_px;
+%     instruction.stack_um_per_slice = experiment_setup.stack_um_per_slice;
+    instruction.make_neurons_struct = 1;
     instruction.experiment_setup = experiment_setup;
     instruction.dummy_targs = 0;
     instruction.num_dummy_targs = 200;
     
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
 
-    acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
-    acq_gui_data.data.fluor_vals = return_info.fluor_vals;
+%     acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
+%     acq_gui_data.data.fluor_vals = return_info.fluor_vals;
     handles.data.nuclear_locs = return_info.nuclear_locs;
     handles.data.fluor_vals = return_info.fluor_vals;
     experiment_setup.neurons = return_info.neurons;
     handles.data.experiment_setup = experiment_setup;
+
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
     exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
