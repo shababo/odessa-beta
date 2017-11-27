@@ -30,7 +30,7 @@ if take_new_stack
     instruction = struct();
     instruction.type = 92;
     
-    instruction.filename = [handles.data.params.map_id '_stack'];
+    instruction.filename = [experiment_setup.exp_id '_stack'];
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     experiment_setup.stack = return_info.image;
     if isfield(return_info,'image_zero_order_coord')
@@ -46,6 +46,6 @@ if take_new_stack
     guidata(hObject,handles);
     guidata(acq_gui, acq_gui_data);
     handles.data.experiment_setup = experiment_setup;
-    exp_data = handles.data; save(experiment_setup.fullsavefile,'exp_data')
+    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
     
 end

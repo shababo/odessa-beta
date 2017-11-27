@@ -23,6 +23,6 @@ if take_new_ref
     guidata(acq_gui, acq_gui_data);
     guidata(hObject,handles)
     handles.data.experiment_setup = experiment_setup;
-    exp_data = handles.data; save(experiment_setup.fullsavefile,'exp_data')
+    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
     
 end

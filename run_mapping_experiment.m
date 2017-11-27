@@ -1,16 +1,19 @@
 function run_mapping_experiment(experiment_setup,varargin)
 
-disp('Experiment start...')
+disp('Experiment start...')    
 
 switch experiment_setup.experiment_type
     case 'pilot'
         
     case 'experiment'
-    
-        experiment_setup.is_exp = 1;
         
         handles = varargin{1};
         hObject = varargin{2};
+        
+        experiment_setup.is_exp = 1;
+        set(handles.close_socket_check,'Value',0)
+        
+        
 
         experiment_setup.enable_user_breaks = 0;
         choice = questdlg('Choose start point?',...
@@ -103,7 +106,7 @@ end
 
 % get cell locations or simulate
 disp('Get presynaptic neurons...')
-if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
+if experiment_setup.is_exp
     
     eventdata = [];
     disp('Get objective ref position...')
@@ -143,7 +146,7 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
 %         acq_gui_data.data.obj_positions = handles.data.obj_positions;
 %         guidata(hObject,handles);
 %         guidata(acq_gui,acq_gui_data)
-%         exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+%         exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
 %     end
 
     % Set power, TODO: add user break
@@ -153,9 +156,14 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
 %     handles.data.experiment_setup.exp.user_power_level = user_input_powers;
 %     experiment_setup = handles.data.experiment_setup;
 %     guidata(hObject,handles)
+end
+if ~experiment_setup.exp.sim_locs
+    
     disp('Detect nuclei...')
     [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
+    
+    
     
     % COULD POTENTIALLY COLLECT SOME DATA HERE...
     % MAYBE RUN A TRIAL FOR BG RATE!
@@ -175,10 +183,10 @@ neighbourhoods = create_neighbourhoods_caller(experiment_setup);
 if experiment_setup.is_exp
     disp('Save...')
     handles.data.experiment_setup = experiment_setup;
-    handles.data.neighbourhoods = neigbhourhoods;
+    handles.data.neighbourhoods = neighbourhoods;
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
-    exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 
 end
@@ -329,7 +337,7 @@ while not_terminated
             handles.data.experiment_setup = experiment_setup;
             handles.data.experiment_query = experiment_query;
             handles.data.neighbourhoods = neighbourhoods;
-            exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+            exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
 
             do_run_trials = 1;
             if experiment_setup.enable_user_breaks
@@ -392,7 +400,7 @@ while not_terminated
                     acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
 
                     guidata(hObject,handles)
-%                     exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+%                     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
             %         guidata(acq_gui,acq_gui_data)
 
                     acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
@@ -407,7 +415,8 @@ while not_terminated
                 experiment_query = add_voltage_clamp_data(experiment_query,traces,this_seq);
 
             end
-        else
+        end
+        if experiment_setup.exp.sim_response
             % simulate this batch data
             switch experiment_setup.experiment_type
                 case 'simulation'
@@ -470,7 +479,7 @@ while not_terminated
         handles.data.experiment_setup = experiment_setup;
         handles.data.experiment_query = experiment_query;
         handles.data.neighbourhoods = neighbourhoods;
-        exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+        exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
         
     end
     

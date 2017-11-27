@@ -45,7 +45,7 @@ if detect_nucs
 %     instruction.stack_um_per_slice = experiment_setup.stack_um_per_slice;
     instruction.make_neurons_struct = 1;
     instruction.experiment_setup = experiment_setup;
-    instruction.dummy_targs = 0;
+    instruction.dummy_targs = 1;
     instruction.num_dummy_targs = 200;
     
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
