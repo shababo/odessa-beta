@@ -218,9 +218,9 @@ end
 
 if init_first_batches       
     if experiment_setup.is_exp || experiment_setup.sim.do_instructions
-        build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
+        build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
     else
-        [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles);
+        [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
     end
 end
 
@@ -316,9 +316,18 @@ while not_terminated
             if ~return_info.batch_found
                 continue
             else
-                neighbourhoods(i) = return_info.neighbourhood;
+                
+                load(['X:\\shababo\' instruction.matchstr '.mat'])
+                
+                neighbourhoods(i) = neighbourhood;
                 neighbourhood = neighbourhoods(i);
-                experiment_query = return_info.experiment_query;
+                experiment_query = experiment_query;
+                
+                
+                handles.data.experiment_setup = experiment_setup;
+                handles.data.experiment_query = experiment_query;
+                handles.data.neighbourhoods = neighbourhoods;
+                exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
             end
         end
         
@@ -330,7 +339,7 @@ while not_terminated
             % load holograms
             instruction = struct();
             instruction.type = 84;
-            instruction.precomputed_target = phase_masks;
+            instruction.precomputed_target = experiment_query.phase_masks;
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
             guidata(hObject,handles)
             
