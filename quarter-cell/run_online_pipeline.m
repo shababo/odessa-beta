@@ -7,6 +7,7 @@ if length(varargin) == 1
     exp_query_filename = varargin{1};
     load(exp_query_filename) % neighbourhood, experiment_query, experiment_setup
     
+    
 elseif length(varargin) == 3
     
     neighbourhood = varargin{1};
@@ -14,6 +15,9 @@ elseif length(varargin) == 3
     experiment_setup = varargin{3};
     
 end
+
+
+
 group_names = experiment_setup.group_names;
 
 % FOR LOOP BELOW IS GENERAL ANALYSIS CASE (NOT DEBUGGED)
@@ -87,6 +91,11 @@ batch_ID = experiment_query.batch_ID + 1;
 
 % DESIGN NEXT BATCH OF TRIALS
 clear experiment_query
+if ~isfield(experiment_setup,'disk_grid_phase')
+    load('phase-mask-base.mat')
+    experiment_setup.disk_grid_phase = disk_grid_phase;
+    experiment_setup.fine_spots_grid_phase = fine_spots_grid_phase;
+end
 % design trials
 % Alwasy initialize all groups in experiment_query for a consistent format
 
@@ -111,17 +120,22 @@ neighbourhood.batch_ID = batch_ID;
 
 % compute phase masks and other values related to running data acq
 if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
+    disp('computing phase masks')
+    save('tmp.mat','experiment_query')
     experiment_query = ...
         compute_phase_masks_build_seq(experiment_query, experiment_setup, neighbourhood);
 end
 neighbourhood.batch_ID = batch_ID;
+
+experiment_setup = rmfield(experiment_setup,'disk_grid_phase');
+experiment_setup = rmfield(experiment_setup,'fine_spots_grid_phase');
 
 if experiment_setup.is_exp || experiment_setup.sim.do_instructions
     fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
                         '_n' num2str(neighbourhood.neighbourhood_ID)...
                         '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
 
-    save(fullpathname,'experiment_query','neighbourhood')
+    save(fullpathname,'experiment_query','neighbourhood','experiment_setup')
 end
 
 disp('done online pipe')

@@ -1,5 +1,7 @@
 function run_mapping_experiment(experiment_setup,varargin)
 
+disp('Experiment start...')
+
 switch experiment_setup.experiment_type
     case 'pilot'
         
@@ -100,9 +102,11 @@ end
 
 
 % get cell locations or simulate
+disp('Get presynaptic neurons...')
 if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
     
     eventdata = [];
+    disp('Get objective ref position...')
     [experiment_setup, handles] = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 
@@ -113,7 +117,8 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
 % %     set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
 % 
 %     [handles,acq_gui,acq_gui_data] = obj_go_to(handles,hObject);
-
+    
+    disp('Take stack...')
     [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 
@@ -148,7 +153,7 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
 %     handles.data.experiment_setup.exp.user_power_level = user_input_powers;
 %     experiment_setup = handles.data.experiment_setup;
 %     guidata(hObject,handles)
-
+    disp('Detect nuclei...')
     [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
     
@@ -158,16 +163,17 @@ if experiment_setup.is_exp && ~experiment_setup.exp.sim_locs
 else
 
     % simulate the neurons
+    disp('Simulate neurons...')
     experiment_setup.neurons=generate_neurons(experiment_setup);
     
 end
 
-
+disp('Create neighbourhoods...')
 neighbourhoods = create_neighbourhoods_caller(experiment_setup);
 
 
 if experiment_setup.is_exp
-    
+    disp('Save...')
     handles.data.experiment_setup = experiment_setup;
     handles.data.neighbourhoods = neigbhourhoods;
     guidata(acq_gui,acq_gui_data)
@@ -465,6 +471,7 @@ while not_terminated
         handles.data.experiment_query = experiment_query;
         handles.data.neighbourhoods = neighbourhoods;
         exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+        
     end
     
     not_terminated = experiment_setup.terminator(neighbourhoods);
