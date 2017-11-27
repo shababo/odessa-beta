@@ -29,7 +29,8 @@ group_names = experiment_setup.group_names;
 % RUN ANALYSIS (IN THIS CASE SPECIFICALLY SPLIT AS DETECT PSCS, RUN
 % CONNECTIVITY INF
 num_trials = 0;
- neighbourhood =initialize_neurons_new_batch(neighbourhood);
+neighbourhood =initialize_neurons_new_batch(neighbourhood);
+
 for i = 1:length(group_names)
     % initialize parameters for all neurons in this neighbourhood for this
     % batch 

@@ -260,9 +260,7 @@ if experiment_setup.is_exp
     experiment_setup.patched_neuron=struct;
     experiment_setup.patched_neuron.background_rate=1e-4;
     experiment_setup.patched_neuron.cell_type=[];
-    
-    
-    
+           
 else
     
     % simulate bg rate
@@ -281,6 +279,7 @@ loop_count = 0;
 while not_terminated
     loop_count=loop_count+1;
     
+    % CHOOSE TO ENTER START N AND B HERE
     for i = 1:num_neighbourhoods
         
         neighbourhood = neighbourhoods(i);
@@ -320,6 +319,11 @@ while not_terminated
             instruction.precomputed_target = phase_masks;
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
             guidata(hObject,handles)
+            
+            handles.data.experiment_setup = experiment_setup;
+            handles.data.experiment_query = experiment_query;
+            handles.data.neighbourhoods = neighbourhoods;
+            exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
 
             do_run_trials = 1;
             if experiment_setup.enable_user_breaks
@@ -457,13 +461,17 @@ while not_terminated
 %         if ~do_cont   
 %             handles.data.design.id_continue{i} = 0;
 %         end
+        handles.data.experiment_setup = experiment_setup;
+        handles.data.experiment_query = experiment_query;
+        handles.data.neighbourhoods = neighbourhoods;
+        exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
     end
     
     not_terminated = experiment_setup.terminator(neighbourhoods);
   
 end    
 
-exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
