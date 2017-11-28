@@ -136,9 +136,10 @@ disp('waiting for instruction...')
 instruction = [];
 disp('check for instruction...')
 pause(.1)
+disp('check for instruction...')
 while isempty(instruction)
 
-    disp('check for instruction...')
+    
     [instruction, success] = msrecv(handles.sock,.5);
 
 end
@@ -183,7 +184,7 @@ if ~isfield(instruction,'close_socket') || ...
 elseif isfield(instruction,'close_socket')
     dont_close_restart = 1;
 end
-
+guidata(hObject,handles)
 if (isfield(instruction,'restart_socket') && instruction.restart_socket) || ...
         dont_close_restart
     
