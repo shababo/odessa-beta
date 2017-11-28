@@ -24,33 +24,33 @@ switch clamp_choice1
         whole_cell1 = 0;
 end
 
-if handles.data.set_cell2_pos
-    clamp_choice2 = questdlg('Cell 2 Patch Type?', ...
-        'Patch type?', ...
-        'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
-    % Handle response
-    switch clamp_choice2
-        case 'Voltage Clamp'
-            set(acq_gui_data.Cell2_type_popup,'Value',1)
-            set(acq_gui_data.test_pulse,'Value',1)
-            whole_cell2 = 1;
-        case 'Current Clamp'
-            set(acq_gui_data.Cell2_type_popup,'Value',2)
-            whole_cell2 = 1;
-        case 'Cell Attached'
-            set(acq_gui_data.Cell2_type_popup,'Value',3)
-            set(acq_gui_data.test_pulse,'Value',1)
-            whole_cell2 = 0;
-    end
-else
-    clamp_choice2 = 'Cell Attached';
-    set(acq_gui_data.Cell2_type_popup,'Value',3)
-    set(acq_gui_data.test_pulse,'Value',0)
-    whole_cell2 = 0;
-end
+% if handles.data.set_cell2_pos
+%     clamp_choice2 = questdlg('Cell 2 Patch Type?', ...
+%         'Patch type?', ...
+%         'Voltage Clamp','Current Clamp','Cell Attached','Voltage Clamp');
+%     % Handle response
+%     switch clamp_choice2
+%         case 'Voltage Clamp'
+%             set(acq_gui_data.Cell2_type_popup,'Value',1)
+%             set(acq_gui_data.test_pulse,'Value',1)
+%             whole_cell2 = 1;
+%         case 'Current Clamp'
+%             set(acq_gui_data.Cell2_type_popup,'Value',2)
+%             whole_cell2 = 1;
+%         case 'Cell Attached'
+%             set(acq_gui_data.Cell2_type_popup,'Value',3)
+%             set(acq_gui_data.test_pulse,'Value',1)
+%             whole_cell2 = 0;
+%     end
+% else
+%     clamp_choice2 = 'Cell Attached';
+%     set(acq_gui_data.Cell2_type_popup,'Value',3)
+%     set(acq_gui_data.test_pulse,'Value',0)
+%     whole_cell2 = 0;
+% end
 
 
-if whole_cell1 || whole_cell2
+if whole_cell1 %|| whole_cell2
     
     do_whole_cell_stuff = 0;
     choice = questdlg('Get patch ready and take baseline/instrinsics?', ...
@@ -185,22 +185,22 @@ switch clamp_choice1
 %         whole_cell = 0;
 end
 
-switch clamp_choice2
-    case 'Voltage Clamp'
-%         set(acq_gui_data.Cell1_type_popup,'Value',1)
-        set(acq_gui_data.Cell2_type_popup,'Value',1)
-        set(acq_gui_data.test_pulse,'Value',1)
-%         whole_cell = 1;msaccept
-    case 'Current Clamp'
-%         set(acq_gui_data.Cell1_type_popup,'Value',2)
-        set(acq_gui_data.Cell2_type_popup,'Value',2)
-%         whole_cell = 1;
-    case 'Cell Attached'
-%         set(acq_gui_data.Cell1_type_popup,'Value',3)
-        set(acq_gui_data.Cell2_type_popup,'Value',3)
-        set(acq_gui_data.test_pulse,'Value',1)
-%         whole_cell = 0;
-end
+% switch clamp_choice2
+%     case 'Voltage Clamp'
+% %         set(acq_gui_data.Cell1_type_popup,'Value',1)
+%         set(acq_gui_data.Cell2_type_popup,'Value',1)
+%         set(acq_gui_data.test_pulse,'Value',1)
+% %         whole_cell = 1;msaccept
+%     case 'Current Clamp'
+% %         set(acq_gui_data.Cell1_type_popup,'Value',2)
+%         set(acq_gui_data.Cell2_type_popup,'Value',2)
+% %         whole_cell = 1;
+%     case 'Cell Attached'
+% %         set(acq_gui_data.Cell1_type_popup,'Value',3)
+%         set(acq_gui_data.Cell2_type_popup,'Value',3)
+%         set(acq_gui_data.test_pulse,'Value',1)
+% %         whole_cell = 0;
+% end
 
 guidata(hObject,handles);
 guidata(acq_gui,acq_gui_data)

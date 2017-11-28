@@ -19,6 +19,7 @@ end
 % end
 pause(1)
 disp('sending instruction...')
+instruction.type
 mssend(handles.sock_analysis,instruction);
 disp('getting return info...')
 pause(1)
@@ -35,7 +36,7 @@ if get_return
     end
     assignin('base','return_info',return_info)
 end
-% success = 1;
+success = 1;
 
 if instruction.close_socket
     disp('closing socket')

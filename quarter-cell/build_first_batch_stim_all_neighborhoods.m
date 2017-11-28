@@ -2,6 +2,7 @@ function [experiment_query, neighbourhoods] = build_first_batch_stim_all_neighbo
 
 if ~isempty(varargin) && ~isempty(varargin{1})
     handles = varargin{1};
+    hObject = varargin{2};
 else
     handles = [];
 end
@@ -52,10 +53,12 @@ if build_first_batch_stim
         
         if experiment_setup.is_exp
             [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+            guidata(hObject,handles)
         else
             [return_info, success] = do_instruction_local(instruction);
         end
         experiment_query = [];
+
     end
     
 end

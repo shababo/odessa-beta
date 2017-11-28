@@ -69,7 +69,7 @@ for i = 1:length(group_names)
             end
 
             matching_trials = find(trials_map == j);
-            for k = matching_trials
+            for k = 1:matching_trials
                 experiment_query.(group_names{i}).trials(k).precomputed_target_index = phase_mask_id;
                 experiment_query.(group_names{i}).trials(k).filter_configuration = 'Femto Phasor';
                 experiment_query.(group_names{i}).trials(k).duration = experiment_setup.exp.stim_duration*1000;

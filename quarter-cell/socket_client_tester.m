@@ -158,10 +158,18 @@ disp('got info...')
 
 
 [return_info,handles] = do_instruction(instruction,handles);
-
+if instruction.type == 401
+    disp('out of do_ins')
+    return_info.batch_found
+end
 assignin('base','return_info',return_info)
 disp('sending return info')
+
 mssend(handles.sock,return_info);
+if instruction.type == 401
+    disp('sent')
+    return_info.batch_found
+end
 handles.close_socket = instruction.close_socket;
 % if isfield(instruction,'waittime')
 %     handles.waittime = instruction.waittime
@@ -184,6 +192,7 @@ if ~isfield(instruction,'close_socket') || ...
 elseif isfield(instruction,'close_socket')
     dont_close_restart = 1;
 end
+
 guidata(hObject,handles)
 if (isfield(instruction,'restart_socket') && instruction.restart_socket) || ...
         dont_close_restart

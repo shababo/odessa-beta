@@ -37,7 +37,7 @@ CHECK_FOR_BATCH = 401;
 
 success = 1;
 
-% instruction.type
+instruction.type
 return_info = struct();
 if success >= 0
 %     disp('doing something...')
@@ -228,7 +228,7 @@ if success >= 0
 %             filename = ['/media/shababo/data/' instruction.filename '.tif'];
 %             write_tiff_stack(filename,imagemat)
             disp('into main function')
-            experiment_setup = instruction.experiment_setup
+            experiment_setup = instruction.experiment_setup;
             filename = ['/media/shababo/data/' instruction.filename '.tif'];
             disp('writing tif')
             write_tiff_stack(filename,uint16(experiment_setup.stackmat))
@@ -547,22 +547,31 @@ if success >= 0
             if length(matchfile_ind) > 1
                 warndlg('more than one file found that matches :(')
             end
+            batch_found = 'no';
             if ~isempty(matchfile_ind)
-                filename = files(matchfile_ind(1)).name;
-                load([instruction.dir filename])
-                return_info.batch_found = 1;
-                return_info.experiment_query = experiment_query;
-                return_info.neighbourhood = neighbourhood;
+                disp('batch found')
+%                 filename = files(matchfile_ind(1)).name;
+%                 try
+%                     load([instruction.dir filename])
+                    batch_found = 'yes';
+%                     return_info.experiment_query = experiment_query;
+%                     return_info.neighbourhood = neighbourhood;
+%                 catch e
+%                     disp('no batch')
+%                     batch_found = 'no';
+%                 end
             else
-                return_info.batch_found = 0;
+                disp('no batch')
+                batch_found = 'no';
             end
            
-            
+            return_info.batch_found = batch_found;
+            return_info.dummy = 1:10;
         case CHECK_FOR_ANALYSIS
                 
             % CHECK FOR FILE
             cmd = ['matlab -nojvm -nodisplay -nosplash '...
-                '"run_online_pipeline(' fullpathname ')"';];
+                '"run_online_pipeline(' fullpathname ')" &';];
             system(cmd)
             
     end 
@@ -577,6 +586,12 @@ if instruction.type == DETECT_NUC_LOCAL
     
     return_info.nuclear_locs = nuclear_locs;
     return_info.detect_img = detect_img;
+    
+% elseif instruction.type == CHECK_FOR_BATCH
+%     
+%     clear return_info
+%     return_info.batch_found = batch_found;
+    
 
 end
 
