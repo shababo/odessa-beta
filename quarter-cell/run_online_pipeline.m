@@ -19,6 +19,9 @@ end
 
 
 group_names = experiment_setup.group_names;
+for i = 1:length(group_names)
+    experiment_setup.groups.(group_names{i}) = eval(['get_' group_names{i}]);
+end
 
 % FOR LOOP BELOW IS GENERAL ANALYSIS CASE (NOT DEBUGGED)
 % for i = 1:length(group_names)
@@ -46,7 +49,8 @@ for i = 1:length(group_names)
         this_exp_query = experiment_query.(this_group);
         group_profile=experiment_setup.groups.(this_group);
         experiment_query.(this_group) = ...
-            experiment_setup.groups.(this_group).psc_detect_function(this_exp_query,neighbourhood, group_profile, experiment_setup);
+            experiment_setup.groups.(this_group).psc_detect_function(...
+                    this_exp_query,neighbourhood,this_group, experiment_setup,experiment_query.batch_ID);
         
         num_trials = num_trials + length(experiment_query.(this_group).trials);
         
@@ -89,6 +93,7 @@ save(batchsavepath,'neighbourhood', 'experiment_query', 'experiment_setup')
 % INCREMENT BATCH_ID HERE!
 batch_ID = experiment_query.batch_ID + 1; 
 
+save('loading phases.mat','batch_ID')
 % DESIGN NEXT BATCH OF TRIALS
 clear experiment_query
 if ~isfield(experiment_setup,'disk_grid_phase')
@@ -98,7 +103,7 @@ if ~isfield(experiment_setup,'disk_grid_phase')
 end
 % design trials
 % Alwasy initialize all groups in experiment_query for a consistent format
-
+save('designing stim.mat','batch_ID')
 for i = 1:length(group_names)
     
     this_group = group_names{i};
@@ -109,13 +114,14 @@ for i = 1:length(group_names)
     if isfield(group_profile,'design_function')
      
         experiment_query.(this_group) = ...
-            experiment_setup.groups.(this_group).design_function(neighbourhood,group_profile,experiment_setup);
-   end
+            group_profile.design_function(neighbourhood,group_profile,experiment_setup);
+    end
     end
     
 end
 experiment_query.batch_ID = batch_ID;
 neighbourhood.batch_ID = batch_ID;
+save('tmp.mat','experiment_query')
 
 
 % compute phase masks and other values related to running data acq
@@ -130,12 +136,34 @@ neighbourhood.batch_ID = batch_ID;
 experiment_setup = rmfield(experiment_setup,'disk_grid_phase');
 experiment_setup = rmfield(experiment_setup,'fine_spots_grid_phase');
 
-if experiment_setup.is_exp || experiment_setup.sim.do_instructions
+if experiment_setup.is_exp
+
+    fullpathname = [experiment_setup.ephys_mapped_drive experiment_setup.exp_id ...
+                        '_n' num2str(neighbourhood.neighbourhood_ID)...
+                        '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
+%                         filename = [experiment_setup.exp_id ...
+%                             '_n' num2str(neighbourhood.neighbourhood_ID)...
+%                             '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
+    disp('writing file')
+    save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v6')
+%         status = -1;
+%         while status
+%         status = system(['smbclient //adesnik2.ist.berkeley.edu/excitation adesnik110623 -c ''cd /shababo ; '...
+%                 'put ' fullpathname ' ' filename ''''])
+%         end
+%         save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v7.3')
+    fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
+                    '_n' num2str(neighbourhood.neighbourhood_ID)...
+                    '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
+    save(fullpathname,'neighbourhood','experiment_setup')
+
+elseif experiment_setup.sim.do_instructions
+    
     fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
                         '_n' num2str(neighbourhood.neighbourhood_ID)...
                         '_b' num2str(experiment_query.batch_ID) '_to_acquisition.mat'];
-
-    save(fullpathname,'experiment_query','neighbourhood','experiment_setup')
+        save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v7.3')
+        
 end
 
 disp('done online pipe')
