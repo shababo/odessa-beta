@@ -412,7 +412,8 @@ if success >= 0
             return_info.num_stim = size(stim_key,1);
             clear phase_masks_target 
         case LOAD_PRECOMPUTED_TARGET
-            vars{1} = phase_masks_target;
+            
+            vars{1} = instruction.precomputed_target;
             names{1} = 'precomputed_target';
             assignin_base(names,vars);
             evalin('base','set_precomp_target_ready')

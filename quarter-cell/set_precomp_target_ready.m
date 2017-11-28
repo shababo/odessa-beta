@@ -11,4 +11,4 @@ set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
 waitfor(wrndlg)
 % pause(wait_time)
 disp('done waiting for phase loading')
-clear precomputed_target
+% clear precomputed_target
