@@ -1,4 +1,4 @@
-function [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
+function [handles, neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
 
 % THIS FUNCTION DOES NOT SUBSCRIBE TO NEW DATA STRUCTURES YET
 
@@ -54,8 +54,8 @@ if detect_nucs
 %     acq_gui_data.data.fluor_vals = return_info.fluor_vals;
     handles.data.nuclear_locs = return_info.nuclear_locs;
     handles.data.fluor_vals = return_info.fluor_vals;
-    experiment_setup.neurons = return_info.neurons;
-    handles.data.experiment_setup = experiment_setup;
+    neurons = return_info.neurons;
+%     handles.data.experiment_setup = experiment_setup;
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)

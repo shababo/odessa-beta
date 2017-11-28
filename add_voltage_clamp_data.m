@@ -1,5 +1,5 @@
 function experiment_query = ...
-    add_voltage_clamp_data(experiment_query,traces,this_seq,experiment_setup)
+    add_voltage_clamp_data(experiment_query,traces,experiment_setup)
 
 
 
