@@ -27,6 +27,7 @@ PRECOMPUTE_PHASE_NUCLEAR = 81;
 PRECOMPUTE_PHASE_MULTI_W_COMBO_SELECT = 82;
 PRECOMPUTE_PHASE_MULTI = 83;
 LOAD_PRECOMPUTED_TARGET = 84;
+LOAD_PRECOMPUTED_TARGET_FROM_FILE = 85;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
@@ -412,11 +413,35 @@ if success >= 0
             return_info.num_stim = size(stim_key,1);
             clear phase_masks_target 
         case LOAD_PRECOMPUTED_TARGET
-            
+
             vars{1} = instruction.precomputed_target;
             names{1} = 'precomputed_target';
             assignin_base(names,vars);
             evalin('base','set_precomp_target_ready')
+
+        case LOAD_PRECOMPUTED_TARGET_FROM_FILE
+%             fileloc = ['phase_masks_tmp\' instruction.filename '.mat'];
+%             [stat,struc] = fileattrib(fileloc);
+%             while ~struc.UserWrite
+%                 pause(2.0)
+%                 [stat,struc] = fileattrib(fileloc);
+%             end
+            try
+                load(['phase_masks_tmp\' instruction.filename])
+                vars{1} = experiment_query.phase_masks;
+                names{1} = 'precomputed_target';
+                if isfield(instruction,'user_finish')
+                    vars{2} = instruction.user_finish;
+                    names{2} = 'user_finish'
+                end
+                assignin_base(names,vars);
+                evalin('base','set_precomp_target_ready')
+                return_info.experiment_query = rmfield(experiment_query,'phase_masks');
+                return_info.neighbourhood = neighbourhood;
+                return_info.bad_file = 0;
+            catch e
+                return_info.bad_file = 1;
+            end
         case TAKE_SNAP
             evalin('base','take_snap')
             handles.snap_image = evalin('base','temp');

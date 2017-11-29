@@ -5,10 +5,13 @@ isPrecomputedTargetArrayReady = 1;
 % while any(isPrecomputedHologramReady == 0)
 %     pause(5);
 % end
-wrndlg = warndlg('Precomp Done?');
-pos = get(wrndlg,'position');
-set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
-waitfor(wrndlg)
+user_finish = evalin('base','user_finish');
+% if user_finish
+    wrndlg = warndlg('Precomp Done?');
+    pos = get(wrndlg,'position');
+    set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
+    waitfor(wrndlg)
+% end
 % pause(wait_time)
 disp('done waiting for phase loading')
 % clear precomputed_target
