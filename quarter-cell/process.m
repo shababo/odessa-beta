@@ -64,6 +64,8 @@ switch handles.run_type
         handles.data.trial_metadata(sweep_counter).pulse_starttime = handles.data.stimulation.pulse_starttime;
         if isfield(handles.data,'stim_key')
             handles.data.trial_metadata(sweep_counter).stim_key = handles.data.stim_key;
+        end
+        if isfield(handles.data,'sequence')
             handles.data.trial_metadata(sweep_counter).sequence = handles.data.sequence;
         end
         

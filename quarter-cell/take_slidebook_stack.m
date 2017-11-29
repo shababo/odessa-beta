@@ -29,7 +29,7 @@ if take_new_stack
     disp('take stack')
     instruction = struct();
     instruction.type = 92;
-    
+    instruction.get_return = 1;
     instruction.filename = [experiment_setup.exp_id '_stack'];
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     experiment_setup.stack = return_info.image;

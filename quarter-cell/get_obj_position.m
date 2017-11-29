@@ -2,6 +2,7 @@ function [experiment_setup, handles] = get_obj_position(hObject,eventdata,handle
 
 disp('Getting current obj pos...')
 
+instruction = struct();
 instruction.type = 20; %GET_OBJ_POS
 instruction.close_socket = get(handles.close_socket_check,'Value');
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);

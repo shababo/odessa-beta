@@ -7,32 +7,32 @@ else
     handles = [];
 end
 
-build_first_batch_stim = 1;
-if experiment_setup.enable_user_breaks
-    choice = questdlg('Build stim and phase masks for first batch?', ...
-        'Build stim and phase masks for first batch?', ...
-        'Yes','No','Yes');
-    % Handle response
-    switch choice
-        case 'Yes'
-            build_first_batch_stim = 1;
-            choice = questdlg('Continue user control?',...
-                'Continue user control?', ...
-                'Yes','No','Yes');
-            % Handle response
-            switch choice
-                case 'Yes'
-                    experiment_setup.enable_user_breaks = 1;
-                case 'No'
-                    experiment_setup.enable_user_breaks = 0;
-            end
-        case 'No'
-            build_first_batch_stim = 0;
-    end
-end
-
-
-if build_first_batch_stim
+% build_first_batch_stim = 1;
+% if experiment_setup.enable_user_breaks
+%     choice = questdlg('Build stim and phase masks for first batch?', ...
+%         'Build stim and phase masks for first batch?', ...
+%         'Yes','No','Yes');
+%     % Handle response
+%     switch choice
+%         case 'Yes'
+%             build_first_batch_stim = 1;
+%             choice = questdlg('Continue user control?',...
+%                 'Continue user control?', ...
+%                 'Yes','No','Yes');
+%             % Handle response
+%             switch choice
+%                 case 'Yes'
+%                     experiment_setup.enable_user_breaks = 1;
+%                 case 'No'
+%                     experiment_setup.enable_user_breaks = 0;
+%             end
+%         case 'No'
+%             build_first_batch_stim = 0;
+%     end
+% end
+% 
+% 
+% if build_first_batch_stim
     
     if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
         for i = 1:length(neighbourhoods)
@@ -61,5 +61,5 @@ if build_first_batch_stim
 
     end
     
-end
+% end
 

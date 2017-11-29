@@ -128,7 +128,7 @@ if isfield(handles.data,'obj_position_socket')
 else
     handles.data.obj_position = [0 0 0];%[x y z];
 end
-
+do_bg = 0;
 % what type of run are we going to do?
 switch handles.run_type
     case 'loop'
@@ -142,6 +142,7 @@ switch handles.run_type
 %                 handles = process_plot_wait(handles,str2double(get(handles.ITI,'String')));
                 start_time = clock;
                 handles = process_plot(handles);
+
             
             % wait
             
@@ -149,18 +150,29 @@ switch handles.run_type
                 end
             end
         else
-            for loop_ind = 1:str2num(get(handles.loop_count,'String'))
-                handles.io_data = step_loop(handles);
-                start_time = clock;
-                handles = process_plot(handles);
-                % wait
+            num_loops = str2num(get(handles.loop_count,'String'));
+            do_bg = handles.defaults.background_acq && num_loops == 1;
+            for loop_ind = 1:num_loops
                 
-                while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
+                if do_bg
+                    handles.data.do_process = 1;
                 end
-                drawnow
-                if ~get(hObject,'Value')
-                    break
+                io_data = step_loop(handles,do_bg);
+                
+                if ~do_bg
+                    handles.io_data = io_data;
+                    start_time = clock;
+                    handles = process_plot(handles);
+                    % wait
+                    while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
+                    end
+                    drawnow
+                    if ~get(hObject,'Value')
+                        break
+                    end
                 end
+                
+                
             end
         end
         set(hObject,'Value',0)
@@ -357,26 +369,22 @@ switch handles.run_type
         
         
 
-        
-set(hObject,'String','Start');
-set(hObject,'BackgroundColor',default_color);
+if ~do_bg        
+    set(hObject,'String','Start');
+    set(hObject,'BackgroundColor',default_color);
 
-% update fields
-handles = trial_length_Callback(handles.trial_length, [], handles);
+
+    % update fields
+    handles = trial_length_Callback(handles.trial_length, [], handles);
+else
+%     delete(handles.lh)
+%     handles = rmfield(handles,'lh');
+end
 
 guidata(hObject,handles)
 
-function handles = process_plot(handles)
 
-
-
-set(handles.run,'String','Process')
-handles = process(handles);
-guidata(handles.acq_gui,handles) % needed?
-handles = plot_gui(handles);
-guidata(handles.acq_gui,handles) % needed?
-drawnow
-% set(handles.run,'String','ITI')
+% set(handles.run,'String','ITI')def
 % drawnow
 
 

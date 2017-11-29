@@ -26,6 +26,16 @@ switch experiment_setup.experiment_type
         % Handle response
         switch choice
             case 'Yes'
+                
+                experiment_setup = handles.data.experiment_setup;
+                if isfield(handles.data,'neighbourhoods')
+                    neighbourhoods = handles.data.neighbourhoods;
+                end
+                if isfield(handles.data,'experiment_query')
+                    experiment_query = handles.data.experiment_query;
+                end
+                experiment_setup.is_exp = 1;
+                experiment_setup.terminator=@check_all_learned;
                 experiment_setup.enable_user_breaks = 1;
             case 'No'
                 experiment_setup.enable_user_breaks = 0;
@@ -120,6 +130,8 @@ switch experiment_setup.experiment_type
         experiment_setup.is_exp = 0;
         experiment_setup.enable_user_breaks = 0;
         handles = [];
+        hObject = [];
+        
 end
 
 
@@ -241,7 +253,7 @@ end
 if init_first_batches       
     if experiment_setup.is_exp || experiment_setup.sim.do_instructions
         build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
-        handles = guidata(hObject)
+        handles = guidata(hObject);
     else
         [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
     end
@@ -308,265 +320,181 @@ else
 end
 
 
-num_neighbourhoods = length(neighbourhoods);
-
 not_terminated = 1;
 loop_count = 0;
+batch_found = 0;
+
 
 while not_terminated
-    loop_count=loop_count+1
     
-    % CHOOSE TO ENTER START N AND B HERE
-    for i = 1:num_neighbourhoods
+    loop_count = loop_count + 1;
+	
+    % FIND BATCH AND LOAD PHASE MASKS IF NEEDED
+    if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions   
         
-        neighbourhood = neighbourhoods(i);
+        neighbourhood = neighbourhoods(mod(loop_count,length(neigbhourhoods))+1);
+        experiment_query = experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID);   
         
-        if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
-            experiment_query = experiment_query_full(i,loop_count);
-        else
-            % check for batch on this neighborhood
-            send_phase_masks = 1;
-            if experiment_setup.enable_user_breaks
-                choice = questdlg('Send phase masks?', ...
-                    'Send phase masks?', ...
-                    'Yes','No','Yes');
-                % Handle response
-                switch choice
-                    case 'Yes'
-                        send_phase_masks = 1;
-                        choice = questdlg('Continue user control?',...
-                            'Continue user control?', ...
-                            'Yes','No','Yes');
-                        % Handle response
-                        switch choice
-                            case 'Yes'
-                                experiment_setup.enable_user_breaks = 1;
-                            case 'No'
-                                experiment_setup.enable_user_breaks = 0;
-                        end
-                    case 'No'
-                        send_phase_masks = 0;
-                end
-            end
-            if send_phase_masks
-                instruction.type = 401;
-                instruction.dir = experiment_setup.analysis_root;   
-                instruction.get_return = 1;
-                instruction.matchstr = [experiment_setup.exp_id ...
-                            '_n' num2str(neighbourhood.neighbourhood_ID)...
-                            '_b' num2str(neighbourhood.batch_ID + 1) '_to_acquisition'];
-                if experiment_setup.is_exp
-                    [return_info, success, handles] = do_instruction_analysis(instruction, handles);
-    %                 batch_found = return_info.batch_found;
-                else
-                    [return_info, success] = do_instruction_local(instruction);
-                end
-                if ~isfield(return_info,'batch_found')
-                    disp('no field...')
-                    continue
-                end
-                switch return_info.batch_found %~isfield(return_info,'batch_found') || ~
-                    case 'no'
-                        continue
-                    case 'yes'
+    else
+        
+        
+        while ~batch_found
+            disp('getting batch...')
+            [batch_found, experiment_query_next, neighbourhood_next] = ...
+                prep_next_run(experiment_setup,neighbourhoods,handles);
+        end
+        batch_found = 0;
+        
+        neighbourhood = neighbourhood_next;
+        neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood;
+        experiment_query = experiment_query_next;
+    end  
+    
+    % ACQ OR SIM DATA
+    if experiment_setup.is_exp
 
-                    experiment_setup_bu = experiment_setup;
-                    neighbourhoods_bu = neighbourhoods;
-    %                 experiment_query_bu = experiment_query;
-                    try
-                        disp('loading phase masks')
-                        load(['X:\shababo\' instruction.matchstr '.mat'])
-
-                        neighbourhoods(i) = neighbourhood;
-                        neighbourhood = neighbourhoods(i);
-        %                 experiment_query = experiment_query;
-
-
-                        handles.data.experiment_setup = experiment_setup;
-                        handles.data.experiment_query = experiment_query;
-                        handles.data.neighbourhoods = neighbourhoods;
-                        exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-                    catch e
-                         experiment_setup= experiment_setup_bu;
-                         neighbourhoods = neighbourhoods_bu;
-    %                      experiment_query = experiment_query_bu;
-                        continue
+        do_run_trials = 1;
+        if experiment_setup.enable_user_breaks
+            choice = questdlg('Run the trials?', ...
+                'Run the trials?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    do_run_trials = 1;
+                    choice = questdlg('Continue user control?',...
+                        'Continue user control?', ...
+                        'Yes','No','Yes');
+                    % Handle response
+                    switch choice
+                        case 'Yes'
+                            experiment_setup.enable_user_breaks = 1;
+                        case 'No'
+                            experiment_setup.enable_user_breaks = 0;
                     end
-                end
-                disp('sending phase masks')
-                instruction = struct();
-                instruction.type = 84;
-                instruction.precomputed_target = experiment_query.phase_masks;
-                [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-                guidata(hObject,handles)
-                experiment_query = rmfield(experiment_query,'phase_masks');
-                handles.data.experiment_setup = experiment_setup;
-                handles.data.experiment_query = experiment_query;
-                handles.data.neighbourhoods = neighbourhoods;
-                exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+                case 'No'
+                    do_run_trials = 0;
             end
         end
+
+        if do_run_trials
+
+            disp('running trials')
+            max_seq_length = experiment_setup.exp.max_trials_per_sweep;
+            [experiment_query, this_seq] = make_slidebook_sequence(experiment_query,experiment_setup);
+            num_runs = ceil(length(this_seq)/max_seq_length);
+
+            handles.data.start_trial = acq_gui_data.data.sweep_counter + 1;
+
+
+            seqs = cell(num_runs,1);
+            for run_i = 1:num_runs
+
+                this_subseq = this_seq((run_i-1)*max_seq_length+1:min(run_i*max_seq_length,length(this_seq)));
+                time_offset = this_subseq(1).start - 1000;
+                for k = 1:length(this_subseq)
+                    this_subseq(k).start = this_subseq(k).start - time_offset;
+                end
+                total_duration = (this_subseq(end).start + this_subseq(end).duration)/1000 + experiment_setup.exp.sweep_time_padding;
+
+                set(acq_gui_data.trial_length,'String',num2str(total_duration))
+                acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+
+                instruction = struct();
+                instruction.type = 32; %SEND SEQ
+                handles.sequence = this_subseq;
+                seqs{run_i} = this_subseq;
+%                     guidata(acq_gui,acq_gui_data);
+                instruction.sequence = this_subseq;
+                handles.total_duration = total_duration;
+                instruction.waittime = total_duration + 120;
+                disp('sending instruction...')
+                [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+                acq_gui_data.data.sequence =  this_subseq;
+                guidata(acq_gui,acq_gui_data)
+
+                set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+
+                acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+
+                guidata(hObject,handles)
+%                     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+        %         guidata(acq_gui,acq_gui_data)
+
+                Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+                while ~batch_found || ~strcmp(get(acq_gui_data.run,'String'),'Start')
+                    disp('looking for batch in bg')
+%                     otherhoods = setdiff(1:length(neighbourhoods),find([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID));
+                    [batch_found, experiment_query_next, neighbourhood_next] = ...
+                        prep_next_run(experiment_setup,neighbourhoods,handles);
+                end
+                waitfor(acq_gui_data.run,'String','Start')
+%                 acq_gui_data = guidata(acq_gui);
+%                 guidata(acq_gui,acq_gui_data)
+            end
+
+            acq_gui_data = guidata(acq_gui);
+            trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
+            traces = ...
+                get_traces(acq_gui_data.data,trials,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
+            experiment_query = add_voltage_clamp_data(experiment_query,traces,experiment_setup);
+
+        end
+
+    end
+    
+        % simulate this batch data
+    switch experiment_setup.experiment_type
+%         case 'experiment'
+%             if experiment_setup.exp.sim_response
+%                 experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
+%             end
+        case 'simulation'
+            experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
+        case 'reproduction'
+
+    end
+    
+
+
+    % RUN ONLINE MAPPING PIPELINE
+    if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+
+        neighbourhood_tmp = struct();
+        experiment_query_tmp = struct();
+        [experiment_query_tmp, neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
+            experiment_query,experiment_setup);
+        neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood_tmp;
+        experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
+
+    else
+        instruction.type = 300; 
+        instruction.experiment_query = experiment_query;
+        instruction.neighbourhoods = neighbourhood;
+        instruction.get_return = 0;
+        instruction.experiment_setup = experiment_setup;
         
         if experiment_setup.is_exp
-            
-%             handles.data.obj_go_to_pos = handles.data.ref_obj_position + neighbourhoods(i).center;
-%             [handles,acq_gui,acq_gui_data] = obj_go_to(handles,hObject);
-
-            do_run_trials = 1;
-            if experiment_setup.enable_user_breaks
-                choice = questdlg('Run the trials?', ...
-                    'Run the trials?', ...
-                    'Yes','No','Yes');
-                % Handle response
-                switch choice
-                    case 'Yes'
-                        do_run_trials = 1;
-                        choice = questdlg('Continue user control?',...
-                            'Continue user control?', ...
-                            'Yes','No','Yes');
-                        % Handle response
-                        switch choice
-                            case 'Yes'
-                                experiment_setup.enable_user_breaks = 1;
-                            case 'No'
-                                experiment_setup.enable_user_breaks = 0;
-                        end
-                    case 'No'
-                        do_run_trials = 0;
-                end
-            end
-
-            if do_run_trials
-                
-                disp('running trials')
-                max_seq_length = experiment_setup.exp.max_trials_per_sweep;
-                [experiment_query, this_seq] = make_slidebook_sequence(experiment_query,experiment_setup);
-                num_runs = ceil(length(this_seq)/max_seq_length);
-                
-                handles.data.start_trial = acq_gui_data.data.sweep_counter + 1;
-                
-                
-                seqs = cell(num_runs,1);
-                for run_i = 1:num_runs
-
-                    this_subseq = this_seq((run_i-1)*max_seq_length+1:min(run_i*max_seq_length,length(this_seq)));
-                    time_offset = this_subseq(1).start - 1000;
-                    for k = 1:length(this_subseq)
-                        this_subseq(k).start = this_subseq(k).start - time_offset;
-                    end
-                    total_duration = (this_subseq(end).start + this_subseq(end).duration)/1000 + experiment_setup.exp.sweep_time_padding;
-
-                    set(acq_gui_data.trial_length,'String',num2str(total_duration))
-                    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-                    
-                    instruction = struct();
-                    instruction.type = 32; %SEND SEQ
-                    handles.sequence = this_subseq;
-                    seqs{run_i} = this_subseq;
-%                     guidata(acq_gui,acq_gui_data);
-                    instruction.sequence = this_subseq;
-                    handles.total_duration = total_duration;
-                    instruction.waittime = total_duration + 120;
-                    disp('sending instruction...')
-                    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-                    acq_gui_data.data.sequence =  this_subseq;
-                    guidata(acq_gui,acq_gui_data)
-
-                    set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-                   
-                    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-
-                    guidata(hObject,handles)
-%                     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-            %         guidata(acq_gui,acq_gui_data)
-
-                    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-                    waitfor(acq_gui_data.run,'String','Start')
-                    guidata(acq_gui,acq_gui_data)
-
-                end
-                acq_gui_data = guidata(acq_gui);
-                trials = handles.data.start_trial:acq_gui_data.data.sweep_counter;
-                traces = ...
-                    get_traces(acq_gui_data.data,trials,seqs,experiment_setup.trials.max_time_sec,20000);
-                experiment_query = add_voltage_clamp_data(experiment_query,traces,experiment_setup);
-
-            end
-        end
-%         if experiment_setup.exp.sim_response || strcmp(experiment_setup.experiment_type,'simulation')
-%             % simulate this batch data
-% %             switch experiment_setup.experiment_type
-% %                 case 'experiment'
-% %                     i_neighbourhood=i;
-% %                     experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhoods(i_neighbourhood));
-% %                 case 'simulation'
-%                     % simulate data 
-%                     i_neighbourhood=i;
-%                     experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhoods(i_neighbourhood));
-% %                 case 'reproduction'
-%                     % read data from files
-% %             end
-%         end
-        
-        
-        % RUN ONLINE MAPPING PIPELINE HERE
-        if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
-
-            neighbourhood_tmp = struct();
-            experiment_query_tmp = struct();
-            [experiment_query_tmp, neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
-                experiment_query,experiment_setup);
-            neighbourhoods(i) = neighbourhood_tmp;
-            experiment_query_full(i,loop_count+1)=experiment_query_tmp;
-
+            [return_info, success, handles] = do_instruction_analysis(instruction, handles);
         else
-            instruction.type = 300; 
-            instruction.experiment_query = experiment_query;
-            instruction.neighbourhoods = neighbourhood;
-            instruction.get_return = 0;
-            instruction.experiment_setup = experiment_setup;
-            
-            if experiment_setup.is_exp
-                [return_info, success, handles] = do_instruction_analysis(instruction, handles);
-            else
-                [return_info, success] = do_instruction_local(instruction);
-            end
+            [return_info, success] = do_instruction_local(instruction);
         end
         
-        % check if all cells in this neighbourhood are alive or
-        % disconnected 
         
-        
-        
-        % Plot the progress
-%         fprintf('Number of trials so far: %d; number of cells killed: %d\n',handles.data.design.n_trials{i}, sum(handles.data.design.dead_cells{i}{handles.data.design.iter}+handles.data.design.alive_cells{i}{handles.data.design.iter}))
-        
-%         do_cont = 0;
-%         choice = questdlg('Continue Plane?', ...
-%         'Continue Plane?', ...
-%         'Yes','No','Yes');
-%         % Handle response
-%         switch choice
-%         case 'Yes'
-%             do_cont = 1;
-%         case 'No'
-%             do_cont = 0;
-%         end
-% 
-%         if ~do_cont   
-%             handles.data.design.id_continue{i} = 0;
-%         end
-        handles.data.experiment_setup = experiment_setup;
-        handles.data.experiment_query = experiment_query;
-        handles.data.neighbourhoods = neighbourhoods;
-        exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
         
     end
     
+    
+    % SAVE!
+    handles.data.experiment_setup = experiment_setup;
+    handles.data.experiment_query = experiment_query;
+    handles.data.neighbourhoods = neighbourhoods;
+    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+
+    % CHECK IF WE ARE DONE
     not_terminated = experiment_setup.terminator(neighbourhoods);
   
 end    
-
 
 
 set(handles.close_socket_check,'Value',1);
