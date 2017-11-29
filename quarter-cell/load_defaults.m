@@ -19,7 +19,7 @@ end
 
 % set default inter-stimulus-interval; this is the total time between
 % successive trigers from the timer fcn, not the time between trials
-intertrial_interval = 4.0; %in sec
+intertrial_interval = 0.25; %in sec
 
 % set default sweep duration (in seconds)
 trial_length = 1.0;
