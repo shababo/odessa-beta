@@ -144,50 +144,12 @@ if experiment_setup.is_exp
     disp('Get objective ref position...')
     [experiment_setup, handles] = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
-
-    % move obj to ref position (top of slice, centered on map fov)
-%     handles.data.obj_go_to_pos = handles.data.ref_obj_position;
-% %     set(handles.thenewx,'String',num2str(handles.data.ref_obj_position(1)))
-% %     set(handles.thenewy,'String',num2str(handles.data.ref_obj_position(2)))
-% %     set(handles.thenewz,'String',num2str(handles.data.ref_obj_position(3)))
-% 
-%     [handles,acq_gui,acq_gui_data] = obj_go_to(handles,hObject);
     
     disp('Take stack...')
     [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
     [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-%     set_depths = 1;
-%     choice = questdlg('Set Z-Depths?', ...
-%         'Set Cell Pos?', ...
-%         'Yes','No','Yes');
-%     % Handle response
-%     switch choice
-%         case 'Yes'
-%             set_depths = 1;
-%         case 'No'
-%             set_depths = 0;
-%     end
-% 
-%     if set_depths
-%         handles.data.z_offsets = inputdlg('Z Locations?',...
-%                      'Z Locations?',1,{experiment_setup.exp.z_depths});
-%         handles.data.z_offsets = strread(handles.data.z_offsets{1})';
-%         handles.data.obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
-%         handles.data.obj_positions = bsxfun(@plus,handles.data.obj_positions,handles.data.obj_position);
-%         acq_gui_data.data.obj_positions = handles.data.obj_positions;
-%         guidata(hObject,handles);
-%         guidata(acq_gui,acq_gui_data)
-%         exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-%     end
 
-    % Set power, TODO: add user break
-%     user_input_powers = inputdlg('Enter desired powers (space-delimited):',...
-%                  'Powers to run?',1,{experiment_setup.exp.power_levels});
-%     user_input_powers = strread(user_input_powers{1});
-%     handles.data.experiment_setup.exp.user_power_level = user_input_powers;
-%     experiment_setup = handles.data.experiment_setup;
-%     guidata(hObject,handles)
 end
 
 if ~experiment_setup.exp.sim_locs

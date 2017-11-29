@@ -1,15 +1,6 @@
 function experiment_query = run_oasis(experiment_query,neighbourhood,group_name,experiment_setup,batch_ID)
 
-% may need to adjust this ifs when we implement vclamp sim
-if (strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.sim_vclamp) || ...
-        (experiment_setup.is_exp && experiment_setup.exp.sim_response)
-    
-    for i = 1:length(experiment_query.trials)
-        experiment_query.trials(i).event_times = ...
-            experiment_query.trials(i).truth.event_times;
-    end
-    
-end
+
 
 % may need to adjust this ifs when we implement vclamp sim
 if experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
@@ -46,14 +37,26 @@ if experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
     end
     if exist(oasis_out_path, 'file')
       load(oasis_out_path)
-      oasis_data = reshape(event_process,size(instruction.data'))';
+      oasis_data = reshape(event_process,size(traces'))';
 
     else
       fprintf('Warning: x.log never got created after waiting %d seconds', secondsWaitedSoFar);
     %               uiwait(warndlg(warningMessage));
-      oasis_data = zeros(size(instruction.traces));
+      oasis_data = zeros(size(traces));
     end
+end
 
+% may need to adjust this ifs when we implement vclamp sim
+if (strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.sim_vclamp) || ...
+        (experiment_setup.is_exp && experiment_setup.exp.sim_response)
+    
+    for i = 1:length(experiment_query.trials)
+        experiment_query.trials(i).event_times = ...
+            experiment_query.trials(i).truth.event_times;
+    end
+    
+elseif experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
+    
     trial_count = 1;
     % for i = 1:length(experiment_setup.group_names)
         for j = 1:length(experiment_query.trials)
