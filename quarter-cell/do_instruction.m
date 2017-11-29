@@ -519,11 +519,16 @@ if success >= 0
             experiment_setup = instruction.experiment_setup;
             for i = 1:length(instruction.neighbourhoods)
                 neighbourhood = instruction.neighbourhoods(i);
-                experiment_query = instruction.experiment_query(i);              
+                experiment_query = instruction.experiment_query(i); 
+                
+               
                 fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
                     '_n' num2str(neighbourhood.neighbourhood_ID)...
-                    '_b' num2str(experiment_query.batch_ID) '_to_analysis.mat'];
-                save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
+                    '_b' num2str(neighbourhood.batch_ID) '_to_analysis.mat'];
+                if (isfield(instruction,'dont_write') && ~instruction.dont_write) || ...
+                        ~isfield(instruction,'dont_write')
+                    save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
+                end
                 cmd = ['matlab -nodesktop -nodisplay -nosplash -r '...
                     '"run_online_pipeline(''' fullpathname ''');" &'];
                 system(cmd);

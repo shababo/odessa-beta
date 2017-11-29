@@ -12,6 +12,7 @@ else
     fine_spots_grid_phase = experiment_setup.fine_spots_grid_phase;
 end
 
+
 % build unique phase masks
 for i = 1:length(group_names)
     
@@ -30,10 +31,10 @@ for i = 1:length(group_names)
         
         [~, unique_trials_ind, trial_index] = ...
             unique(trial_signature, 'rows');
-        trials_map = unique_trials_ind(trial_index);
+%         trials_map = unique_trials_ind(trial_index);
 %         save('tmp_sigs.mat','trial_signature','trials_map','unique_trials_ind', 'trial_index')
         unique_trials = experiment_query.(group_names{i}).trials(unique_trials_ind);
-
+        disp(length(unique_trials))
         for j = 1:length(unique_trials)
 
             phase_mask_id = phase_mask_id + 1;
@@ -68,8 +69,8 @@ for i = 1:length(group_names)
                 phase_masks(:,:,phase_mask_id) = convP;
             end
 
-            matching_trials = find(trials_map == j);
-            for k = 1:matching_trials
+            matching_trials = find(trial_index == j)';
+            for k = matching_trials
                 experiment_query.(group_names{i}).trials(k).precomputed_target_index = phase_mask_id;
                 experiment_query.(group_names{i}).trials(k).filter_configuration = 'Femto Phasor';
                 experiment_query.(group_names{i}).trials(k).duration = experiment_setup.exp.stim_duration*1000;
