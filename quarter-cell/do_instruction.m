@@ -438,9 +438,9 @@ if success >= 0
                 evalin('base','set_precomp_target_ready')
                 return_info.experiment_query = rmfield(experiment_query,'phase_masks');
                 return_info.neighbourhood = neighbourhood;
-                return_info.bad_file = 0;
+                return_info.bad_file = 0
             catch e
-                return_info.bad_file = 1;
+                return_info.bad_file = 1
             end
         case TAKE_SNAP
             evalin('base','take_snap')
