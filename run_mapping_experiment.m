@@ -144,41 +144,66 @@ switch experiment_setup.experiment_type
 end
 
 
-
+get_neurons = 1;
+if experiment_setup.enable_user_breaks
+    choice = questdlg('Get presynaptic neurons?',...
+        'Get presynaptic neurons?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            get_neurons = 1;
+            choice = questdlg('Continue user control?',...
+                'Continue user control?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+                    enable_user_breaks = 1;
+                case 'No'
+                    enable_user_breaks = 0;
+            end
+            guidata(hObject,handles)
+        case 'No'
+            get_neurons = 0;
+    end
+end
 % get cell locations or simulate
 disp('Get presynaptic neurons...')
-if experiment_setup.is_exp
-    
-    eventdata = [];
-    disp('Get objective ref position...')
-    [experiment_setup, handles] = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
-    [acq_gui, acq_gui_data] = get_acq_gui_data;
-    
-    disp('Take stack...')
-    [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-    [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+if get_neurons
+    if experiment_setup.is_exp
+
+        eventdata = [];
+        disp('Get objective ref position...')
+        [experiment_setup, handles] = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+        disp('Take stack...')
+        [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
 
 
+    end
+
+    if ~experiment_setup.exp.sim_locs
+
+        disp('Detect nuclei...')
+        [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+        % COULD POTENTIALLY COLLECT SOME DATA HERE...
+        % MAYBE RUN A TRIAL FOR BG RATE!
+
+    else
+
+        % simulate the neurons
+        disp('Simulate neurons...')
+        experiment_setup.neurons=generate_neurons(experiment_setup);
+
+    end
 end
 
-if ~experiment_setup.exp.sim_locs
-    
-    disp('Detect nuclei...')
-    [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-    [acq_gui, acq_gui_data] = get_acq_gui_data;
-    
-    
-    
-    % COULD POTENTIALLY COLLECT SOME DATA HERE...
-    % MAYBE RUN A TRIAL FOR BG RATE!
-    
-elseif ~isfield(experiment_setup,'neurons')
-
-    % simulate the neurons
-    disp('Simulate neurons...')
-    experiment_setup.neurons=generate_neurons(experiment_setup);
-    
-end
 
 if ~exist('neighbourhoods','var')
     disp('Create neighbourhoods...')
@@ -396,7 +421,7 @@ while not_terminated
                 drawnow
                 disp('looking for batch in bg')
                 count = 1;
-                while ~batch_found || s.IsRunning
+                while ~batch_found && acq_gui_data.s.IsRunning
 %                     otherhoods = setdiff(1:length(neighbourhoods),find([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID));
                     [batch_found, experiment_query_next, neighbourhood_next] = ...
                         prep_next_run(experiment_setup,neighbourhoods,handles);
@@ -406,7 +431,7 @@ while not_terminated
                     end
                 end
                 drawnow
-                while s.IsRunning
+                while acq_gui_data.s.IsRunning
                     count = count + 1;
                     if ~mod(count,500)
                         drawnow
