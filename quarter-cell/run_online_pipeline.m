@@ -42,7 +42,7 @@ end
 % RUN ANALYSIS (IN THIS CASE SPECIFICALLY SPLIT AS DETECT PSCS, RUN
 % CONNECTIVITY INF
 num_trials = 0;
-neighbourhood =initialize_neurons_new_batch(neighbourhood);
+neighbourhood = initialize_neurons_new_batch(neighbourhood);
 
 
 
@@ -52,7 +52,8 @@ for i = 1:length(group_names)
 
     this_group = group_names{i};
 
-    if any(get_group_inds(neighbourhood,this_group)) && ~isempty(experiment_query.(this_group).trials)
+    if any(get_group_inds(neighbourhood,this_group)) && ...
+            (isfield(experiment_query.(this_group),'trials') && ~isempty(experiment_query.(this_group).trials))
         
         this_exp_query = experiment_query.(this_group);
         group_profile=experiment_setup.groups.(this_group);
@@ -120,11 +121,10 @@ for i = 1:length(group_names)
     if any(get_group_inds(neighbourhood,this_group))
         
         group_profile=experiment_setup.groups.(this_group);
-    if isfield(group_profile,'design_function')
-     
-        experiment_query.(this_group) = ...
-            group_profile.design_function(neighbourhood,group_profile,experiment_setup);
-    end
+        if isfield(group_profile,'design_function')
+            experiment_query.(this_group) = ...
+                group_profile.design_function(neighbourhood,group_profile,experiment_setup);
+        end
     end
     
 end
@@ -189,7 +189,7 @@ elseif experiment_setup.sim.do_instructions
     fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
                         '_n' num2str(neighbourhood.neighbourhood_ID)...
                         '_b' num2str(experiment_query.batch_ID) '_batch _ready.mat'];
-    save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v7.3')
+    save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v6')
         
 end
 

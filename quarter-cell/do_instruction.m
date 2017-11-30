@@ -549,13 +549,13 @@ if success >= 0
                
                 fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
                     '_n' num2str(neighbourhood.neighbourhood_ID)...
-                    '_b' num2str(neighbourhood.batch_ID) '_to_analysis.mat'];
+                    '_b' num2str(neighbourhood.batch_ID) '_to_analysis'];
                 if (isfield(instruction,'dont_write') && ~instruction.dont_write) || ...
                         ~isfield(instruction,'dont_write')
                     save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
                 end
-                cmd = ['matlab -nodesktop -nodisplay -nosplash -r '...
-                    '"run_online_pipeline(''' fullpathname ''');" &'];
+                cmd = ['matlab -nojvm -nodisplay -nosplash -logfile ' fullpathname '.log -r '...
+                    '"try, run_online_pipeline(''' fullpathname '.mat''); catch e, disp(e.message); end,exit" &'];
                 system(cmd);
             end
 %         case QUEUE_FULL_ONLINE_PIPELINE
