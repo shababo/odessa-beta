@@ -45,7 +45,6 @@ if send_phase_masks
         neighbourhood = [];
         experiment_query = [];
         
-        
         filename = [experiment_setup.phase_mask_dir experiment_setup.exp_id ...
             '_n' num2str(neighbourhood.neighbourhood_ID)...
             '_b' num2str(neighbourhood.batch_ID + 1) '_to_acquisition.mat'];

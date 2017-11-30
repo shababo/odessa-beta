@@ -9,6 +9,11 @@ switch experiment_setup.experiment_type
         
         handles = varargin{1};
         hObject = varargin{2};
+        if length(varargin) > 2 && ~isempty(varargin{3})
+            fast_start = varargin{3};
+        else
+            fast_start = 0;
+        end
         
         handles.data.experiment_setup = experiment_setup;
         handles.data.neighbourhoods = [];
@@ -20,13 +25,90 @@ switch experiment_setup.experiment_type
         
 
         experiment_setup.enable_user_breaks = 0;
-        choice = questdlg('Choose start point?',...
-            'Choose start point?', ...
-            'Yes','No','Yes');
-        % Handle response
-        switch choice
-            case 'Yes'
-                
+        if ~fast_start
+            choice = questdlg('Choose start point?',...
+                'Choose start point?', ...
+                'Yes','No','Yes');
+            % Handle response
+            switch choice
+                case 'Yes'
+
+                    experiment_setup = handles.data.experiment_setup;
+                    if isfield(handles.data,'neighbourhoods')
+                        neighbourhoods = handles.data.neighbourhoods;
+                    end
+                    if isfield(handles.data,'experiment_query')
+                        experiment_query = handles.data.experiment_query;
+                    end
+                    experiment_setup.is_exp = 1;
+                    experiment_setup.terminator=@check_all_learned;
+                    experiment_setup.enable_user_breaks = 1;
+                case 'No'
+                    experiment_setup.enable_user_breaks = 0;
+            end
+            guidata(hObject,handles)
+
+            reinit_oed = 0;
+            if experiment_setup.enable_user_breaks
+                choice = questdlg('Initialize OED experiment_setup?',...
+                    'Initialize OED experiment_setup?', ...
+                    'Yes','No','Yes');
+                % Handle response
+                switch choice
+                    case 'Yes'
+                        reinit_oed = 1;
+                        choice = questdlg('Continue user control?',...
+                            'Continue user control?', ...
+                            'Yes','No','Yes');
+                        % Handle response
+                        switch choice
+                            case 'Yes'
+                                enable_user_breaks = 1;
+                            case 'No'
+                                enable_user_breaks = 0;
+                        end
+                        guidata(hObject,handles)
+                    case 'No'
+                        reinit_oed = 0;
+                end
+            end
+
+            if reinit_oed
+                experiment_setup = get_experiment_setup('millennium_falcon');
+                experiment_setup.enable_user_breaks = enable_user_breaks;
+                experiment_setup.is_exp = 1;
+                guidata(hObject,handles)
+            end
+
+            load_exp = 0;
+            if experiment_setup.enable_user_breaks
+                choice = questdlg('Load an experiment?',...
+                    'Initialize OED experiment_setup?', ...
+                    'Yes','No','Yes');
+                % Handle response
+                switch choice
+                    case 'Yes'
+                        load_exp = 1;
+                        choice = questdlg('Continue user control?',...
+                            'Continue user control?', ...
+                            'Yes','No','Yes');
+                        % Handle response
+                        switch choice
+                            case 'Yes'
+                                enable_user_breaks = 1;
+                            case 'No'
+                                enable_user_breaks = 0;
+                        end
+                        guidata(hObject,handles)
+                    case 'No'
+                        load_exp = 0;
+                end
+            end
+
+            if load_exp
+                [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
+                load(fullfile(data_pathname,data_filename),'exp_data')
+                handles.data = exp_data;
                 experiment_setup = handles.data.experiment_setup;
                 if isfield(handles.data,'neighbourhoods')
                     neighbourhoods = handles.data.neighbourhoods;
@@ -34,90 +116,17 @@ switch experiment_setup.experiment_type
                 if isfield(handles.data,'experiment_query')
                     experiment_query = handles.data.experiment_query;
                 end
+                experiment_setup.enable_user_breaks = enable_user_breaks;
                 experiment_setup.is_exp = 1;
                 experiment_setup.terminator=@check_all_learned;
-                experiment_setup.enable_user_breaks = 1;
-            case 'No'
-                experiment_setup.enable_user_breaks = 0;
-        end
-        guidata(hObject,handles)
 
-        reinit_oed = 0;
-        if experiment_setup.enable_user_breaks
-            choice = questdlg('Initialize OED experiment_setup?',...
-                'Initialize OED experiment_setup?', ...
-                'Yes','No','Yes');
-            % Handle response
-            switch choice
-                case 'Yes'
-                    reinit_oed = 1;
-                    choice = questdlg('Continue user control?',...
-                        'Continue user control?', ...
-                        'Yes','No','Yes');
-                    % Handle response
-                    switch choice
-                        case 'Yes'
-                            enable_user_breaks = 1;
-                        case 'No'
-                            enable_user_breaks = 0;
-                    end
-                    guidata(hObject,handles)
-                case 'No'
-                    reinit_oed = 0;
             end
-        end
 
-        if reinit_oed
-            experiment_setup = get_experiment_setup('millennium_falcon');
-            experiment_setup.enable_user_breaks = enable_user_breaks;
-            experiment_setup.is_exp = 1;
             guidata(hObject,handles)
+
         end
-
-        load_exp = 0;
-        if experiment_setup.enable_user_breaks
-            choice = questdlg('Load an experiment?',...
-                'Initialize OED experiment_setup?', ...
-                'Yes','No','Yes');
-            % Handle response
-            switch choice
-                case 'Yes'
-                    load_exp = 1;
-                    choice = questdlg('Continue user control?',...
-                        'Continue user control?', ...
-                        'Yes','No','Yes');
-                    % Handle response
-                    switch choice
-                        case 'Yes'
-                            enable_user_breaks = 1;
-                        case 'No'
-                            enable_user_breaks = 0;
-                    end
-                    guidata(hObject,handles)
-                case 'No'
-                    load_exp = 0;
-            end
-        end
-
-        if load_exp
-            [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
-            load(fullfile(data_pathname,data_filename),'exp_data')
-            handles.data = exp_data;
-            experiment_setup = handles.data.experiment_setup;
-            if isfield(handles.data,'neighbourhoods')
-                neighbourhoods = handles.data.neighbourhoods;
-            end
-            if isfield(handles.data,'experiment_query')
-                experiment_query = handles.data.experiment_query;
-            end
-            experiment_setup.enable_user_breaks = enable_user_breaks;
-            experiment_setup.is_exp = 1;
-            experiment_setup.terminator=@check_all_learned;
-            
-        end
-
-        guidata(hObject,handles)
-
+        
+        
         % shift focus
         [acq_gui, acq_gui_data] = get_acq_gui_data;
         figure(acq_gui)
@@ -298,10 +307,10 @@ while not_terminated
         experiment_query = experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID);   
         
     else
-        
-        
+        drawnow
+        disp('getting batch...')
         while ~batch_found
-            disp('getting batch...')
+            
             [batch_found, experiment_query_next, neighbourhood_next] = ...
                 prep_next_run(experiment_setup,neighbourhoods,handles);
         end
@@ -384,13 +393,26 @@ while not_terminated
         %         guidata(acq_gui,acq_gui_data)
 
                 Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-                while ~batch_found || ~strcmp(get(acq_gui_data.run,'String'),'Start')
-                    disp('looking for batch in bg')
+                drawnow
+                disp('looking for batch in bg')
+                count = 1;
+                while ~batch_found || s.IsRunning
 %                     otherhoods = setdiff(1:length(neighbourhoods),find([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID));
                     [batch_found, experiment_query_next, neighbourhood_next] = ...
                         prep_next_run(experiment_setup,neighbourhoods,handles);
+                    count = count + 1;
+                    if ~mod(count,500)
+                        disp('still checking in bg')
+                    end
                 end
-                waitfor(acq_gui_data.run,'String','Start')
+                drawnow
+                while s.IsRunning
+                    count = count + 1;
+                    if ~mod(count,500)
+                        drawnow
+                    end
+                end
+                drawnow
 %                 acq_gui_data = guidata(acq_gui);
 %                 guidata(acq_gui,acq_gui_data)
             end

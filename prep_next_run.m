@@ -2,7 +2,8 @@ function [batch_found, experiment_query, neighbourhood] = ...
                 prep_next_run(experiment_setup,neighbourhoods,handles,varargin)
 
 [batch_found,neighbourhood_ID] = check_for_batch(experiment_setup,neighbourhoods);
-
+% disp('return from check for batch')
+% batch_found
 if batch_found
     neighbourhood = neighbourhoods([neighbourhoods.neighbourhood_ID]  ==  neighbourhood_ID);
     if experiment_setup.is_exp

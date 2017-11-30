@@ -23,7 +23,7 @@
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 13-Nov-2017 13:09:07
+% Last Modified by GUIDE v2.5 29-Nov-2017 14:31:43
 
 
 % Begin initialization code - DO NOT EDIT
@@ -7108,3 +7108,19 @@ function mapper_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 run_mapping_experiment(handles.data.experiment_setup,handles,hObject);
+
+
+% --- Executes on button press in mapper_new_exp.
+function mapper_new_exp_Callback(hObject, eventdata, handles)
+% hObject    handle to mapper_new_exp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+clock_array = clock;
+handles.data.experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5))];
+handles.data.experiment_setup.exp.fullsavefile = ...
+    fullfile(handles.data.experiment_setup.exp_root,[handles.data.experiment_setup.exp_id '_data.mat']);
+fast_start = 1;
+run_mapping_experiment(handles.data.experiment_setup,handles,hObject,fast_start);
