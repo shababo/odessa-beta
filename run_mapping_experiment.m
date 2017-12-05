@@ -402,6 +402,7 @@ while not_terminated
                 seqs{run_i} = this_subseq;
 %                     guidata(acq_gui,acq_gui_data);
                 instruction.sequence = this_subseq;
+                instruction.sequence = rmfield(instruction.sequence,{'group_ID','group_trial_ID'})
                 handles.total_duration = total_duration;
                 instruction.waittime = total_duration + 120;
                 disp('sending instruction...')
@@ -421,6 +422,7 @@ while not_terminated
                 drawnow
                 disp('looking for batch in bg')
                 count = 1;
+                pause(1.0)
                 while ~batch_found && acq_gui_data.s.IsRunning
 %                     otherhoods = setdiff(1:length(neighbourhoods),find([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID));
                     [batch_found, experiment_query_next, neighbourhood_next] = ...
