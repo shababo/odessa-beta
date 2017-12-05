@@ -328,8 +328,8 @@ while not_terminated
     % FIND BATCH AND LOAD PHASE MASKS IF NEEDED
     if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions   
         
-        neighbourhood = neighbourhoods(mod(loop_count,length(neigbhourhoods))+1);
-        experiment_query = experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID);   
+        neighbourhood = neighbourhoods(mod(loop_count,length(neighbourhoods))+1);
+        experiment_query = experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID-1);   
         
     else
         drawnow
@@ -475,7 +475,15 @@ while not_terminated
             experiment_query,experiment_setup);
         neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood_tmp;
         experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
-
+     
+         % Visualization 
+    if strcmp(experiment_setup.experiment_type,'simulation') && experiment_setup.sim.visualize 
+        digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
+        figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+        
+        save_path=experiment_setup.exp_root;
+        experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
+    end 
     else
         instruction.type = 300; 
         instruction.experiment_query = experiment_query;
@@ -488,9 +496,7 @@ while not_terminated
         else
             [return_info, success] = do_instruction_local(instruction);
         end
-        
-        
-        
+   
     end
     
     

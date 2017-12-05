@@ -3,7 +3,12 @@ function experiment_query = run_oasis(experiment_query,neighbourhood,group_name,
 
 
 % may need to adjust this ifs when we implement vclamp sim
-if experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
+vclamp_flag=  (strcmp(experiment_setup.experiment_type,'simulation') & experiment_setup.sim.sim_vclamp) ... 
+    | (strcmp(experiment_setup.experiment_type,'experiment') &  experiment_setup.exp.run_online_detection);
+
+if vclamp_flag
+    %experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
+    
     filename = [experiment_setup.exp_id '_z' num2str(neighbourhood.neighbourhood_ID) '_g' group_name '_b' num2str(batch_ID)];
 
     cmd = 'python /home/shababo/projects/mapping/code/OASIS/run_oasis_online.py ';
@@ -55,7 +60,8 @@ if (strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.s
             experiment_query.trials(i).truth.event_times;
     end
     
-elseif experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
+elseif vclamp_flag
+     %experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
     
     trial_count = 1;
     % for i = 1:length(experiment_setup.group_names)

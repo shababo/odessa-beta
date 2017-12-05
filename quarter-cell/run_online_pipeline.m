@@ -55,7 +55,7 @@ for i = 1:length(group_names)
     % batch 
 
     this_group = group_names{i};
-
+    if isfield(experiment_query,(this_group))
     if any(get_group_inds(neighbourhood,this_group)) && ...
             (isfield(experiment_query.(this_group),'trials') && ~isempty(experiment_query.(this_group).trials))
         
@@ -70,7 +70,7 @@ for i = 1:length(group_names)
         neighbourhood = ...
             experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
     end
-    
+    end
 
 end
 
@@ -109,11 +109,15 @@ batch_ID = experiment_query.batch_ID + 1;
 % save('loading phases.mat','batch_ID')
 % DESIGN NEXT BATCH OF TRIALS
 clear experiment_query
-if ~isfield(experiment_setup,'disk_grid_phase')
-    load('phase-mask-base-v6.mat')
-    experiment_setup.disk_grid_phase = cat(3,disk_grid_phase1,disk_grid_phase2);
-    experiment_setup.fine_spots_grid_phase = fine_spots_grid_phase;
-    clear disk_grid_phase1 disk_grid_phase2 fine_spots_grid_phase
+if ~isfield(experiment_setup,'disk_grid_phase') 
+    if strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.do_instructions
+            experiment_setup.disk_grid_phase = [];
+    else
+        load('phase-mask-base-v6.mat')
+        experiment_setup.disk_grid_phase = cat(3,disk_grid_phase1,disk_grid_phase2);
+        experiment_setup.fine_spots_grid_phase = fine_spots_grid_phase;
+        clear disk_grid_phase1 disk_grid_phase2 fine_spots_grid_phase
+    end
 end
 % design trials
 % Alwasy initialize all groups in experiment_query for a consistent format
@@ -143,14 +147,15 @@ if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
 %     save('tmp.mat','experiment_query')
     experiment_query = ...
         compute_phase_masks_build_seq(experiment_query, experiment_setup, neighbourhood);
+    experiment_setup = rmfield(experiment_setup,'disk_grid_phase');
+    experiment_setup = rmfield(experiment_setup,'fine_spots_grid_phase');
 end
+
 if experiment_setup.run_parfor
     delete(poolobj);
 end
-neighbourhood.batch_ID = batch_ID;
 
-experiment_setup = rmfield(experiment_setup,'disk_grid_phase');
-experiment_setup = rmfield(experiment_setup,'fine_spots_grid_phase');
+neighbourhood.batch_ID = batch_ID;
 
 if experiment_setup.is_exp
 
