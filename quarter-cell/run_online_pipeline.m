@@ -17,6 +17,7 @@ elseif length(varargin) == 3
 end
 
 
+    
 
 % rebuild function links :(
 group_names = experiment_setup.group_names;
@@ -45,6 +46,9 @@ num_trials = 0;
 neighbourhood = initialize_neurons_new_batch(neighbourhood);
 
 
+if experiment_setup.run_parfor
+    poolobj = parpool(3);
+end
 
 for i = 1:length(group_names)
     % initialize parameters for all neurons in this neighbourhood for this
@@ -139,6 +143,9 @@ if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
 %     save('tmp.mat','experiment_query')
     experiment_query = ...
         compute_phase_masks_build_seq(experiment_query, experiment_setup, neighbourhood);
+end
+if experiment_setup.run_parfor
+    delete(poolobj);
 end
 neighbourhood.batch_ID = batch_ID;
 
