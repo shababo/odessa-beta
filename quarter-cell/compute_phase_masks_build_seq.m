@@ -35,7 +35,7 @@ for i = 1:length(group_names)
 %         save('tmp_sigs.mat','trial_signature','trials_map','unique_trials_ind', 'trial_index')
         unique_trials = experiment_query.(group_names{i}).trials(unique_trials_ind);
         disp(length(unique_trials))
-        if experiment_setup.run_parfar
+        if experiment_setup.run_parfor
             parfor j = 1:length(unique_trials)
 
     %             phase_mask_id = phase_mask_id + 1;
