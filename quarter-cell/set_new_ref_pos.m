@@ -16,7 +16,7 @@ if take_new_ref
     
 %     handles = update_obj_pos_Callback(hObject, eventdata, handles);
     [experiment_setup, handles] = ...
-        get_obj_position(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup)
+        get_obj_position(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
     acq_gui_data.data.ref_obj_position = handles.data.obj_position;
     handles.data.ref_obj_position = handles.data.obj_position;
     experiment_setup.exp.ref_obj_position = handles.data.obj_position;

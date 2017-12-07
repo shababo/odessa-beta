@@ -18,7 +18,7 @@ for i = 1:length(group_names)
             sequence(trial_count).precomputed_target_index = trials(j).precomputed_target_index;
             sequence(trial_count).group_trial_ID = j;
             sequence(trial_count).group_ID = experiment_query.(group_names{i}).group_ID;
-
+            sequence(trial_count).piezo_z = trials(j).locations(1,3);% %round(100*rand)
             experiment_query.(group_names{i}).trials(j).trial_ID = trial_count;
 
             trial_count = trial_count + 1;
