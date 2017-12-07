@@ -56,20 +56,20 @@ for i = 1:length(group_names)
 
     this_group = group_names{i};
     if isfield(experiment_query,(this_group))
-    if any(get_group_inds(neighbourhood,this_group)) && ...
-            (isfield(experiment_query.(this_group),'trials') && ~isempty(experiment_query.(this_group).trials))
-        
-        this_exp_query = experiment_query.(this_group);
-        group_profile=experiment_setup.groups.(this_group);
-        experiment_query.(this_group) = ...
-            experiment_setup.groups.(this_group).psc_detect_function(...
-                    this_exp_query,neighbourhood,this_group, experiment_setup,experiment_query.batch_ID);
-        
-        num_trials = num_trials + length(experiment_query.(this_group).trials);
-        
-        neighbourhood = ...
-            experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
-    end
+        if any(get_group_inds(neighbourhood,this_group)) && ...
+                (isfield(experiment_query.(this_group),'trials') && ~isempty(experiment_query.(this_group).trials))
+
+            this_exp_query = experiment_query.(this_group);
+            group_profile=experiment_setup.groups.(this_group);
+            experiment_query.(this_group) = ...
+                experiment_setup.groups.(this_group).psc_detect_function(...
+                        this_exp_query,neighbourhood,this_group, experiment_setup,experiment_query.batch_ID);
+
+            num_trials = num_trials + length(experiment_query.(this_group).trials);
+
+            neighbourhood = ...
+                experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
+        end
     end
 
 end

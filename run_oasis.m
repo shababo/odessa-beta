@@ -3,7 +3,7 @@ function experiment_query = run_oasis(experiment_query,neighbourhood,group_name,
 
 
 % may need to adjust this ifs when we implement vclamp sim
-vclamp_flag=  (strcmp(experiment_setup.experiment_type,'simulation') & experiment_setup.sim.sim_vclamp) ... 
+vclamp_flag =  (strcmp(experiment_setup.experiment_type,'simulation') & experiment_setup.sim.sim_vclamp) ... 
     | (strcmp(experiment_setup.experiment_type,'experiment') &  experiment_setup.exp.run_online_detection);
 
 if vclamp_flag
@@ -29,24 +29,29 @@ if vclamp_flag
     % end
     save(fullsavepath,'traces')
     cmd = [cmd ' ' fullsavepath];
-    system(cmd)
-    % Wait for file to be created.
-    maxSecondsToWait = 60*5; % Wait five minutes...?
-    secondsWaitedSoFar  = 0;
-    while secondsWaitedSoFar < maxSecondsToWait 
-      if exist(oasis_out_path, 'file')
-        break;
-      end
-      pause(1); % Wait 1 second.
-      secondsWaitedSoFar = secondsWaitedSoFar + 1;
-    end
-    if exist(oasis_out_path, 'file')
-      load(oasis_out_path)
-      oasis_data = reshape(event_process,size(traces'))';
+%     try
+    error = system(cmd);
+    if ~error
+        % Wait for file to be created.
+        maxSecondsToWait = 60*5; % Wait five minutes...?
+        secondsWaitedSoFar  = 0;
+        while secondsWaitedSoFar < maxSecondsToWait 
+          if exist(oasis_out_path, 'file')
+            break;
+          end
+          pause(1); % Wait 1 second.
+          secondsWaitedSoFar = secondsWaitedSoFar + 1;
+        end
+        if exist(oasis_out_path, 'file')
+          load(oasis_out_path)
+          oasis_data = reshape(event_process,size(traces'))';
 
+        else
+          fprintf('Warning: x.log never got created after waiting %d seconds', secondsWaitedSoFar);
+        %               uiwait(warndlg(warningMessage));
+            oasis_data = zeros(size(traces));
+        end
     else
-      fprintf('Warning: x.log never got created after waiting %d seconds', secondsWaitedSoFar);
-    %               uiwait(warndlg(warningMessage));
       oasis_data = zeros(size(traces));
     end
 end
