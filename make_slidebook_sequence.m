@@ -32,6 +32,7 @@ sequence = sequence(order);
 
 sequence(1).start = round(experiment_setup.exp.first_stim_time*1000);
 for i = 2:length(sequence)
+    iti = round(1000*(i-1)*(1/experiment_query.batch_trial_rate));
     sequence(i).start = ...
-        round(1000*(experiment_setup.exp.first_stim_time + (i-1)*(1/experiment_query.batch_trial_rate)));
+        round(1000*experiment_setup.exp.first_stim_time) + iti;
 end
