@@ -424,6 +424,7 @@ while not_terminated
                 count = 1;
                 pause(1.0)
                 while ~batch_found && acq_gui_data.s.IsRunning
+                    drawnow
 %                     otherhoods = setdiff(1:length(neighbourhoods),find([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID));
                     [batch_found, experiment_query_next, neighbourhood_next] = ...
                         prep_next_run(experiment_setup,neighbourhoods,handles);
@@ -432,7 +433,7 @@ while not_terminated
                         disp('still checking in bg')
                     end
                 end
-                drawnow
+                
                 while acq_gui_data.s.IsRunning
                     count = count + 1;
                     if ~mod(count,500)
