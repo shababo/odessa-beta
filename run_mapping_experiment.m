@@ -347,22 +347,32 @@ while not_terminated
     end  
     
     % Update neuron info in experiment_setup from neighbourhood 
-        for i_cell = 1:length( neighbourhood.neurons)
-            if ~strcmp(neighbourhood.neurons(i_cell).group_ID{end},'secondary')
-        experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID)=...
-            neighbourhood.neurons(i_cell);
-            end
+    for i_cell = 1:length( neighbourhood.neurons)
+        if ~strcmp(neighbourhood.neurons(i_cell).group_ID{end},'secondary')
+            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).PR_params=...
+                neighbourhood.neurons(i_cell).PR_params;
+            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).gain_params=...
+                neighbourhood.neurons(i_cell).gain_params;
         end
+    end
     
     % Update secondary neurons in all neighbourhoods 
         i_cell_group_to_nhood= find(get_group_inds(neighbourhood,'secondary'));
         
         for i_cell = i_cell_group_to_nhood
             temp_ID=neighbourhood.neurons(i_cell).cell_ID;
+            if isfield(experiment_setup.neurons(temp_ID),'PR_params')
+                if ~isempty(experiment_setup.neurons(temp_ID).PR_params)
              neighbourhood.neurons(i_cell).PR_params(end)=...
                  experiment_setup.neurons(temp_ID).PR_params(end);
+                end
+            end
+            if  isfield(experiment_setup.neurons(temp_ID),'gain_params')
+                   if ~isempty(experiment_setup.neurons(temp_ID).gain_params)
              neighbourhood.neurons(i_cell).gain_params(end)=...
                  experiment_setup.neurons(temp_ID).gain_params(end);
+                   end
+            end
         end
    
     
