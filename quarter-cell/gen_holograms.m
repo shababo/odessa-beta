@@ -148,7 +148,7 @@ for i = 1:length(x_pos)
 end
 
 %% MAKE DISK
-diskRadii = [5 7.5 10]*1.5;
+diskRadii = [5]*1.5;
 
 target.radius = 1;
 target.mode = 'Disks';

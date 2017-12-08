@@ -1,4 +1,22 @@
 %%
+%% MAKE DISK
+diskRadii = [5]*1.5;
+
+target.radius = 1;
+target.mode = 'Disks';
+target.wavelength = 1040;
+target.relative_power_density = 1;
+target.x = 40; target.y = 40;
+
+for i = 1:length(diskRadii)
+    target.radius = diskRadii(i);
+    isTargetPatternReady = 1;
+%     pause(5)
+    diskPhase(:,:,i) = P;
+    
+end
+
+%%
 this_trans = full_trans;
 % generate individual spots
 clear target
@@ -84,7 +102,7 @@ end
 
 % tf_phase = tf_x_spots;
 % notf_phase = notf_all_spots_phase;
-diskPhaseLocal = diskPhase(:,:,1);
+diskPhaseLocal = diskPhase;
 tic
 target_base_fast.mode = 'Phase';
 target_base_fast.pattern = 1040;

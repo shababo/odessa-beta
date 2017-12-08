@@ -104,13 +104,13 @@ for i = 1:num_points
               
 end
 
-full_trans_bu = full_trans
+% full_trans_bu = full_trans
 full_trans = slm_cam_points\points_vec;
 full_trans = reshape(full_trans,3,2)'         
 
 image_zero_order_coord = inv(full_trans(:,[1 2]))*-full_trans(:,3)
 
-full_trans_bu*test_mat' - full_trans*test_mat'
+% full_trans_bu*test_mat' - full_trans*test_mat'
 
 points - full_trans*test_mat'
 % slm_cam_trans = pinv(slm_cam_points) * points_vec;
