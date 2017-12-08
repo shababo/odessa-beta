@@ -75,7 +75,14 @@ for i = 1:length(group_names)
 end
 
 % regroup cells
+% Update the groups names: (since batch_ID increases regardless of whether
+% there are any trials (line 114)
+for i = 1:length(neighbourhood.neurons)
+   neighbourhood.neurons(i).group_ID{neighbourhood.batch_ID+1}=neighbourhood.neurons(i).group_ID{neighbourhood.batch_ID};
+end
+
 if num_trials
+    
     for i = 1:length(group_names)
 
         this_group = group_names{i};
