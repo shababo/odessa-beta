@@ -509,6 +509,29 @@ while not_terminated
     handles.data.neighbourhoods = neighbourhoods;
     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
 
+    % Update neuron info in experiment_setup
+    for i_neighbourhood = 1:length(neighbourhoods)
+        for i_cell = 1:length( neighbourhoods(i_neighbourhood).neurons)
+        experiment_setup.neurons(neighbourhoods(i_neighbourhood).neurons(i_cell).cell_ID)=...
+            neighbourhoods(i_neighbourhood).neurons(i_cell);
+        end
+    end
+    
+    % Update secondary neurons in all neighbourhoods 
+    for i_neighbourhood = 1:length(neighbourhoods)
+        i_cell_group_to_nhood= find(get_group_inds(neighbourhoods(i_neighbourhood),'secondary'));
+        
+        for i_cell = i_cell_group_to_nhood
+            temp_ID=neighbourhoods(i_neighbourhood).neurons(i_cell).cell_ID;
+             neighbourhoods(i_neighbourhood).neurons(i_cell).PR_params(end)=...
+                 experiment_setup.neurons(temp_ID).PR_params(end);
+             neighbourhoods(i_neighbourhood).neurons(i_cell).gain_params(end)=...
+                 experiment_setup.neurons(temp_ID).gain_params(end);
+        end
+    end
+    
+    
+    
     % CHECK IF WE ARE DONE
     not_terminated = experiment_setup.terminator(neighbourhoods);
   
