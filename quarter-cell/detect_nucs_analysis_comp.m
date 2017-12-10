@@ -45,9 +45,9 @@ if detect_nucs
 %     instruction.stack_um_per_slice = experiment_setup.stack_um_per_slice;
     instruction.make_neurons_struct = 1;
     instruction.experiment_setup = experiment_setup;
-    instruction.dummy_targs = 1;
+    instruction.dummy_targs = 0;
     instruction.num_dummy_targs = 200;
-    
+    instruction.get_return = 1;
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
 
 %     acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
@@ -59,6 +59,7 @@ if detect_nucs
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
-    exp_data = handles.data; save(handles.data.experiment_setup.fullsavefile,'exp_data')
+    handles.data.experiment_setup = experiment_setup;
+    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
 %     assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 end

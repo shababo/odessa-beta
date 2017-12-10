@@ -9,6 +9,7 @@ switch experiment_setup.experiment_type
         
         handles = varargin{1};
         hObject = varargin{2};
+        
         if length(varargin) > 2 && ~isempty(varargin{3})
             fast_start = varargin{3};
         else
@@ -208,7 +209,13 @@ end
 if ~exist('neighbourhoods','var')
     disp('Create neighbourhoods...')
     neighbourhoods = create_neighbourhoods_caller(experiment_setup);
+    handles.fighandle = figure;
+    for i = 1:length(neighbourhoods)
+        plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
+    end
 end
+
+experiment_setup = rmfield(experiment_setup,'stack');
 
 if experiment_setup.is_exp
     disp('Save...')
@@ -347,7 +354,7 @@ while not_terminated
     end  
     
     % Update neuron info in experiment_setup from neighbourhood 
-    for i_cell = 1:length( neighbourhood.neurons)
+    for i_cell = 1:length(neighbourhood.neurons)
         if ~strcmp(neighbourhood.neurons(i_cell).group_ID{end},'secondary')
             experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).PR_params=...
                 neighbourhood.neurons(i_cell).PR_params;
@@ -357,24 +364,27 @@ while not_terminated
     end
     
     % Update secondary neurons in all neighbourhoods 
-        i_cell_group_to_nhood= find(get_group_inds(neighbourhood,'secondary'));
-        
-        for i_cell = i_cell_group_to_nhood
-            temp_ID=neighbourhood.neurons(i_cell).cell_ID;
-            if isfield(experiment_setup.neurons(temp_ID),'PR_params')
-                if ~isempty(experiment_setup.neurons(temp_ID).PR_params)
-             neighbourhood.neurons(i_cell).PR_params(end)=...
-                 experiment_setup.neurons(temp_ID).PR_params(end);
-                end
-            end
-            if  isfield(experiment_setup.neurons(temp_ID),'gain_params')
-                   if ~isempty(experiment_setup.neurons(temp_ID).gain_params)
-             neighbourhood.neurons(i_cell).gain_params(end)=...
-                 experiment_setup.neurons(temp_ID).gain_params(end);
-                   end
+    i_cell_group_to_nhood= find(get_group_inds(neighbourhood,'secondary'));
+
+    for i_cell = i_cell_group_to_nhood
+        temp_ID=neighbourhood.neurons(i_cell).cell_ID;
+        if isfield(experiment_setup.neurons(temp_ID),'PR_params')
+            if ~isempty(experiment_setup.neurons(temp_ID).PR_params)
+         neighbourhood.neurons(i_cell).PR_params(end)=...
+             experiment_setup.neurons(temp_ID).PR_params(end);
             end
         end
-   
+        if  isfield(experiment_setup.neurons(temp_ID),'gain_params')
+               if ~isempty(experiment_setup.neurons(temp_ID).gain_params)
+         neighbourhood.neurons(i_cell).gain_params(end)=...
+             experiment_setup.neurons(temp_ID).gain_params(end);
+               end
+        end
+    end
+    
+    %Update plots
+    plot_one_neighbourhood(neighbourhood,handles.fighandle)
+%     drawnow
     
     % ACQ OR SIM DATA
     if experiment_setup.is_exp
@@ -510,13 +520,13 @@ while not_terminated
         experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
      
          % Visualization 
-    if strcmp(experiment_setup.experiment_type,'simulation') && experiment_setup.sim.visualize 
-        digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
-        figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
-        
-        save_path=experiment_setup.exp_root;
-        experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
-    end 
+        if strcmp(experiment_setup.experiment_type,'simulation') && experiment_setup.sim.visualize 
+            digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
+            figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+
+            save_path=experiment_setup.exp_root;
+            experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
+        end 
     else
         instruction.type = 300; 
         instruction.experiment_query = experiment_query;

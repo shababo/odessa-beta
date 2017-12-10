@@ -9,6 +9,7 @@ if ~isfield(handles,'sock_analysis')
     handles.sock_analysis = msaccept(srvsock);
     disp('socket open..')
     msclose(srvsock);
+    guidata(handles.close_socket_check,handles)
 end
 % if isfield(handles,'close_socket')
 
