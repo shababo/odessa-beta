@@ -20,11 +20,11 @@ if vclamp_flag
     % trial_length = experiment_setup.trials.max_time;
 
     % traces = zeros(trial_count,trial_length);
-    trial_count = 1;
+%     trial_count = 1;
     % for i = 1:length(experiment_setup.group_names)
         for j = 1:length(experiment_query.trials)
-            traces(trial_count,:) = experiment_query.trials(j).voltage_clamp;
-            trial_count = trial_count + 1;
+            traces(j,:) = experiment_query.trials(j).voltage_clamp;
+%             trial_count = trial_count + 1;
         end
     % end
     save(fullsavepath,'traces')
@@ -68,11 +68,11 @@ if (strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.s
 elseif vclamp_flag
      %experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
     
-    trial_count = 1;
+%     trial_count = 1;
     % for i = 1:length(experiment_setup.group_names)
         for j = 1:length(experiment_query.trials)
             experiment_query.trials(j).event_times = ...
-                find(oasis_data(trial_count,...
+                find(oasis_data(j,...
                         experiment_setup.trials.min_time:experiment_setup.trials.max_time),1) + ...
                         experiment_setup.trials.min_time - 1;
         end

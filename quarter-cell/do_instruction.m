@@ -232,7 +232,7 @@ if success >= 0
             experiment_setup = instruction.experiment_setup;
             filename = ['/media/shababo/data/' instruction.filename '.tif'];
             disp('writing tif')
-            write_tiff_stack(filename,uint16(experiment_setup.stackmat))
+            write_tiff_stack(filename,uint16(experiment_setup.stack))
             if ~isfield(instruction,'dummy_targs')
                 instruction.dummy_target = 0;
             end

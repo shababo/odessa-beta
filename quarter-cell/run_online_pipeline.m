@@ -53,7 +53,7 @@ end
 for i = 1:length(group_names)
     % initialize parameters for all neurons in this neighbourhood for this
     % batch 
-
+    disp(group_names{i})
     this_group = group_names{i};
     if isfield(experiment_query,(this_group))
         if any(get_group_inds(neighbourhood,this_group)) && ...
@@ -61,12 +61,13 @@ for i = 1:length(group_names)
 
             this_exp_query = experiment_query.(this_group);
             group_profile=experiment_setup.groups.(this_group);
+            disp('event detect')
             experiment_query.(this_group) = ...
                 experiment_setup.groups.(this_group).psc_detect_function(...
                         this_exp_query,neighbourhood,this_group, experiment_setup,experiment_query.batch_ID);
 
             num_trials = num_trials + length(experiment_query.(this_group).trials);
-
+            disp('connectivity inference')
             neighbourhood = ...
                 experiment_setup.groups.(this_group).inference_function(experiment_query.(this_group),neighbourhood,group_profile, experiment_setup);
         end
@@ -81,11 +82,11 @@ for i = 1:length(neighbourhood.neurons)
    neighbourhood.neurons(i).group_ID{neighbourhood.batch_ID+1}=neighbourhood.neurons(i).group_ID{neighbourhood.batch_ID};
 end
 
-if num_trials
-    
-    for i = 1:length(group_names)
 
-        this_group = group_names{i};
+if num_trials 
+    for i = 1:length(group_names)
+        disp('regrouping...')
+        this_group = group_names{i}
         to_groups=setdiff(group_names,this_group);
         group_profile=experiment_setup.groups.(this_group);
         

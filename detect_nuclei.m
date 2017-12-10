@@ -27,7 +27,7 @@ end
 if length(varargin) > 4 && ~isempty(varargin{5})
     fluor_min = varargin{5};
 else
-    fluor_min = 0;
+    fluor_min = 50;
 end
 
 if do_detect
@@ -40,13 +40,13 @@ params_em_reduce = filter_nuclear_detection(params_em,fluor_min);
 % params_em_reduce = params_em;
 nuclear_locs = params_em_reduce([3 2 4],:); % flip from image coord order
 fluor_vals = params_em_reduce(1,:);
-nuclear_locs_image_coord = nuclear_locs;
+nuclear_locs_image_coord = nuclear_locs([2 1 3],:);
 nuclear_locs([1 2],:) = ...
     bsxfun(@minus,nuclear_locs([1 2],:),image_zero_order_coord)*image_um_per_px;
 nuclear_locs([3],:) = nuclear_locs([3],:)*stack_um_per_slice;
 
-out_of_range = find(abs(nuclear_locs(1,:)) > 150 | ...
-                    abs(nuclear_locs(2,:)) > 150);
+out_of_range = find(abs(nuclear_locs(1,:)) > 160 | ...
+                    abs(nuclear_locs(2,:)) > 160);
 nuclear_locs(:,out_of_range) = [];
 nuclear_locs = nuclear_locs';
 % nuclear_locs(:,[1 2]) = nuclear_locs(:,[2 1]);
@@ -57,29 +57,29 @@ fluor_vals(out_of_range) = [];
 
 % if ~isempty(fluor_vals)
 
-fluor_cut = .90;
-plane_fit_points = nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),:);
-[min_z,min_z_cell] = min(nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),3));
-% offset_cells = nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),:);
-% plane_fit_points(:,3) = plane_fit_points(:,3) - min_z;
-
-plane_fit = [];
-A = [plane_fit_points(:,1) plane_fit_points(:,2) ones(size(plane_fit_points,1),1)];
-b = plane_fit_points(:,3);
-
-[X,Y] = meshgrid(-150:10:150);
-
-
-plane_fit = inv(A'*A)*A'*b;
-Z = plane_fit(1)*X + plane_fit(2)*Y + plane_fit(3);
-% detect_img
-res = b - A*plane_fit;
-[min_z, min_z_cell] = max(-res)
-Z_offset = min_z;%plane_fit(1)*offset_cells(min_z_cell,1) + plane_fit(2)*offset_cells(min_z_cell,2) + plane_fit(3) 
-Z = Z - Z_offset;
-plane_fit(3) = plane_fit(3) - Z_offset;
-
-nuclear_locs(:,4) = nuclear_locs(:,3) - (plane_fit(1)*nuclear_locs(:,1) + plane_fit(2)*nuclear_locs(:,2) + plane_fit(3));
+% fluor_cut = .90;
+% plane_fit_points = nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),:);
+% [min_z,min_z_cell] = min(nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),3));
+% % offset_cells = nuclear_locs(fluor_vals > quantile(fluor_vals,fluor_cut),:);
+% % plane_fit_points(:,3) = plane_fit_points(:,3) - min_z;
+% 
+% plane_fit = [];
+% A = [plane_fit_points(:,1) plane_fit_points(:,2) ones(size(plane_fit_points,1),1)];
+% b = plane_fit_points(:,3);
+% 
+% [X,Y] = meshgrid(-150:10:150);
+% 
+% 
+% plane_fit = inv(A'*A)*A'*b;
+% Z = plane_fit(1)*X + plane_fit(2)*Y + plane_fit(3);
+% % detect_img
+% res = b - A*plane_fit;
+% [min_z, min_z_cell] = max(-res)
+% Z_offset = min_z;%plane_fit(1)*offset_cells(min_z_cell,1) + plane_fit(2)*offset_cells(min_z_cell,2) + plane_fit(3) 
+% Z = Z - Z_offset;
+% plane_fit(3) = plane_fit(3) - Z_offset;
+% 
+% nuclear_locs(:,4) = nuclear_locs(:,3) - (plane_fit(1)*nuclear_locs(:,1) + plane_fit(2)*nuclear_locs(:,2) + plane_fit(3));
 
 figure; 
 % subplot(121)
@@ -97,5 +97,5 @@ xlabel('x (um)'); ylabel('y (um)'); zlabel('depth (um)')
 
 % detect_img = [];
 
-% detect_img = plot_nuclear_detect_3D([filename '.tif'],nuclear_locs_image_coord,[],ceil(fluor_vals/10) + 1,fluor_vals);
+detect_img = plot_nuclear_detect_3D([filename '.tif'],nuclear_locs_image_coord);%,[],ceil(fluor_vals/10) + 1,fluor_vals);
 

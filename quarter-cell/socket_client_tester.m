@@ -128,7 +128,7 @@ while handles.sock < 0
     drawnow
 end
 
-
+guidata(hObject,handles)
 disp('waiting for instruction...')
 % if ~isfield(handles,'waittime')
 %     handles.waittime = 120;
@@ -136,11 +136,11 @@ disp('waiting for instruction...')
 instruction = [];
 disp('check for instruction...')
 pause(.1)
-disp('check for instruction...')
+% disp('check for instruction...')
 while isempty(instruction)
 
     
-    [instruction, success] = msrecv(handles.sock,.5);
+    [instruction, success] = msrecv(handles.sock,0.5);
 
 end
 disp('got instruction')

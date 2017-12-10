@@ -36,6 +36,18 @@ end
 order = randperm(length(sequence));
 sequence = sequence(order);
 
+for i = 1:length(group_names)
+    
+    if isfield(experiment_query.(group_names{i}),'trials')
+
+        for j = 1:length(experiment_query.(group_names{i}).trials)
+            
+            experiment_query.(group_names{i}).trials(j).trial_ID = find(order == experiment_query.(group_names{i}).trials(j).trial_ID);
+
+        end        
+    end
+end
+
 sequence(1).start = round(experiment_setup.exp.first_stim_time*1000);
 for i = 2:length(sequence)
     iti = round(1000*(i-1)*(1/experiment_query.batch_trial_rate));
