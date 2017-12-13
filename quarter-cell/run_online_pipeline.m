@@ -86,7 +86,7 @@ end
 if num_trials 
     for i = 1:length(group_names)
         disp('regrouping...')
-        this_group = group_names{i}
+        this_group = group_names{i};
         to_groups=setdiff(group_names,this_group);
         group_profile=experiment_setup.groups.(this_group);
         
