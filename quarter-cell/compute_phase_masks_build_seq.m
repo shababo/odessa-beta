@@ -116,8 +116,11 @@ for i = 1:length(group_names)
                         experiment_query.(group_names{i}).trials(k).power = ...
                             round(100*get_voltage(experiment_setup.exp.pockels_lut,...
                                 sum(experiment_query.(group_names{i}).trials(k).adj_power_per_spot)));
+                        if experiment_query.(group_names{i}).trials(k).power < 3
+                            experiment_query.(group_names{i}).trials(k).power = 3;
+                        end
                     else
-                        experiment_query.(group_names{i}).trials(k).power = 0;
+                        experiment_query.(group_names{i}).trials(k).power = 3;
                     end
                 end
                 
