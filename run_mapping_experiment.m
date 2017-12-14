@@ -460,20 +460,21 @@ while not_terminated
 
                 Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
                 drawnow
-                disp('looking for batch in bg')
-                count = 1;
-                pause(1.0)
-                while ~batch_found && acq_gui_data.s.IsRunning
-                    drawnow
-%                     otherhoods = setdiff(1:length(neighbourhoods),find([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID));
-                    [batch_found, experiment_query_next, neighbourhood_next] = ...
-                        prep_next_run(experiment_setup,neighbourhoods,handles);
-                    count = count + 1;
-                    if ~mod(count,500)
-                        disp('still checking in bg')
+%                 if run_i == num_runs
+                    disp('looking for batch in bg')
+                    count = 1;
+                    pause(1.0)
+                    while ~batch_found && acq_gui_data.s.IsRunning
+                        drawnow
+    %                     otherhoods = setdiff(1:length(neighbourhoods),find([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID));
+                        [batch_found, experiment_query_next, neighbourhood_next] = ...
+                            prep_next_run(experiment_setup,neighbourhoods,handles);
+                        count = count + 1;
+                        if ~mod(count,500)
+                            disp('still checking in bg')
+                        end
                     end
-                end
-                
+%                 end
                 while acq_gui_data.s.IsRunning
                     count = count + 1;
                     if ~mod(count,500)
