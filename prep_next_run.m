@@ -2,10 +2,11 @@ function [batch_found, experiment_query, neighbourhood] = ...
                 prep_next_run(experiment_setup,neighbourhoods,handles,varargin)
 
 [batch_found,neighbourhood_ID] = check_for_batch(experiment_setup,neighbourhoods);
-% disp('return from check for batch')
+
 % batch_found
 if batch_found
     neighbourhood = neighbourhoods([neighbourhoods.neighbourhood_ID]  ==  neighbourhood_ID);
+    disp(['batch found: n' num2str(neighbourhood_ID) '_b' num2str(neighbourhood.batch_ID)])
     if experiment_setup.is_exp
         [experiment_query, neighbourhood] = load_phase_masks(experiment_setup,neighbourhood,handles,varargin{:});
         if isempty(experiment_query)

@@ -176,6 +176,7 @@ for i = 1:length(group_names)
     
 end
 experiment_query.batch_ID = batch_ID;
+experiment_query.neighbourhood_ID = neighbourhood.neighbourhood_ID;
 neighbourhood.batch_ID = batch_ID;
 % save('tmp.mat','experiment_query')
 

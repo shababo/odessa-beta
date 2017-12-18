@@ -64,7 +64,7 @@ end
         
         if experiment_setup.is_exp
             [return_info, success, handles] = do_instruction_analysis(instruction, handles);
-            guidata(hObacject,handles)
+            guidata(hObject,handles)
         else
             [return_info, success] = do_instruction_local(instruction);
         end

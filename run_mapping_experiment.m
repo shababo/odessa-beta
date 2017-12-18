@@ -199,7 +199,7 @@ if get_neurons
 
     else
         switch experiment_setup.experiment_type
-            case 'simulation'
+            case {'simulation','experiment'}
                 
                 % simulate the neurons
                 disp('Simulate neurons...')
@@ -213,8 +213,8 @@ end
 
 
 if ~exist('neighbourhoods','var')
-    load_neighbourhoods_flag= false;
     
+    load_neighbourhoods_flag= false;
     
     if strcmp(experiment_setup.experiment_type,'reproduction')
         if ~experiment_setup.rep.rep_params.neighbourhoods
@@ -253,16 +253,15 @@ if isfield(experiment_setup, 'stack')
     experiment_setup = rmfield(experiment_setup,'stack');
 end
 
-if experiment_setup.is_exp
-    disp('Save...')
-    handles.data.experiment_setup = experiment_setup;
-    handles.data.neighbourhoods = neighbourhoods;
-    guidata(acq_gui,acq_gui_data)
-    guidata(hObject,handles)
-    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-    [acq_gui, acq_gui_data] = get_acq_gui_data;
-
-end
+% if experiment_setup.is_exp
+%     disp('Save...')
+%     handles.data.experiment_setup = experiment_setup;
+%     handles.data.neighbourhoods = neighbourhoods;
+%     guidata(acq_gui,acq_gui_data)
+%     guidata(hObject,handles)
+%     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+%     [acq_gui, acq_gui_data] = get_acq_gui_data;
+% end
 
 init_first_batches = 1;
 if experiment_setup.enable_user_breaks
@@ -360,12 +359,6 @@ if experiment_setup.is_exp
 
     if do_ephys
         % get info on patched cells while first batches prep
-    %     handles = set_cell1_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
-    %     [acq_gui, acq_gui_data] = get_acq_gui_data;
-    % 
-    %     handles = set_cell2_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
-    %     [acq_gui, acq_gui_data] = get_acq_gui_data;
-
         handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
         [acq_gui, acq_gui_data] = get_acq_gui_data;
 
@@ -461,6 +454,13 @@ while not_terminated
     %Update plots
     if ~strcmp(experiment_setup.experiment_type,'reproduction')
         plot_one_neighbourhood(neighbourhood,handles.fighandle)
+        if experiment_setup.sim.visualize
+            digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
+            figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+
+            save_path=experiment_setup.exp_root;
+            experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
+        end
     end
 %     drawnow
     
@@ -580,8 +580,10 @@ while not_terminated
 %             if experiment_setup.exp.sim_response
 %                 experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
 %             end
-        case 'simulation'
-            experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
+        case {'simulation','experiment'}
+            if ~experiment_setup.is_exp || experiment_setup.exp.sim_response
+                experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
+            end
         case 'reproduction'
             % do nothing since the experiment query already contains data
             % might need to simulate responses
@@ -610,11 +612,11 @@ while not_terminated
         
         neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood_tmp;
          experiment_query_tmp.batch_trial_rate=[]; 
-       experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
+        experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
         
         visualization=false;
         switch experiment_setup.experiment_type
-            case 'simulation'
+            case {'simulation','experiment'}
                 if experiment_setup.sim.visualize 
                     visualization=true;
                 end
@@ -663,14 +665,7 @@ while not_terminated
         neighbourhood_rcd=experiment_setup.records.neighbourhoods(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID);
         experiment_setup.rep.rep_func.posteriors_comparison(neighbourhood_tmp,neighbourhood_rcd);
     end
-    % SAVE!
-    if strcmp(experiment_setup.experiment_type, 'experiment')
-        handles.data.experiment_setup = experiment_setup;
-        handles.data.experiment_query = experiment_query;
-        handles.data.neighbourhoods = neighbourhoods;
-        exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-        
-    end
+
     
     
     % CHECK IF WE ARE DONE
@@ -690,13 +685,18 @@ if strcmp(experiment_setup.experiment_type,'reproduction')
        neighbourhoods = experiment_setup.records.neighbourhoods;
        save(strcat(erase(experiment_setup.rep.file_name,'.mat'),'_reproduced.mat'),...
            'experiment_queries','neighbourhoods','experiment_setup');
+elseif strcmp(experiment_setup.experiment_type, 'experiment')
+    handles.data.experiment_setup = experiment_setup;
+    handles.data.experiment_query = experiment_query;
+    handles.data.neighbourhoods = neighbourhoods;
+    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+
 end
 
-if ~strcmp(experiment_setup.experiment_type,'reproduction')
-
-set(handles.close_socket_check,'Value',1);
-instruction.type = 00;
-instruction.string = 'done';
-[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-guidata(hObject,handles)    
+if strcmp(experiment_setup.experiment_type,'experiment')
+    set(handles.close_socket_check,'Value',1);
+    instruction.type = 00;
+    instruction.string = 'done';
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+    guidata(hObject,handles)    
 end

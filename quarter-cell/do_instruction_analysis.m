@@ -18,12 +18,12 @@ end
 % else
 %     instruction.close_socket = 1;
 % end
-pause(1)
+% pause(1)
 disp('sending instruction...')
 instruction.type
 mssend(handles.sock_analysis,instruction);
 
-pause(1)
+% pause(1)
 return_info = [];
 if isfield(instruction,'get_return')
     get_return = instruction.get_return;
@@ -32,7 +32,7 @@ else
 end
 if get_return
     disp('getting return info...')
-    pause(1)
+%     pause(1)
     while isempty(return_info)
         [return_info, success] = msrecv(handles.sock_analysis,5);
     end
