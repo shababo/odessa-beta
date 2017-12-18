@@ -459,7 +459,9 @@ while not_terminated
     end
     
     %Update plots
-    plot_one_neighbourhood(neighbourhood,handles.fighandle)
+    if ~strcmp(experiment_setup.experiment_type,'reproduction')
+        plot_one_neighbourhood(neighbourhood,handles.fighandle)
+    end
 %     drawnow
     
     % ACQ OR SIM DATA
@@ -604,8 +606,10 @@ while not_terminated
         experiment_query_tmp = struct();
         [experiment_query_tmp, neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
             experiment_query,experiment_setup);
+        
         neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood_tmp;
-        experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
+         experiment_query_tmp.batch_trial_rate=[]; 
+       experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
         
         visualization=false;
         switch experiment_setup.experiment_type
@@ -646,20 +650,26 @@ while not_terminated
     if strcmp(experiment_setup.experiment_type,'reproduction')
         experiment_setup.reproduced.neighbourhoods(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID)=...
             neighbourhood_tmp;
+        % BATCH_TRIAL_RATE:
+        %
         experiment_setup.reproduced.queries(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID)=...
             experiment_query_tmp;  
         % ALSO REPLACE THE SIMULATED TRIALS WITH THE RECORDS
         experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=...
              experiment_setup.records.queries(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID);
-    end
     
+        % COMPARE THE ESTIMATES WITH THE RECORDS
+        neighbourhood_rcd=experiment_setup.records.neighbourhoods(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID);
+        experiment_setup.rep.rep_func.posteriors_comparison(neighbourhood_tmp,neighbourhood_rcd);
+    end
     % SAVE!
-    handles.data.experiment_setup = experiment_setup;
-    handles.data.experiment_query = experiment_query;
-    handles.data.neighbourhoods = neighbourhoods;
-    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-
-     
+    if strcmp(experiment_setup.experiment_type, 'experiment')
+        handles.data.experiment_setup = experiment_setup;
+        handles.data.experiment_query = experiment_query;
+        handles.data.neighbourhoods = neighbourhoods;
+        exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+        
+    end
     
     
     % CHECK IF WE ARE DONE
