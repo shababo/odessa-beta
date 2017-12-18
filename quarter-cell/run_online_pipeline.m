@@ -149,9 +149,9 @@ if ~isfield(experiment_setup,'disk_grid_phase')
         end
     end
        
-        if ~get_disk_flag
-            experiment_setup.disk_grid_phase = [];
-        else
+    if ~get_disk_flag
+        experiment_setup.disk_grid_phase = [];
+    else
         load('phase-mask-base-v6.mat')
         experiment_setup.disk_grid_phase = cat(3,disk_grid_phase1,disk_grid_phase2);
         experiment_setup.fine_spots_grid_phase = fine_spots_grid_phase;
@@ -224,7 +224,8 @@ if experiment_setup.is_exp
     while ~good_write
         try
             save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v6')
-            load(fullpathname)
+            good_file_test = who('-file',fullpathname);
+%             load(fullpathname)
             good_write = 1;
         catch e
         end
