@@ -26,7 +26,19 @@ for i = 1:length(group_names)
 end
 experiment_setup.prior_info.induced_intensity.linkfunc={@link_sig, @derlink_sig, @invlink_sig,@derinvlink_sig};
 
-if strcmp(experiment_setup.experiment_type,'experiment') && experiment_setup.exp.sim_response
+gen_psc_flag = false;
+switch experiment_setup.experiment_type
+    case 'experiment' 
+        if experiment_setup.exp.sim_response
+            gen_psc_flag = true;
+        end 
+    case 'simulation'
+        
+    case 'production'
+        
+end
+
+if gen_psc_flag
     experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
 end
 
@@ -103,12 +115,20 @@ if num_trials
     end
 end
 
+write_out_flag=true;
+switch experiment_setup.experiment_type
+    case 'reproduction'
+        if ~experiment_setup.rep.rep_params.write_out
+            write_out_flag=false;
+        end
+end
+if write_out_flag
 % AT THIS POINT WRITE OUT TO EXPERIMENT RECORD
 batchsavepath = [experiment_setup.analysis_root experiment_setup.exp_id ...
                     '_n' num2str(neighbourhood.neighbourhood_ID)...
                     '_b' num2str(experiment_query.batch_ID) '_complete.mat'];
 save(batchsavepath,'neighbourhood', 'experiment_query', 'experiment_setup')
-
+end 
 % CHECK FOR NEW NEIGHBOURHOOD MEMBERS
 
 % INCREMENT BATCH_ID HERE!
@@ -118,9 +138,20 @@ batch_ID = experiment_query.batch_ID + 1;
 % DESIGN NEXT BATCH OF TRIALS
 clear experiment_query
 if ~isfield(experiment_setup,'disk_grid_phase') 
-    if strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.do_instructions
+        get_disk_flag=true;
+    if strcmp(experiment_setup.experiment_type,'simulation') 
+        if ~experiment_setup.sim.do_instructions
+            get_disk_flag=false;
+        end
+    elseif  strcmp(experiment_setup.experiment_type,'reproduction')
+        if ~experiment_setup.rep.rep_params.phase_mask
+            get_disk_flag=false;
+        end
+    end
+       
+        if ~get_disk_flag
             experiment_setup.disk_grid_phase = [];
-    else
+        else
         load('phase-mask-base-v6.mat')
         experiment_setup.disk_grid_phase = cat(3,disk_grid_phase1,disk_grid_phase2);
         experiment_setup.fine_spots_grid_phase = fine_spots_grid_phase;
@@ -150,7 +181,21 @@ neighbourhood.batch_ID = batch_ID;
 
 
 % compute phase masks and other values related to running data acq
-if experiment_setup.is_exp || experiment_setup.sim.compute_phase_masks
+phase_masks_flag=false;
+if experiment_setup.is_exp
+    phase_masks_flag=true;
+end
+switch experiment_setup.experiment_type
+    case 'simulation'
+        if experiment_setup.sim.compute_phase_masks
+            phase_masks_flag=true;
+        end
+    case 'reproduction'
+        if experiment_setup.rep.rep_params.phase_mask
+            phase_masks_flag=true;
+        end
+end
+if phase_masks_flag
     disp('computing phase masks')
 %     save('tmp.mat','experiment_query')
     experiment_query = ...
@@ -204,13 +249,24 @@ if experiment_setup.is_exp
     end
     
 
-elseif experiment_setup.sim.do_instructions
-    
-    fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
-                        '_n' num2str(neighbourhood.neighbourhood_ID)...
-                        '_b' num2str(experiment_query.batch_ID) '_batch _ready.mat'];
-    save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v6')
-        
+else
+    write_out_flag=true;
+    switch experiment_setup.experiment_type
+        case 'simulation'
+            if ~experiment_setup.sim.do_instructions
+                write_out_flag=false;
+            end
+        case 'reproduction'
+            if ~experiment_setup.rep.rep_params.write_out
+                write_out_flag=false;
+            end   
+    end
+    if write_out_flag
+        fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
+            '_n' num2str(neighbourhood.neighbourhood_ID)...
+            '_b' num2str(experiment_query.batch_ID) '_batch _ready.mat'];
+        save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v6')
+    end
 end
 
 disp('done online pipe')

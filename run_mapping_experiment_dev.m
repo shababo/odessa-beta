@@ -1,4 +1,4 @@
-function run_mapping_experiment(experiment_setup,varargin)
+function run_mapping_experiment_dev(experiment_setup,varargin)
 
 disp('Experiment start...')    
 
