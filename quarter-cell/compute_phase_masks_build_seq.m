@@ -75,7 +75,7 @@ for i = 1:length(group_names)
 
     %             phase_mask_id = phase_mask_id + 1;
 
-                fullF = zeros(600,792);            
+                fullF = single(zeros(600,792));            
                 for k =  1:experiment_setup.groups.(group_names{i}).design_func_params.trials_params.spots_per_trial
 
                     this_loc = unique_trials(j).locations(k,:);
@@ -100,7 +100,7 @@ for i = 1:length(group_names)
 
     %             if experiment_setup.exp.phase_mask_struct
                     phase_masks(count).mode = 'Phase';
-                    phase_masks(count).pattern = convP;
+                    phase_masks(count).pattern = single(convP);
     %             else
     %                 phase_masks(:,:,j) = convP;
     %             end
@@ -137,7 +137,7 @@ for i = 1:length(group_names)
 
     end
 end
-save('tmp.mat')
+% save('tmp.mat')
 group_max_trial_rate = sum(trials_per_group)./avg_trials_per_cell * experiment_setup.exp.max_spike_freq;
 batch_trial_rate = min([experiment_setup.exp.max_stim_freq group_max_trial_rate]);
 
