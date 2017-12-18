@@ -26,7 +26,19 @@ for i = 1:length(group_names)
 end
 experiment_setup.prior_info.induced_intensity.linkfunc={@link_sig, @derlink_sig, @invlink_sig,@derinvlink_sig};
 
-if strcmp(experiment_setup.experiment_type,'experiment') && experiment_setup.exp.sim_response
+gen_psc_flag = false;
+switch experiment_setup.experiment_type
+    case 'experiment' 
+        if experiment_setup.exp.sim_response
+            gen_psc_flag = true;
+        end 
+    case 'simulation'
+        
+    case 'production'
+        
+end
+
+if gen_psc_flag
     experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
 end
 

@@ -310,8 +310,11 @@ if init_first_batches
     else
         
         if load_trials_flag
-            experiment_query_full=experiment_setup.records.queries(:,1);
+            experiment_query_full=experiment_setup.records.queries(:,2);% the first one is empty
             neighbourhoods=experiment_setup.records.neighbourhoods(:,1);
+            for i_neighbourhood = 1:length( neighbourhoods)
+                neighbourhoods(i_neighbourhood).batch_ID=2;
+            end
         else
             [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
         end
@@ -320,6 +323,8 @@ if init_first_batches
     if strcmp(experiment_setup.experiment_type,'reproduction')
         if ~load_trials_flag
             experiment_setup.rep.rep_func.designs_comparison(experiment_query_full(:,1), experiment_setup.records.queries(:,1));
+            experiment_setup.reproduced.neighbourhoods(:,1)=neighbourhoods;
+            experiment_setup.reproduced.queries(:,1)=experiment_query_full;
             experiment_query_full=experiment_setup.records.queries(:,1);
         end
     end
@@ -396,11 +401,19 @@ while not_terminated
     loop_count = loop_count + 1;
 	
     % FIND BATCH AND LOAD PHASE MASKS IF NEEDED
-    if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions   
-        
+    find_batch_flag=true;
+    switch experiment_setup.experiment_type
+        case 'experiment' % default
+        case 'simulation'
+            if ~experiment_setup.sim.do_instructions
+                find_batch_flag=false;
+            end
+        case 'reproduction'
+            find_batch_flag=false;
+    end
+    if ~find_batch_flag
         neighbourhood = neighbourhoods(mod(loop_count,length(neighbourhoods))+1);
         experiment_query = experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID-1);   
-        
     else
         drawnow
         disp('getting batch...')
@@ -567,13 +580,25 @@ while not_terminated
         case 'simulation'
             experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
         case 'reproduction'
-
+            % do nothing since the experiment query already contains data
+            % might need to simulate responses
     end
     
 
 
     % RUN ONLINE MAPPING PIPELINE
-    if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+     follow_instructions = true;
+    switch experiment_setup.experiment_type
+        case 'experiment' % default
+        case 'simulation'
+            if ~experiment_setup.sim.do_instructions
+                follow_instructions=false;
+            end
+        case 'reproduction'
+            follow_instructions=false;
+    end
+    
+    if ~follow_instructions
 
         neighbourhood_tmp = struct();
         experiment_query_tmp = struct();
@@ -581,9 +606,21 @@ while not_terminated
             experiment_query,experiment_setup);
         neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood_tmp;
         experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
-     
+        
+        visualization=false;
+        switch experiment_setup.experiment_type
+            case 'simulation'
+                if experiment_setup.sim.visualize 
+                    visualization=true;
+                end
+            case 'reproduction'
+                if experiment_setup.rep.visualize 
+                    visualization=true;
+                end
+        end
+    
          % Visualization 
-        if strcmp(experiment_setup.experiment_type,'simulation') && experiment_setup.sim.visualize 
+        if  visualization
             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
 
@@ -605,6 +642,16 @@ while not_terminated
    
     end
     
+    % SAVE THE OUTPUT FOR REPRODUCTION MODE:
+    if strcmp(experiment_setup.experiment_type,'reproduction')
+        experiment_setup.reproduced.neighbourhoods(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID)=...
+            neighbourhood_tmp;
+        experiment_setup.reproduced.queries(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID)=...
+            experiment_query_tmp;  
+        % ALSO REPLACE THE SIMULATED TRIALS WITH THE RECORDS
+        experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=...
+             experiment_setup.records.queries(neighbourhood_tmp.neighbourhood_ID,neighbourhood_tmp.batch_ID);
+    end
     
     % SAVE!
     handles.data.experiment_setup = experiment_setup;
@@ -616,11 +663,23 @@ while not_terminated
     
     
     % CHECK IF WE ARE DONE
-    not_terminated = experiment_setup.terminator(neighbourhoods);
-  
-end    
-
-
+    if strcmp(experiment_setup.experiment_type,'reproduction')
+        % END IF WE RUN TILL THE END
+        end_of_records=size(experiment_setup.records.queries);
+        if neighbourhood_tmp.neighbourhood_ID==end_of_records(1) && neighbourhood_tmp.batch_ID==end_of_records(2)
+           not_terminated = false;
+        end 
+    else
+        not_terminated = experiment_setup.terminator(neighbourhoods);
+    end
+end
+% SAVE 
+if strcmp(experiment_setup.experiment_type,'reproduction')
+       experiment_queries=experiment_setup.records.queries;
+       neighbourhoods = experiment_setup.records.neighbourhoods;
+       save(strcat(erase(experiment_setup.rep.file_name,'.mat'),'_reproduced.mat'),...
+           experiment_queries,neighbourhoods,experiment_setup);
+end
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
