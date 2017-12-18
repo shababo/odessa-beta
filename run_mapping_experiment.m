@@ -688,10 +688,14 @@ if strcmp(experiment_setup.experiment_type,'reproduction')
        experiment_queries=experiment_setup.records.queries;
        neighbourhoods = experiment_setup.records.neighbourhoods;
        save(strcat(erase(experiment_setup.rep.file_name,'.mat'),'_reproduced.mat'),...
-           experiment_queries,neighbourhoods,experiment_setup);
+           'experiment_queries','neighbourhoods','experiment_setup');
 end
+
+if ~strcmp(experiment_setup.experiment_type,'reproduction')
+
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)    
+end
