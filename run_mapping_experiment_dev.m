@@ -187,7 +187,8 @@ if get_neurons
 
     end
 
-    if ~experiment_setup.exp.sim_locs
+  
+    if ~experiment_setup.exp.sim_locs && strcmp(experiment_setup.experiment_type,'experiment')
 
         disp('Detect nuclei...')
         [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
@@ -197,25 +198,60 @@ if get_neurons
         % MAYBE RUN A TRIAL FOR BG RATE!
 
     else
-
-        % simulate the neurons
-        disp('Simulate neurons...')
-        experiment_setup.neurons=generate_neurons(experiment_setup);
-
+        switch experiment_setup.experiment_type
+            case 'simulation'
+                
+                % simulate the neurons
+                disp('Simulate neurons...')
+                experiment_setup.neurons=generate_neurons(experiment_setup);
+            case 'reproduction'
+                % DO NOTHING
+                % since neurons are already loaded in experiment_setup
+        end
     end
 end
 
 
 if ~exist('neighbourhoods','var')
-    disp('Create neighbourhoods...')
-    neighbourhoods = create_neighbourhoods_caller(experiment_setup);
-    handles.fighandle = figure;
-    for i = 1:length(neighbourhoods)
-        plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
+    load_neighbourhoods_flag= false;
+    
+    
+    if strcmp(experiment_setup.experiment_type,'reproduction')
+        if ~experiment_setup.rep.rep_params.neighbourhoods
+            load_neighbourhoods_flag= true; 
+        end
+    end
+    if load_neighbourhoods_flag
+        disp('Load neighbourhoods...')
+        neighbourhoods=struct([]);
+        neighbourhoods=experiment_setup.records.neighbourhoods(:,1);
+    else
+        disp('Create neighbourhoods...')
+        neighbourhoods = create_neighbourhoods_caller(experiment_setup);
+        handles.fighandle = figure;
+        for i = 1:length(neighbourhoods)
+            plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
+        end
     end
 end
 
-experiment_setup = rmfield(experiment_setup,'stack');
+if strcmp(experiment_setup.experiment_type,'reproduction') 
+   experiment_setup.reproduced.neighbourhoods(:,1)=neighbourhoods;
+end
+        
+% COMPARE NEW NEIGHBOURHOODS WITH NEIGHBOURHOODS IN RECORDS
+if strcmp(experiment_setup.experiment_type,'reproduction')
+    if experiment_setup.rep.rep_params.neighbourhoods
+        experiment_setup.rep.rep_func.neighbourhoods_comparison(neighbourhoods,experiment_setup.records.neighbourhoods(:,1));
+        % USE THE RECORDED NEIGHBOURHOOD
+        neighbourhoods=struct([]);
+        neighbourhoods=experiment_setup.records.neighbourhoods(:,1);
+    end
+end
+
+if isfield(experiment_setup, 'stack')
+    experiment_setup = rmfield(experiment_setup,'stack');
+end
 
 if experiment_setup.is_exp
     disp('Save...')
@@ -253,12 +289,39 @@ if experiment_setup.enable_user_breaks
     end
 end
 
-if init_first_batches       
-    if experiment_setup.is_exp || experiment_setup.sim.do_instructions
+if init_first_batches
+    load_trials_flag=false;
+    follow_instructions = true;
+    switch experiment_setup.experiment_type
+        case 'experiment' % default
+        case 'simulation'
+            if ~experiment_setup.sim.do_instructions
+                follow_instructions=false;
+            end
+        case 'reproduction'
+            if ~experiment_setup.rep.rep_params.trials
+                load_trials_flag=true;
+            end
+            follow_instructions=false;
+    end
+    if follow_instructions
         build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
         handles = guidata(hObject);
     else
-        [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
+        
+        if load_trials_flag
+            experiment_query_full=experiment_setup.records.queries(:,1);
+            neighbourhoods=experiment_setup.records.neighbourhoods(:,1);
+        else
+            [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
+        end
+    end
+    
+    if strcmp(experiment_setup.experiment_type,'reproduction')
+        if ~load_trials_flag
+            experiment_setup.rep.rep_func.designs_comparison(experiment_query_full(:,1), experiment_setup.records.queries(:,1));
+            experiment_query_full=experiment_setup.records.queries(:,1);
+        end
     end
 end
 

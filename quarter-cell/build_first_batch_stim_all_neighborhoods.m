@@ -33,8 +33,19 @@ end
 % 
 % 
 % if build_first_batch_stim
+    follow_instructions = true;
+    switch experiment_setup.experiment_type
+        case 'experiment' % default
+        case 'simulation'
+            if ~experiment_setup.sim.do_instructions
+                follow_instructions=false;
+            end
+        case 'reproduction'
+          
+            follow_instructions=false;
+    end
     
-    if ~experiment_setup.is_exp && ~experiment_setup.sim.do_instructions
+    if ~follow_instructions
         for i = 1:length(neighbourhoods)
             [experiment_query(i,1), neighbourhoods(i)] = run_online_pipeline(neighbourhoods(i),...
                 empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group)),...
@@ -53,7 +64,7 @@ end
         
         if experiment_setup.is_exp
             [return_info, success, handles] = do_instruction_analysis(instruction, handles);
-            guidata(hObject,handles)
+            guidata(hObacject,handles)
         else
             [return_info, success] = do_instruction_local(instruction);
         end
