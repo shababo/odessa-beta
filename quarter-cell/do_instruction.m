@@ -428,8 +428,15 @@ if success >= 0
 %                 [stat,struc] = fileattrib(fileloc);
 %             end
             try
+                disp(['Loading : ' instruction.filename])
                 load(['phase_masks_tmp\' instruction.filename])
-                vars{1} = experiment_query.phase_masks;
+                precomputed_target = experiment_query.phase_masks;
+                if isa(precomputed_target(1).pattern,'single')
+                    for i = 1:length(precomputed_target)
+                        precomputed_target(i).pattern = double(precomputed_target(i).pattern); 
+                    end
+                end
+                vars{1} = precomputed_target;
                 names{1} = 'precomputed_target';
                 if isfield(instruction,'user_finish')
                     vars{2} = instruction.user_finish;
