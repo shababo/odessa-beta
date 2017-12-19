@@ -5,7 +5,7 @@ function experiment_query = run_oasis(experiment_query,neighbourhood,group_name,
 % a super complicated logical statement - feel free to simplify :)
 run_oasis_flag =  (strcmp(experiment_setup.experiment_type,'simulation') && experiment_setup.sim.sim_vclamp) ... 
     || (experiment_setup.is_exp && ((experiment_setup.exp.sim_response && experiment_setup.sim.sim_vclamp) || ~experiment_setup.exp.sim_response)) ...
-    || (strcmp(experiment_setup.experiment_type,'reproduction') && reproduction_setup.rep_params.event_detection);
+    || (strcmp(experiment_setup.experiment_type,'reproduction') && experiment_setup.rep.rep_params.event_detection);
 
 if run_oasis_flag
     %experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection

@@ -402,7 +402,7 @@ end
 
 
 not_terminated = 1;
-loop_count = 0;
+loop_count = -1;
 batch_found = 0;
 
 
@@ -435,10 +435,10 @@ while not_terminated
         batch_found = 0;
         
         neighbourhood = neighbourhood_next;
-        neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood;
+        neighbourhoods([neighbourhoods.neighbourhood_ID] == neighbourhood.neighbourhood_ID) = neighbourhood;
         experiment_query = experiment_query_next;
     end
-    
+    disp(['*****ABOUT TO RUN LOOP ON N' num2str(neighbourhood.neighbourhood_ID) '_B' num2str(neighbourhood.batch_ID) '*****'])
     % Update neuron info in experiment_setup from neighbourhood
     for i_cell = 1:length(neighbourhood.neurons)
         if ~strcmp(neighbourhood.neurons(i_cell).group_ID{end},'secondary')
@@ -702,8 +702,8 @@ while not_terminated
 end
 % SAVE
 if strcmp(experiment_setup.experiment_type,'reproduction')
-    experiment_queries=experiment_setup.records.queries;
-    neighbourhoods = experiment_setup.records.neighbourhoods;
+    experiment_queries=experiment_setup.reproduced.queries;
+    neighbourhoods = experiment_setup.reproduced.neighbourhoods;
     save(strcat(erase(experiment_setup.rep.file_name,'.mat'),'_reproduced.mat'),...
         'experiment_queries','neighbourhoods','experiment_setup');
 elseif strcmp(experiment_setup.experiment_type, 'experiment')
