@@ -196,7 +196,7 @@ if get_neurons
 
     else
         switch experiment_setup.experiment_type
-            case {'simulation','experiment'}
+            case 'simulation'
                 
                 % simulate the neurons
                 disp('Simulate neurons...')
@@ -253,42 +253,8 @@ if ~strcmp(experiment_setup.experiment_type,'reproduction')
     end
 end
 
-% if experiment_setup.is_exp
-%     disp('Save...')
-%     handles.data.experiment_setup = experiment_setup;
-%     handles.data.neighbourhoods = neighbourhoods;
-%     guidata(acq_gui,acq_gui_data)
-%     guidata(hObject,handles)
-%     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-%     [acq_gui, acq_gui_data] = get_acq_gui_data;
-% end
-
-% init_first_batches = 1;
-% if experiment_setup.enable_user_breaks
-%     choice = questdlg('Initialize first batches for each neighbourhood?',...
-%         'Initialize first batches for each neighbourhood?', ...
-%         'Yes','No','Yes');
-%     % Handle response
-%     switch choice
-%         case 'Yes'
-%             init_first_batches = 1;
-%             choice = questdlg('Continue user control?',...
-%                 'Continue user control?', ...
-%                 'Yes','No','Yes');
-%             % Handle response
-%             switch choice
-%                 case 'Yes'
-%                     experiment_setup.enable_user_breaks = 1;
-%                 case 'No'
-%                     experiment_setup.enable_user_breaks = 0;
-%             end
-%             guidata(hObject,handles)
-%         case 'No'
-%             init_first_batches = 0;
-%     end
-% end
-
 if ~experiment_setup.is_exp
+    
     load_trials_flag=false;
     follow_instructions = true;
     switch experiment_setup.experiment_type
@@ -378,6 +344,7 @@ if ~experiment_setup.is_exp
     experiment_setup.patched_neuron.cell_type=[];
     
 else
+    
     do_ephys = 1;
     if experiment_setup.enable_user_breaks
         choice = questdlg('Initialize first batches for each neighbourhood?',...
