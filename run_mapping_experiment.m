@@ -434,7 +434,7 @@ loop_count = 0;
 batch_found = 0;
 
 
-while not_terminated
+while not_terminated 
     
     loop_count = loop_count + 1;
     
@@ -484,14 +484,14 @@ while not_terminated
         temp_ID=neighbourhood.neurons(i_cell).cell_ID;
         if isfield(experiment_setup.neurons(temp_ID),'PR_params')
             if ~isempty(experiment_setup.neurons(temp_ID).PR_params)
-                neighbourhood.neurons(i_cell).PR_params = ...
-                    experiment_setup.neurons(temp_ID).PR_params;
+                neighbourhood.neurons(i_cell).PR_params(end) = ...
+                    experiment_setup.neurons(temp_ID).PR_params(end);
             end
         end
         if  isfield(experiment_setup.neurons(temp_ID),'gain_params')
             if ~isempty(experiment_setup.neurons(temp_ID).gain_params)
-                neighbourhood.neurons(i_cell).gain_params=...
-                    experiment_setup.neurons(temp_ID).gain_params;
+                neighbourhood.neurons(i_cell).gain_params(end)=...
+                    experiment_setup.neurons(temp_ID).gain_params(end);
             end
         end
     end
