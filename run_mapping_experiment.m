@@ -188,14 +188,13 @@ if get_neurons
     end
 
   
-    if ~experiment_setup.exp.sim_locs && strcmp(experiment_setup.experiment_type,'experiment')
+    if strcmp(experiment_setup.experiment_type,'experiment')
 
         disp('Detect nuclei...')
-        [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+%         [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+        
+        handles = init_first_batches_from_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
         [acq_gui, acq_gui_data] = get_acq_gui_data;
-
-        % COULD POTENTIALLY COLLECT SOME DATA HERE...
-        % MAYBE RUN A TRIAL FOR BG RATE!
 
     else
         switch experiment_setup.experiment_type
@@ -225,22 +224,17 @@ if ~exist('neighbourhoods','var')
         disp('Load neighbourhoods...')
         neighbourhoods=struct([]);
         neighbourhoods=experiment_setup.records.neighbourhoods(:,1);
-    else
+    elseif ~strcmp(experiment_setup.experiment_type,'experiment')
         disp('Create neighbourhoods...')
         neighbourhoods = create_neighbourhoods_caller(experiment_setup);
-        handles.fighandle = figure;
-        for i = 1:length(neighbourhoods)
-            plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
-        end
     end
 end
 
 if strcmp(experiment_setup.experiment_type,'reproduction') 
    experiment_setup.reproduced.neighbourhoods(:,1)=neighbourhoods;
-end
+
         
-% COMPARE NEW NEIGHBOURHOODS WITH NEIGHBOURHOODS IN RECORDS
-if strcmp(experiment_setup.experiment_type,'reproduction')
+    % COMPARE NEW NEIGHBOURHOODS WITH NEIGHBOURHOODS IN RECORDS
     if experiment_setup.rep.rep_params.neighbourhoods
         experiment_setup.rep.rep_func.neighbourhoods_comparison(neighbourhoods,experiment_setup.records.neighbourhoods(:,1));
         % USE THE RECORDED NEIGHBOURHOOD
@@ -253,6 +247,14 @@ if isfield(experiment_setup, 'stack')
     experiment_setup = rmfield(experiment_setup,'stack');
 end
 
+if ~strcmp(experiment_setup.experiment_type,'reproduction')
+    handles.fighandle = figure;
+    guidata(hObject,hanldes)
+    for i = 1:length(neighbourhoods)
+        plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
+    end
+end
+
 % if experiment_setup.is_exp
 %     disp('Save...')
 %     handles.data.experiment_setup = experiment_setup;
@@ -263,36 +265,35 @@ end
 %     [acq_gui, acq_gui_data] = get_acq_gui_data;
 % end
 
-init_first_batches = 1;
-if experiment_setup.enable_user_breaks
-    choice = questdlg('Initialize first batches for each neighbourhood?',...
-        'Initialize first batches for each neighbourhood?', ...
-        'Yes','No','Yes');
-    % Handle response
-    switch choice
-        case 'Yes'
-            init_first_batches = 1;
-            choice = questdlg('Continue user control?',...
-                'Continue user control?', ...
-                'Yes','No','Yes');
-            % Handle response
-            switch choice
-                case 'Yes'
-                    experiment_setup.enable_user_breaks = 1;
-                case 'No'
-                    experiment_setup.enable_user_breaks = 0;
-            end
-            guidata(hObject,handles)
-        case 'No'
-            init_first_batches = 0;
-    end
-end
+% init_first_batches = 1;
+% if experiment_setup.enable_user_breaks
+%     choice = questdlg('Initialize first batches for each neighbourhood?',...
+%         'Initialize first batches for each neighbourhood?', ...
+%         'Yes','No','Yes');
+%     % Handle response
+%     switch choice
+%         case 'Yes'
+%             init_first_batches = 1;
+%             choice = questdlg('Continue user control?',...
+%                 'Continue user control?', ...
+%                 'Yes','No','Yes');
+%             % Handle response
+%             switch choice
+%                 case 'Yes'
+%                     experiment_setup.enable_user_breaks = 1;
+%                 case 'No'
+%                     experiment_setup.enable_user_breaks = 0;
+%             end
+%             guidata(hObject,handles)
+%         case 'No'
+%             init_first_batches = 0;
+%     end
+% end
 
-if init_first_batches
+if ~experiment_setup.is_exp
     load_trials_flag=false;
     follow_instructions = true;
     switch experiment_setup.experiment_type
-        case 'experiment' % default
         case 'simulation'
             if ~experiment_setup.sim.do_instructions
                 follow_instructions=false;
@@ -327,9 +328,13 @@ if init_first_batches
             experiment_query_full=experiment_setup.records.queries(:,1);
         end
     end
-end
-
-if experiment_setup.is_exp
+    
+    % simulate bg rate/patched cell stuff
+    experiment_setup.patched_neuron=struct;
+    experiment_setup.patched_neuron.background_rate=1e-4;
+    experiment_setup.patched_neuron.cell_type=[];
+    
+else
     do_ephys = 1;
     if experiment_setup.enable_user_breaks
         choice = questdlg('Initialize first batches for each neighbourhood?',...
@@ -373,13 +378,7 @@ if experiment_setup.is_exp
     experiment_setup.patched_neuron=struct;
     experiment_setup.patched_neuron.background_rate=1e-4;
     experiment_setup.patched_neuron.cell_type=[];
-           
-else
     
-    % simulate bg rate
-    experiment_setup.patched_neuron=struct;
-    experiment_setup.patched_neuron.background_rate=1e-4;
-    experiment_setup.patched_neuron.cell_type=[];
     
 end
 
@@ -495,7 +494,7 @@ while not_terminated
             disp('running trials')
             max_seq_length = experiment_setup.exp.max_trials_per_sweep;
             [experiment_query, this_seq] = make_slidebook_sequence(experiment_query,experiment_setup);
-            num_runs = ceil(length(this_seq)/max_seq_length)
+            num_runs = ceil(length(this_seq)/max_seq_length);
 
             handles.data.start_trial = acq_gui_data.data.sweep_counter + 1;
 

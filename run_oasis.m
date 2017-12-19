@@ -2,11 +2,12 @@ function experiment_query = run_oasis(experiment_query,neighbourhood,group_name,
 
 
 
-% may need to adjust this ifs when we implement vclamp sim
-vclamp_flag =  (strcmp(experiment_setup.experiment_type,'simulation') & experiment_setup.sim.sim_vclamp) ... 
-    | (strcmp(experiment_setup.experiment_type,'experiment') &  experiment_setup.exp.run_online_detection);
+% a super complicated logical statement - feel free to simplify :)
+run_oasis_flag =  (strcmp(experiment_setup.experiment_type,'simulation') && experiment_setup.sim.sim_vclamp) ... 
+    || (experiment_setup.is_exp && ((experiment_setup.exp.sim_response && experiment_setup.sim.sim_vclamp) || ~experiment_setup.exp.sim_response)) ...
+    || (strcmp(experiment_setup.experiment_type,'reproduction') && reproduction_setup.rep_params.event_detection);
 
-if vclamp_flag
+if run_oasis_flag
     %experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
     
     filename = [experiment_setup.exp_id '_z' num2str(neighbourhood.neighbourhood_ID) '_g' group_name '_b' num2str(batch_ID)];
@@ -54,27 +55,20 @@ if vclamp_flag
     else
       oasis_data = zeros(size(traces));
     end
-end
-
-% may need to adjust this ifs when we implement vclamp sim
-if (strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.sim_vclamp) || ...
-        (experiment_setup.is_exp && experiment_setup.exp.sim_response)
+    
+    for j = 1:length(experiment_query.trials)
+        experiment_query.trials(j).event_times = ...
+            find(oasis_data(j,...
+                    experiment_setup.trials.min_time:experiment_setup.trials.max_time),1) + ...
+                    experiment_setup.trials.min_time - 1;
+    end
+        
+elseif (strcmp(experiment_setup.experiment_type,'simulation') && ~experiment_setup.sim.sim_vclamp) || ...
+        (experiment_setup.is_exp && experiment_setup.exp.sim_response && ~experiment_setup.sim.sim_vclamp)
     
     for i = 1:length(experiment_query.trials)
         experiment_query.trials(i).event_times = ...
             experiment_query.trials(i).truth.event_times;
     end
     
-elseif vclamp_flag
-     %experiment_setup.sim.sim_vclamp || experiment_setup.exp.run_online_detection
-    
-%     trial_count = 1;
-    % for i = 1:length(experiment_setup.group_names)
-        for j = 1:length(experiment_query.trials)
-            experiment_query.trials(j).event_times = ...
-                find(oasis_data(j,...
-                        experiment_setup.trials.min_time:experiment_setup.trials.max_time),1) + ...
-                        experiment_setup.trials.min_time - 1;
-        end
-    % end
 end

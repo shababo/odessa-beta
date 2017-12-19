@@ -59,7 +59,7 @@ if detect_nucs
 
     guidata(acq_gui,acq_gui_data)
     guidata(hObject,handles)
-    handles.data.experiment_setup = experiment_setup;
-    exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+%     handles.data.experiment_setup = experiment_setup;
+%     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
 %     assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)
 end

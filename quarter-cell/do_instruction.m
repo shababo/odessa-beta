@@ -35,6 +35,7 @@ RUN_VI = 110;
 DETECT_EVENTS_OASIS_AND_RUN_VI = 200;
 RUN_FULL_ONLINE_PIPELINE = 300;
 CHECK_FOR_BATCH = 401;
+DETECT_NUC_CREATE_NHOODS_INIT_FIRST_BATCH = 500;
 
 success = 1;
 
@@ -603,6 +604,46 @@ if success >= 0
             cmd = ['matlab -nojvm -nodisplay -nosplash '...
                 '"run_online_pipeline(' fullpathname ')" &';];
             system(cmd)
+        case DETECT_NUC_CREATE_NHOODS_INIT_FIRST_BATCH
+            
+            disp('into main function')
+            experiment_setup = instruction.experiment_setup;
+            filename = ['/media/shababo/data/' instruction.filename '.tif'];
+            disp('writing tif')
+            write_tiff_stack(filename,uint16(experiment_setup.stack))
+            if ~isfield(instruction,'dummy_targs')
+                instruction.dummy_targs = 0;
+            end
+            if ~instruction.dummy_targs
+                disp('detecting nucs')
+                [nuclear_locs, fluor_vals] = ...
+                    detect_nuclei(['/media/shababo/data/' instruction.filename],...
+                    experiment_setup.image_um_per_px,experiment_setup.image_zero_order_coord,...
+                    experiment_setup.stack_um_per_slice);
+                experiment_setup.neurons = build_neurons_struct(nuclear_locs,fluor_vals,experiment_setup);
+            end
+            if instruction.dummy_targs || isempty(nuclear_locs) || any(isnan(nuclear_locs(:)))
+                disp('creating dummy nucs')
+                experiment_setup.neurons=generate_neurons(experiment_setup);
+            end
+            
+            neighbourhoods = create_neighbourhoods(experiment_setup);
+            for i = 1:length(neighbourhoods)
+                neighbourhood = neighbourhoods(i);
+                experiment_query = ...
+                    empty_design(neighbourhood,experiment_setup.groups.(experiment_setup.default_group)); 
+                
+               
+                fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
+                    '_n' num2str(neighbourhood.neighbourhood_ID)...
+                    '_b' num2str(neighbourhood.batch_ID) '_to_analysis'];
+
+                save(fullpathname,'neighbourhood','experiment_query','experiment_setup')
+                cmd = ['matlab -nojvm -nodisplay -nosplash -logfile ' fullpathname '.log -r '...
+                    '"try, run_online_pipeline(''' fullpathname '.mat''); catch e, disp(e.message); end,exit" &'];
+                system(cmd);
+            end
+
             
     end 
     
