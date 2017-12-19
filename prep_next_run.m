@@ -6,7 +6,7 @@ function [batch_found, experiment_query, neighbourhood] = ...
 % batch_found
 if batch_found
     neighbourhood = neighbourhoods([neighbourhoods.neighbourhood_ID]  ==  neighbourhood_ID);
-    disp(['batch found: n' num2str(neighbourhood_ID) '_b' num2str(neighbourhood.batch_ID)])
+    disp(['batch found: n' num2str(neighbourhood_ID) '_b' num2str(neighbourhood.batch_ID+1)])
     if experiment_setup.is_exp
         [experiment_query, neighbourhood] = load_phase_masks(experiment_setup,neighbourhood,handles,varargin{:});
         if isempty(experiment_query)

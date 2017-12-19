@@ -11,9 +11,9 @@ all_outs = conform_output_length(handles);
 ch1_output = all_outs{3};
 ch2_output = all_outs{4};
 
-size(handles.data.timebase)
-size(ch1_output)
-size(ch2_output)
+% size(handles.data.timebase)
+% size(ch1_output)
+% size(ch2_output)
 
 ch1_output=ch1_output*handles.defaults.CCexternalcommandsensitivity;
 if isempty(ch2_output)~=1

@@ -116,9 +116,9 @@ else
 
 end
 
-disp('length')
-length(AO0)
-length(AO1)
-length(AO2)
-length(AO3)
+% disp('length')
+% length(AO0)
+% length(AO1)
+% length(AO2)
+% length(AO3)
 

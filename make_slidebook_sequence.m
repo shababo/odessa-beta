@@ -4,6 +4,7 @@ group_names = experiment_setup.group_names;
 sequence = struct();
 
 % build unique phase masks
+disp(['building sequence for n' num2str(experiment_query.neighbourhood_ID) '_b' num2str(experiment_query.batch_ID)])
 trial_count = 1;
 for i = 1:length(group_names)
     

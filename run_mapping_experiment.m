@@ -439,15 +439,15 @@ while not_terminated
         temp_ID=neighbourhood.neurons(i_cell).cell_ID;
         if isfield(experiment_setup.neurons(temp_ID),'PR_params')
             if ~isempty(experiment_setup.neurons(temp_ID).PR_params)
-         neighbourhood.neurons(i_cell).PR_params(end)=...
-             experiment_setup.neurons(temp_ID).PR_params(end);
+                neighbourhood.neurons(i_cell).PR_params = ...
+                    experiment_setup.neurons(temp_ID).PR_params;
             end
         end
         if  isfield(experiment_setup.neurons(temp_ID),'gain_params')
-               if ~isempty(experiment_setup.neurons(temp_ID).gain_params)
-         neighbourhood.neurons(i_cell).gain_params(end)=...
-             experiment_setup.neurons(temp_ID).gain_params(end);
-               end
+            if ~isempty(experiment_setup.neurons(temp_ID).gain_params)
+                neighbourhood.neurons(i_cell).gain_params=...
+                    experiment_setup.neurons(temp_ID).gain_params;
+            end
         end
     end
     
@@ -457,7 +457,6 @@ while not_terminated
         if experiment_setup.sim.visualize
             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
-
             save_path=experiment_setup.exp_root;
             experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
         end
@@ -496,7 +495,7 @@ while not_terminated
             disp('running trials')
             max_seq_length = experiment_setup.exp.max_trials_per_sweep;
             [experiment_query, this_seq] = make_slidebook_sequence(experiment_query,experiment_setup);
-            num_runs = ceil(length(this_seq)/max_seq_length);
+            num_runs = ceil(length(this_seq)/max_seq_length)
 
             handles.data.start_trial = acq_gui_data.data.sweep_counter + 1;
 
@@ -510,7 +509,7 @@ while not_terminated
                     this_subseq(k).start = this_subseq(k).start - time_offset;
                 end
                 total_duration = (this_subseq(end).start + this_subseq(end).duration)/1000 + experiment_setup.exp.sweep_time_padding;
-
+                disp(['subseq length: ' num2str(length(this_subseq))])
                 set(acq_gui_data.trial_length,'String',num2str(total_duration))
                 acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
 
@@ -576,14 +575,14 @@ while not_terminated
     
         % simulate this batch data
     switch experiment_setup.experiment_type
-%         case 'experiment'
+        % WE DO EXPERIMENT SIM ON ANALYSIS COMPUTER NOW
+%         case 'experiment' 
 %             if experiment_setup.exp.sim_response
 %                 experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
 %             end
-        case {'simulation','experiment'}
-            if ~experiment_setup.is_exp || experiment_setup.exp.sim_response
-                experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
-            end
+        case {'simulation'}
+            experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
+
         case 'reproduction'
             % do nothing since the experiment query already contains data
             % might need to simulate responses
@@ -592,7 +591,7 @@ while not_terminated
 
 
     % RUN ONLINE MAPPING PIPELINE
-     follow_instructions = true;
+    follow_instructions = true;
     switch experiment_setup.experiment_type
         case 'experiment' % default
         case 'simulation'
