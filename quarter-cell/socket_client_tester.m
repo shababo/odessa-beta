@@ -117,7 +117,7 @@ if ~isfield(handles,'sock')
 % elseif isfield(handles,'sock') && isfield(handles,'close_socket') && handles.close_
 end
 disp('attempting to open socket')
-
+beep off
 while handles.sock < 0
 
 % sock = -1;

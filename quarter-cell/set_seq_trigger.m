@@ -15,6 +15,7 @@ beep on
 beep
 waitfor(wrndlg)
 toc
+beep off
 %     pause(wait_time)
 % end
 disp('done waiting for sequence load')

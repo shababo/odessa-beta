@@ -605,12 +605,6 @@ if success >= 0
            
             return_info.batch_found = batch_found;
             return_info.dummy = 1:10;
-        case CHECK_FOR_ANALYSIS
-                
-            % CHECK FOR FILE
-            cmd = ['matlab -nojvm -nodisplay -nosplash '...
-                '"run_online_pipeline(' fullpathname ')" &';];
-            system(cmd)
         case DETECT_NUC_CREATE_NHOODS_INIT_FIRST_BATCH
             
             disp('into main function')
