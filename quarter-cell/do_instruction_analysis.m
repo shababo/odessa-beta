@@ -24,7 +24,7 @@ instruction.type
 mssend(handles.sock_analysis,instruction);
 
 % pause(1)
-return_info = [];
+return_info = struct();
 if isfield(instruction,'get_return')
     get_return = instruction.get_return;
 else
@@ -32,9 +32,9 @@ else
 end
 if get_return
     disp('getting return info...')
-%     pause(1)
-    while isempty(return_info)
-        [return_info, success] = msrecv(handles.sock_analysis,5);
+    pause(1)
+    while isempty(fieldnames(return_info))
+        [return_info, success] = msrecv(handles.sock_analysis,1);
     end
 %     assignin('base','return_info',return_info)
 end

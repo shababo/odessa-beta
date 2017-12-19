@@ -186,26 +186,25 @@ if get_neurons
         
         
     end
-    if ~experiment_setup.exp.sim_locs && strcmp(experiment_setup.experiment_type,'experiment')
-        
-        disp('Detect nuclei...')
-%         [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-        
-        handles = init_first_batches_from_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-        [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-    else
-        switch experiment_setup.experiment_type
-            case 'simulation'
-                
-                % simulate the neurons
-                disp('Simulate neurons...')
-                experiment_setup.neurons=generate_neurons(experiment_setup);
-            case 'reproduction'
-                % DO NOTHING
-                % since neurons are already loaded in experiment_setup
-        end
+    switch experiment_setup.experiment_type
+        case 'experiment'
+
+            disp('Send off stack to init first batches...')
+    %         [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+
+            handles = init_first_batches_from_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+            [acq_gui, acq_gui_data] = get_acq_gui_data;
+        case 'simulation'
+
+            % simulate the neurons
+            disp('Simulate neurons...')
+            experiment_setup.neurons=generate_neurons(experiment_setup);
+        case 'reproduction'
+            % DO NOTHING
+            % since neurons are already loaded in experiment_setup
     end
+
 end
 
 
@@ -245,9 +244,8 @@ if isfield(experiment_setup, 'stack')
     experiment_setup = rmfield(experiment_setup,'stack');
 end
 
-if ~strcmp(experiment_setup.experiment_type,'reproduction')
+if strcmp(experiment_setup.experiment_type,'simulation')
     handles.fighandle = figure;
-    guidata(hObject,hanldes)
     for i = 1:length(neighbourhoods)
         plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
     end
@@ -385,9 +383,20 @@ else
         set(acq_gui_data.loop_count,'String',num2str(1))
         
     end
+    
     experiment_setup.patched_neuron=struct;
     experiment_setup.patched_neuron.background_rate=1e-4;
     experiment_setup.patched_neuron.cell_type=[];   
+    
+    % get neurons and neighbourhood info
+    instruction = struct();
+    instruction.type = 501;
+    instruction.experiment_setup = experiment_setup;
+    instruction.get_return = 1;
+    disp('sending instruction...')
+    [return_info,success,handles] = do_instruction_analysis(instruction,handles);
+    experiment_setup.neurons = return_info.neurons;
+    neighbourhoods = return_info.neighbourhoods;
     
 end
 
@@ -461,6 +470,9 @@ while not_terminated
     
     %Update plots
     if ~strcmp(experiment_setup.experiment_type,'reproduction')
+        if ~isfield(handles,'fighandle')
+            handles.fighandle = figure;
+        end
         plot_one_neighbourhood(neighbourhood,handles.fighandle)
         if experiment_setup.sim.visualize
             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
