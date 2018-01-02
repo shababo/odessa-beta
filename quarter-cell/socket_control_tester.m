@@ -319,7 +319,7 @@ handles.data.group_powers = strread(get(handles.target_intensity,'String'));
 sequence_base.power = handles.data.group_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
-
+sequence_base.piezo_z = 0;
 sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
 iti = str2double(get(handles.iti,'String'))*1000;
@@ -342,7 +342,7 @@ for k = 1:length(handles.data.group_powers)
             sequence(count) = sequence_base;
             sequence(count).power = handles.data.group_powers(k);
             sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
-
+            
     %             if get(handles.power,'Value')
     %                 [~, c_i] = min(abs(x_positions(i) - conversion));
     %                 [~, c_j] = min(abs(y_positions(j) - conversion));
