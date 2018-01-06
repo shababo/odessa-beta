@@ -80,7 +80,7 @@ lut_tf_file = 'C:\data\Shababo\lut_10182017.mat';
 
 comnum = 9;
 
-background_acq = 1;
+background_acq = 0;
 defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', intertrial_interval, 'daqModel', device.Model, ...
     'total_sweeps', total_sweeps, 'amplifier', amplifier, ...
     'VCexternalcommandsensitivity', VCexternalcommandsensitivity, 'CCexternalcommandsensitivity', ...
@@ -98,7 +98,7 @@ data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', ex
 s = daq.createSession('ni');
 s.Rate = Fs;
 
-s.addAnalogInputChannel('dev1',[0 1 2 16 4 5 3],'Voltage');
+s.addAnalogInputChannel('dev1',[0 1 2 16 4 5 3 6],'Voltage');
 
 s.Channels(1).InputType = 'SingleEnded';
 s.Channels(2).InputType = 'SingleEnded';
@@ -106,8 +106,8 @@ s.Channels(3).InputType = 'SingleEnded';
 s.Channels(4).InputType = 'SingleEnded';
 s.Channels(5).InputType = 'SingleEnded';
 s.Channels(6).InputType = 'SingleEnded';
-
 s.Channels(7).InputType = 'SingleEnded';
+s.Channels(8).InputType = 'SingleEnded';
 
 
 s.addAnalogOutputChannel('dev1',0:3,'Voltage');

@@ -472,6 +472,12 @@ while not_terminated
     if ~strcmp(experiment_setup.experiment_type,'reproduction')
         if ~isfield(handles,'fighandle')
             handles.fighandle = figure;
+        else
+            try figure(handles.fighandle)
+            catch e
+                handles.fighandle = figure;
+            end
+ 
         end
         plot_one_neighbourhood(neighbourhood,handles.fighandle)
         if experiment_setup.sim.visualize
@@ -635,7 +641,7 @@ while not_terminated
         
         visualization=false;
         switch experiment_setup.experiment_type
-            case {'simulation','experiment'}
+            case {'simulation'}
                 if experiment_setup.sim.visualize
                     visualization=true;
                 end
