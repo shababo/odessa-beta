@@ -24,5 +24,5 @@ if do_bg
 %     [acq_gui, acq_gui_data] = get_acq_gui_data();
 %     data = acq_gui_data.this_acq_data;
 else
-    data = s.startForground();
+    data = s.startForeground();
 end
