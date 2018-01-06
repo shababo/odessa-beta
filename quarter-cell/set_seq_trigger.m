@@ -8,14 +8,17 @@ isTriggeredSequenceReady = 1;
 % isTriggeredSequenceReady
 % while isTriggeredSequenceReady
 %     isTriggeredSequenceReady
-wrndlg = warndlg('Seq Done?');
-pos = get(wrndlg,'position');
-set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
-beep on
-beep
-waitfor(wrndlg)
-toc
-beep off
-%     pause(wait_time)
+
+% wrndlg = warndlg('Seq Done?');
+% pos = get(wrndlg,'position');
+% set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
+% beep on
+% beep
+% waitfor(wrndlg)
+% toc
+% beep off
+
+pause(3)
 % end
+
 disp('done waiting for sequence load')

@@ -1,12 +1,29 @@
-%%
+%% MAKE DISKS AT CORNERS FOR CALIBRATION
+diskRadii = 5*1.5;
+clear target
+target.radius = diskRadii*ones(1,4);
+target.mode = 'Disks';
+target.wavelength = 1040;
+target.relative_power_density = ones(1,4);
+x = 200;
+target.x = [-x -x x x]; target.y = [-x x -x x];
+
+for i = 1:length(diskRadii)
+    target.radius(i) = diskRadii(i);
+    isTargetPatternReady = 1;
+%     pause(5)
+    diskPhase(:,:,i) = P;
+    
+end
+
 %% MAKE DISK
 diskRadii = [5]*1.5;
-
+clear target
 target.radius = 1;
 target.mode = 'Disks';
 target.wavelength = 1040;
 target.relative_power_density = 1;
-target.x = 40; target.y = 40;
+target.x = 0; target.y = 0;
 
 for i = 1:length(diskRadii)
     target.radius = diskRadii(i);
@@ -136,6 +153,7 @@ for i = 1:num_spots
     convP = convP +  + diskPhaseLocal;
     convP(convP < -pi) = convP(convP < -pi) + 2*pi;
     convP(convP > pi) = convP(convP > pi) - 2*pi;
+    
     tf_disk_precomputed_target(count).pattern = convP;
     tf_disk_precomputed_target(count).mode = 'Phase';
     tf_disk_grid(:,:,count) = convP;
@@ -148,6 +166,58 @@ tf_stim_key = tf_disk_key;
 
 toc
 clear tf_phase
+
+%% keep grid structure - SPOTS ONLY - NO DISK
+
+% tf_phase = tf_x_spots;
+% notf_phase = notf_all_spots_phase;
+diskPhaseLocal = diskPhase;
+tic
+target_base_fast.mode = 'Phase';
+target_base_fast.pattern = 1040;
+% num_spots = size(tf_phase,3);
+clear tf_precomputed_target
+clear tf_disk_grid
+clear notf_precomputed_target
+clear tf_stim_key
+% x_pos = -150:10:150;
+num_spots = length(x_pos)
+tf_spot_grid = zeros(600,792,num_spots*num_spots);
+% center = [ceil(sqrt(num_spots)/2) ceil(sqrt(num_spots)/2)];
+% steps_from_center = center-1;
+% linear_ind = find(tf_spots_key(:,1) == 60 & tf_spots_key(:,2) == 60);
+% [center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
+% steps_from_center = 4;
+% spacing = 20;
+clear tf_disk_precomputed_target
+
+order = [];
+% tf_disk_precomputed_target(size(tf_all_spots_phase,3)) = struct();
+tf_spot_key = zeros(num_spots*num_spots,3);
+count = 1;
+
+for i = 1:num_spots
+    for j = 1:num_spots
+
+    convP = tf_x_spots(:,:,i) + tf_y_spots(:,:,j);
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+%     convP = convP +  + diskPhaseLocal;
+%     convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+%     convP(convP > pi) = convP(convP > pi) - 2*pi;
+    tf_spot_precomputed_target(count).pattern = convP;
+    tf_spot_precomputed_target(count).mode = 'Phase';
+    tf_spot_grid(:,:,count) = convP;
+    tf_spot_key(count,1) = x_pos(i);
+    tf_spot_key(count,2) = x_pos(j);
+    count = count+1;
+    end
+end
+tf_spot_stim_key = tf_spot_key;
+
+toc
+clear tf_phase
+
 
 %%
 
@@ -198,9 +268,17 @@ end
 toc
 clear tf_phase
 
-%%
+%% make disk
+clear target
 stim_id = find(tf_disk_key(:,1) == 30 & tf_disk_key(:,2) == 30)
 target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
+
+isTargetPatternReady = 1;
+
+%% make spot
+clear target
+stim_id = find(tf_spot_key(:,1) == -140 & tf_spot_key(:,2) == 140)
+target.mode = 'Phase'; target.pattern = tf_spot_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;
 
@@ -330,3 +408,87 @@ do_target = 1;
 pockels_ratio_refs_tf = pockels_ratio_refs_multi;
 tf_stim_key = stim_key;
 precomputed_target = phase_masks_target;
+
+
+%%
+
+spots_to_measure = [0:10:150; ones(size(0:10:150))*80];
+% clear precomputed_target
+pause(10)
+for i = 1:size(spots_to_measure,2)
+    spots_to_measure(:,i)
+    stim_id = find(tf_disk_key(:,1) == spots_to_measure(1,i) & tf_disk_key(:,2) == spots_to_measure(2,i))
+    target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
+    isTargetPatternReady = 1;
+    pause(1);
+end
+
+% isTargetPatternReady = 1;
+
+%% MAKE ALIGNMENT HOLOGRAM
+
+fullF = single(zeros(600,792)); 
+x = 150;
+locs = [-x -x 0
+%         -x 0 0
+%         x 0 0
+%         0 -x 0
+%         0 x 0
+        -x x 0
+        x -x 0
+        x x 0];
+for k =  1:3%size(locs,1)
+
+    this_loc = locs(k,:);
+
+    decval = round(this_loc,-1);
+    unitval = round(this_loc - decval);
+
+    convP = tf_disk_grid(:,:,tf_disk_key(:,1) == decval(1) & ...
+                                                 tf_disk_key(:,2) == decval(2));
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+    fullF = fullF + exp(1i*convP);
+end
+convP = angle(fullF);
+convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+convP(convP > pi) = convP(convP > pi) - 2*pi;
+
+target.mode = 'Phase';
+target.pattern = double(convP);
+
+isTargetPatternReady = 1;
+
+%% take image of each holo at z = 0
+
+points = -150:10:150;
+for i = 1:length(points)
+    for j = 1:length(points)
+        
+        stim_id = find(tf_disk_key(:,1) == points(i) & tf_disk_key(:,2) == points(j));
+        target = precomputed_target(stim_id);
+        isTargetPatternReady = 1;
+        pause(1)
+
+        isSnapImage = 1;
+        pause(1)
+    
+    end
+end
+
+%% take stack of each holo
+
+points = -150:50:150;
+for i = 1:length(points)
+    for j = 1:length(points)
+        
+        stim_id = find(tf_disk_key(:,1) == points(i) & tf_disk_key(:,2) == points(j));
+        target = precomputed_target(stim_id);
+        isTargetPatternReady = 1;
+        pause(1)
+
+        take_stack
+        pause(13)
+    
+    end
+end

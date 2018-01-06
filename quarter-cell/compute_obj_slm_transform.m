@@ -21,6 +21,7 @@ obj_image = temp;
 % points(:,7) = [];
 % points(:,end) = [];
 figure; imagesc(obj_image)
+
 [x, y] = ginput(size(points,2));
 slmPoints = [x y];
 slmPointsPointsFlip = slmPoints(:,[2 1]);
@@ -113,6 +114,7 @@ image_zero_order_coord = inv(full_trans(:,[1 2]))*-full_trans(:,3)
 % full_trans_bu*test_mat' - full_trans*test_mat'
 
 points - full_trans*test_mat'
+% inv(full_trans)*points
 % slm_cam_trans = pinv(slm_cam_points) * points_vec;
 % slm_cam_trans_sq = reshape(slm_cam_trans,3,2)';
 % slm_cam_trans = inv(slm_cam_trans_sq);
