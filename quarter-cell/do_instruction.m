@@ -150,7 +150,7 @@ if success >= 0
 %             pockels_ratio_refs = [pockels_ratio_refs pockels_ratio_refs];
             for i = 1:length(sequence)
                 if sequence(i).power > 2
-                    ind = sequence(i).precomputed_target_index;
+                    ind = sequence(i).precomputed_target_index
                     sequence(i).target_power = sequence(i).power;
                     sequence(i).power = round(100*get_voltage(handles.data.lut,...
                         handles.data.pockels_ratio_refs(ind)*sequence(i).power));
