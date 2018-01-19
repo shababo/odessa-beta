@@ -7190,7 +7190,7 @@ for i = 1:num_locs
     
     % stim it
     % set params
-    set(handles.target_intensity,'String','0 0.1 0.25 0.4 0.7')
+    set(handles.target_intensity,'String','0 0.1 0.25 0.4')
     set(handles.num_repeats,'String',num2str(5));
     set(handles.tf_flag,'Value',1)
     set(handles.set_seq_trigger,'Value',1)
