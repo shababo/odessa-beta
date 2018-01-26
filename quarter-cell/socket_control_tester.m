@@ -23,7 +23,7 @@
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 05-Jan-2018 12:52:42
+% Last Modified by GUIDE v2.5 23-Jan-2018 14:07:15
 
 
 % Begin initialization code - DO NOT EDIT
@@ -319,7 +319,7 @@ handles.data.group_powers = strread(get(handles.target_intensity,'String'));
 sequence_base.power = handles.data.group_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
-sequence_base.piezo_z = 0;
+sequence_base.piezo_z = 30;
 % sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
 iti = str2double(get(handles.iti,'String'))*1000;
@@ -7183,15 +7183,15 @@ for i = 1:num_locs
     
     % take snap
     clear instruction
-    instruction.type = 91;
+    instruction.type = 92;
     disp('sending instruction...')
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    experiment_setup.images{i} = return_info.snap_image;
+    experiment_setup.images{i} = return_info.image;
     
     % stim it
     % set params
-    set(handles.target_intensity,'String','0 0.1 0.25 0.4')
-    set(handles.num_repeats,'String',num2str(5));
+    set(handles.target_intensity,'String','0.25')
+    set(handles.num_repeats,'String',num2str(3));
     set(handles.tf_flag,'Value',1)
     set(handles.set_seq_trigger,'Value',1)
     set(handles.num_stim,'String',num2str(1));
@@ -7223,6 +7223,172 @@ for i = 1:num_locs
     experiment_setup.traces{experiment_setup.pos_order(i)} = ...
         get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
    
+    data = handles.data;
+    save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+end
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in current_vs_power.
+function current_vs_power_Callback(hObject, eventdata, handles)
+% hObject    handle to current_vs_power (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+set(handles.close_socket_check,'Value',0)
+guidata(hObject,handles);
+
+experiment_setup.exp_root = 'C:\data\Shababo\';
+experiment_setup.trials.Fs = 20000;
+experiment_setup.trials.max_time_sec = .050;
+
+clock_array = clock;
+experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5))];
+experiment_setup.exp.fullsavefile = ...
+    fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
+
+experiment_setup.all_spots_relative = [0 0 0];
+                  
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
+
+[experiment_setup, handles] = ...
+    get_obj_position(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+
+experiment_setup.obj_locations = ...
+    bsxfun(@plus,experiment_setup.all_spots_relative,experiment_setup.exp.obj_position);
+
+num_locs = size(experiment_setup.obj_locations,1);
+experiment_setup.pos_order = randperm(num_locs);
+
+
+
+for i = 1:num_locs
+    
+    this_loc = experiment_setup.obj_locations(experiment_setup.pos_order(i),:);
+    
+    % move obj close to spot
+%     set(handles.thenewx,'String',num2str(this_loc(1)))
+%     set(handles.thenewy,'String',num2str(this_loc(2)))
+%     set(handles.thenewz,'String',num2str(this_loc(3)))
+%     [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+    
+    wrndlg = warndlg('Neuron Under Target?');
+    waitfor(wrndlg)
+    
+    % take snap
+    clear instruction
+    instruction.type = 92;
+    disp('sending instruction...')
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+    experiment_setup.images{i} = return_info.image;
+    
+    % stim it
+    % set params
+    init_powers = '0 .02 .035 .05 .075 .1 .15 .2 .25 .33';
+    set(handles.target_intensity,'String',init_powers)
+    set(handles.num_repeats,'String',num2str(3));
+    set(handles.tf_flag,'Value',1)
+    set(handles.set_seq_trigger,'Value',1)
+    set(handles.num_stim,'String',num2str(1));
+    set(handles.rand_order,'Value',1);
+    set(handles.duration,'String',num2str(.003));
+    set(handles.iti,'String',num2str(2.0));
+    set(handles.ind_offset,'String',0);
+    
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+    set(acq_gui_data.trigger_seq,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    
+    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+    this_seq = acq_gui_data.data.sequence;
+    total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+    set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    guidata(hObject,handles)
+
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+    
+    acq_gui_data = guidata(acq_gui);
+    trial = acq_gui_data.data.sweep_counter;
+    experiment_setup.cc_traces{experiment_setup.pos_order(i)} = ...
+        get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
+    
+    set_new_powers = 0;
+    choice = questdlg('Set Powers?',...
+        'Set Powers?', ...
+        'Yes','No','Yes');
+    % Handle response
+    switch choice
+        case 'Yes'
+            set_new_powers = 1;
+        case 'No'
+            set_new_powers = 0;
+    end
+
+    
+    if set_new_powers
+        user_input_powers =inputdlg('Enter desired powers (space-delimited):',...
+                 'Powers to run?',1,{init_powers});
+        experiment_setup.user_power_level = strread(user_input_powers{1});
+    else
+        user_input_powers{1} = init_powers;
+        experiment_setup.user_power_level = strread(user_input_powers{1});
+    end
+%     experiment_setup.user_power_level = user_input_powers(1);
+    
+    handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+    [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+    % stim it
+    % set params
+    set(handles.target_intensity,'String',user_input_powers{1})
+    set(handles.num_repeats,'String',num2str(3));
+    set(handles.tf_flag,'Value',1)
+    set(handles.set_seq_trigger,'Value',1)
+    set(handles.num_stim,'String',num2str(1));
+    set(handles.rand_order,'Value',1);
+    set(handles.duration,'String',num2str(.003));
+    set(handles.iti,'String',num2str(2.0));
+    set(handles.ind_offset,'String',0);
+    
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+    set(acq_gui_data.trigger_seq,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    
+    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+    this_seq = acq_gui_data.data.sequence;
+    total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+    set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    guidata(hObject,handles)
+
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+    
+    acq_gui_data = guidata(acq_gui);
+    trial = acq_gui_data.data.sweep_counter;
+    experiment_setup.cc_traces{experiment_setup.pos_order(i)} = ...
+        get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
+    
+    
     data = handles.data;
     save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
 end
