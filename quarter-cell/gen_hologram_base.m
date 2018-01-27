@@ -176,10 +176,10 @@ tic
 target_base_fast.mode = 'Phase';
 target_base_fast.pattern = 1040;
 % num_spots = size(tf_phase,3);
-clear tf_precomputed_target
-clear tf_disk_grid
-clear notf_precomputed_target
-clear tf_stim_key
+% clear tf_precomputed_target
+% clear tf_disk_grid
+% clear notf_precomputed_target
+% clear tf_stim_key
 % x_pos = -150:10:150;
 num_spots = length(x_pos)
 tf_spot_grid = zeros(600,792,num_spots*num_spots);
@@ -189,7 +189,7 @@ tf_spot_grid = zeros(600,792,num_spots*num_spots);
 % [center(1), center(2)] = ind2sub([sqrt(size(tf_spots_key,1)) sqrt(size(tf_spots_key,1))],linear_ind);
 % steps_from_center = 4;
 % spacing = 20;
-clear tf_disk_precomputed_target
+clear tf_spot_precomputed_target
 
 order = [];
 % tf_disk_precomputed_target(size(tf_all_spots_phase,3)) = struct();
@@ -270,14 +270,14 @@ clear tf_phase
 
 %% make disk
 clear target
-stim_id = find(tf_disk_key(:,1) == 30 & tf_disk_key(:,2) == 30)
+stim_id = find(tf_disk_key(:,1) == 60 & tf_disk_key(:,2) == 0)
 target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;
 
 %% make spot
 clear target
-stim_id = find(tf_spot_key(:,1) == -140 & tf_spot_key(:,2) == 140)
+stim_id = find(tf_spot_key(:,1) == 150 & tf_spot_key(:,2) ==30)
 target.mode = 'Phase'; target.pattern = tf_spot_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;
@@ -428,7 +428,7 @@ end
 %% MAKE ALIGNMENT HOLOGRAM
 
 fullF = single(zeros(600,792)); 
-x = 150;
+x = 100;
 locs = [-x -x 0
 %         -x 0 0
 %         x 0 0
@@ -437,7 +437,7 @@ locs = [-x -x 0
         -x x 0
         x -x 0
         x x 0];
-for k =  1:3%size(locs,1)
+for k =  1:size(locs,1)
 
     this_loc = locs(k,:);
 
@@ -491,4 +491,56 @@ for i = 1:length(points)
         pause(13)
     
     end
+end
+
+%% take stack of each holo list
+
+loc_inds = [543   537   359   736   224    61];
+for i = 1:length(loc_inds)
+        
+        stim_id = loc_inds(i);
+        target = precomputed_target(stim_id);
+        isTargetPatternReady = 1;
+        pause(1)
+
+        take_stack
+        pause(20)
+    
+    
+end
+
+%% take stack of each holo list
+
+loc_inds = [543   537   359   736   224    61];
+for i = 1:6%length(loc_inds)
+        
+        stim_id = i;%loc_inds(i)
+        target = precomputed_target(stim_id);
+        isTargetPatternReady = 1;
+        pause(1)
+        
+        wrndlg = warndlg('Hole made?');
+        pos = get(wrndlg,'position');
+        set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
+        waitfor(wrndlg)
+%         take_stack
+%         pause(20)
+    
+    
+end
+%%
+loc_inds = [543   537   359   736   224    61];
+
+for i = 1:length(loc_inds)
+    stim_id = loc_inds(i);%find(tf_spot_key(:,1) == -140 & tf_spot_key(:,2) == 140)
+    target.mode = 'Phase'; target.pattern = tf_spot_grid(:,:,stim_id);
+
+    isTargetPatternReady = 1;
+    
+    wrndlg = warndlg('Hole made?');
+    pos = get(wrndlg,'position');
+    set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
+    waitfor(wrndlg)
+    isSnapImage = 1
+    pause(1)
 end
