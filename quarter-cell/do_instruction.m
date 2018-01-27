@@ -460,7 +460,7 @@ if success >= 0
 %             pause(.1)
             evalin('base','take_stack')
             image_all_ch = evalin('base','acquiredImage');
-            return_info.image = image_all_ch(:,:,:,1)/9999*2^16; % scale to 16-bit
+            return_info.image = 0;%image_all_ch(:,:,:,1)/9999*2^16; % scale to 16-bit
             try
                 return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
                 return_info.image_um_per_px = evalin('base','image_um_per_px');
