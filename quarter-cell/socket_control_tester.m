@@ -23,7 +23,7 @@
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 23-Jan-2018 14:07:15
+% Last Modified by GUIDE v2.5 09-Feb-2018 14:01:32
 
 
 % Begin initialization code - DO NOT EDIT
@@ -330,6 +330,9 @@ count = 1;
 ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 num_repeats = str2double(get(handles.num_repeats,'String'));
+if ~isfield(handles.data,'piezo_z')
+    handles.data.piezo_z = 30;
+end
 for k = 1:length(handles.data.group_powers)
     for i = 1:num_stim
 
@@ -338,26 +341,32 @@ for k = 1:length(handles.data.group_powers)
         else
             this_repeat = 1;
         end
-        for j = 1:this_repeat
-            sequence(count) = sequence_base;
-            sequence(count).power = handles.data.group_powers(k);
-            sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
-            
-    %             if get(handles.power,'Value')
-    %                 [~, c_i] = min(abs(x_positions(i) - conversion));
-    %                 [~, c_j] = min(abs(y_positions(j) - conversion));
-    %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
-    % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
-    %                 voltage = get_voltage(handles.lut,scaled_power);
-    %                 image_test(i,j) = voltage;
-    %                 sequence(count).power = voltage*100;
-    %             end
-    %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
-    %             sequence(count).power = powers(k)*100;
+        for m = 1:length(handles.data.piezo_z)
+            for j = 1:this_repeat
+                sequence(count) = sequence_base;
+                sequence(count).power = handles.data.group_powers(k);
+                if ~isfield(handles.data,'precomputed_target_order')
+                    sequence(count).precomputed_target_index = (i + ind_offset)*ind_mult;
+                else
+                    sequence(count).precomputed_target_index = handles.data.precomputed_target_order(i);
+                end
+                sequence(count).piezo_z = handles.data.piezo_z(m);
 
-            count = count + 1;
+        %             if get(handles.power,'Value')
+        %                 [~, c_i] = min(abs(x_positions(i) - conversion));
+        %                 [~, c_j] = min(abs(y_positions(j) - conversion));
+        %                 scaled_power = target_power * handles.ratio_map(c_i,c_j);
+        % %                 voltage = get_voltage([0:.01:2.0; reshape(handles.lut(i,j,:),1,201)],target_intensity);
+        %                 voltage = get_voltage(handles.lut,scaled_power);
+        %                 image_test(i,j) = voltage;
+        %                 sequence(count).power = voltage*100;
+        %             end
+        %                 sequence(count).start = start_time + (count-1)*(ititag + sequence_base.durtag);
+        %             sequence(count).power = powers(k)*100;
+
+                count = count + 1;
+            end
         end
-        
     end
 end
 num_stim = length(sequence);
@@ -388,6 +397,7 @@ total_duration = (sequence(end).start + iti)/1000 + time_padding;
 
 
 instruction.sequence = sequence;
+instruction.get_return = 1;
 instruction.tf_flag = get(handles.tf_flag,'Value');
 instruction.total_duration = total_duration;
 % if ~isfield(handles,'close_socket')
@@ -409,8 +419,16 @@ instruction.set_trigger = get(handles.set_seq_trigger,'Value');
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 [acq_gui,acq_gui_data] = get_acq_gui_data();
-acq_gui_data.data.stim_key =  return_info.stim_key;
-acq_gui_data.data.sequence =  return_info.sequence;
+if isfield(return_info,'stim_key')
+    acq_gui_data.data.stim_key =  return_info.stim_key;
+else
+    acq_gui_data.data.stim_key =  [];
+end
+if isfield(return_info,'sequence')
+    acq_gui_data.data.sequence = return_info.sequence;
+else
+    acq_gui_data.data.sequence = [];
+end
 acq_gui = findobj('Tag','acq_gui');
 guidata(acq_gui,acq_gui_data)
 
@@ -7145,13 +7163,19 @@ experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) .
     '_' num2str(clock_array(5))];
 experiment_setup.exp.fullsavefile = ...
     fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
-
-experiment_setup.all_spots_relative = [0 0 0
-                      0 64.1 0
-                      -58.9 -21.5 0
-                      58.1 -68.9 0
-                      -101.1 95.3 0
-                      -158.5 -138.2 0];
+        
+experiment_setup.all_spots_relative = round([0 0 0
+                      25 0 0
+                      -25 0 0
+                      0 25 0
+                      0 -25 0]);
+                  
+experiment_setup.spatial_targets = ...
+    [80 72 0
+     105 71 0
+     53 72 0
+     81 47 0
+     81 96 0];
                   
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 figure(acq_gui)
@@ -7160,15 +7184,23 @@ figure(acq_gui)
     get_obj_position(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
 
 experiment_setup.obj_locations = ...
-    bsxfun(@plus,experiment_setup.all_spots_relative,experiment_setup.exp.obj_position);
+    bsxfun(@plus,experiment_setup.all_spots_relative,round(experiment_setup.exp.obj_position));
 
 num_locs = size(experiment_setup.obj_locations,1);
-experiment_setup.pos_order = randperm(num_locs);
+num_reps = 3;
+all_pos = [];
+loc_ids = 1:num_locs;
+for i = 1:num_reps
+    all_pos = [all_pos loc_ids(randperm(length(loc_ids)))];
+end
+experiment_setup.pos_order = all_pos;
 
 handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
 [acq_gui, acq_gui_data] = get_acq_gui_data;
 
-for i = 1:num_locs
+stacks_taken = zeros(num_locs,1);
+
+for i = 1:length(experiment_setup.pos_order)
     
     this_loc = experiment_setup.obj_locations(experiment_setup.pos_order(i),:);
     
@@ -7178,27 +7210,39 @@ for i = 1:num_locs
     set(handles.thenewz,'String',num2str(this_loc(3)))
     [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
     
-    wrndlg = warndlg('Neuron Under Target?');
-    waitfor(wrndlg)
+    data = handles.data;
+    save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
     
+%     wrndlg = warndlg('Neuron Under Target?');
+%     waitfor(wrndlg)
+%     
     % take snap
-    clear instruction
-    instruction.type = 92;
-    disp('sending instruction...')
-    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    experiment_setup.images{i} = return_info.image;
-    
+    if ~stacks_taken(experiment_setup.pos_order(i))
+        clear instruction
+        instruction.type = 92;
+        disp('sending instruction...')
+        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+        experiment_setup.images{experiment_setup.pos_order(i)} = return_info.image;
+        experiment_setup.snaps{experiment_setup.pos_order(i)} = cell(0);
+        stacks_taken(experiment_setup.pos_order(i)) = 1;
+    else
+        clear instruction
+        instruction.type = 91;
+        disp('sending instruction...')
+        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+        experiment_setup.snaps{experiment_setup.pos_order(i)}{end+1} = return_info.snap_image;
+    end
     % stim it
     % set params
     set(handles.target_intensity,'String','0.25')
-    set(handles.num_repeats,'String',num2str(3));
+    set(handles.num_repeats,'String',num2str(1));
     set(handles.tf_flag,'Value',1)
     set(handles.set_seq_trigger,'Value',1)
     set(handles.num_stim,'String',num2str(1));
     set(handles.rand_order,'Value',1);
     set(handles.duration,'String',num2str(.003));
-    set(handles.iti,'String',num2str(2.0));
-    set(handles.ind_offset,'String',num2str(experiment_setup.pos_order(i) - 1));
+    set(handles.iti,'String',num2str(.1));
+    set(handles.ind_offset,'String',num2str(experiment_setup.pos_order(i) - 1));%;
     
     set(acq_gui_data.test_pulse,'Value',1)
     set(acq_gui_data.loop,'Value',1)
@@ -7208,7 +7252,7 @@ for i = 1:num_locs
     
     [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
     this_seq = acq_gui_data.data.sequence;
-    total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+    total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 2.5;
 
     set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
     acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
@@ -7220,13 +7264,15 @@ for i = 1:num_locs
     
     acq_gui_data = guidata(acq_gui);
     trial = acq_gui_data.data.sweep_counter;
-    experiment_setup.traces{experiment_setup.pos_order(i)} = ...
+    experiment_setup.traces{i} = ...
         get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
    
-    data = handles.data;
-    save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+    
 end
 
+data = handles.data;
+save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+    
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
 instruction.string = 'done';
@@ -7425,6 +7471,377 @@ for i = 1:num_locs
     data = handles.data;
     save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
     
+end
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in response_vs_z.
+function response_vs_z_Callback(hObject, eventdata, handles)
+% hObject    handle to response_vs_z (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+set(handles.close_socket_check,'Value',0)
+guidata(hObject,handles);
+
+experiment_setup.exp_root = 'C:\data\Shababo\';
+experiment_setup.trials.Fs = 20000;
+experiment_setup.trials.max_time_sec = .050;
+
+clock_array = clock;
+experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5))];
+experiment_setup.exp.fullsavefile = ...
+    fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
+
+experiment_setup.all_spots_relative = [0 0 0];
+                  
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
+
+% [experiment_setup, handles] = ...
+%     get_obj_position(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+% 
+% experiment_setup.obj_locations = ...
+%     bsxfun(@plus,experiment_setup.all_spots_relative,experiment_setup.exp.obj_position);
+
+num_locs = 1;%size(experiment_setup.obj_locations,1);
+experiment_setup.pos_order = randperm(num_locs);
+
+
+
+for i = 1:num_locs
+    
+%     this_loc = experiment_setup.obj_locations(experiment_setup.pos_order(i),:);
+    
+    % move obj close to spot
+%     set(handles.thenewx,'String',num2str(this_loc(1)))
+%     set(handles.thenewy,'String',num2str(this_loc(2)))
+%     set(handles.thenewz,'String',num2str(this_loc(3)))
+%     [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+    
+    wrndlg = warndlg('Neuron Under Target?');
+    waitfor(wrndlg)
+    
+    % take snap
+    clear instruction
+    instruction.type = 92;
+    disp('sending instruction...')
+    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+    experiment_setup.images{i} = return_info.image;
+    
+    % stim it
+    % set params
+    init_powers = '.40';
+    init_z = [-30 -15 -10 -5 -2 -1 0 1 2 5 10 15 30]+30;
+    handles.data.piezo_z = init_z;
+    
+    set(handles.target_intensity,'String',init_powers)
+    set(handles.num_repeats,'String',num2str(2));
+    set(handles.tf_flag,'Value',1)
+    set(handles.set_seq_trigger,'Value',1)
+    set(handles.num_stim,'String',num2str(1));
+    set(handles.rand_order,'Value',1);
+    set(handles.duration,'String',num2str(.003));
+    set(handles.iti,'String',num2str(2.0));
+    set(handles.ind_offset,'String',0);
+    
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+    set(acq_gui_data.trigger_seq,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    
+    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+    this_seq = acq_gui_data.data.sequence;
+    total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+    set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    guidata(hObject,handles)
+
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+    
+    acq_gui_data = guidata(acq_gui);
+    trial = acq_gui_data.data.sweep_counter;
+%     experiment_setup.ca_data_coarse = ...
+%         analyze_current_diffraction_map(acq_gui_data.data,1,trial,'spikes');
+%     cell_spike_times = experiment_setup.ca_data_coarse.spike_times{1};
+%     experiment_setup.ca_data_coarse.spike_times{1} = zeros(size(experiment_setup.ca_data_coarse.spike_times{1}));
+%     for ii = 1:length(cell_spike_times)
+%         if ~isempty(cell_spike_times{ii})
+%             experiment_setup.ca_data_coarse.spike_times{1}(ii) = cell_spike_times{ii};
+%         else
+%             experiment_setup.ca_data_coarse.spike_times{1}(ii) = NaN;
+%         end
+%     end
+%     experiment_setup.ca_data_coarse.power = {zeros(size(experiment_setup.ca_data_coarse.stim_size{1}))};
+%     
+%     unique_powers = unique(round(experiment_setup.ca_data_coarse.stim_size{1},2));
+%     experiment_setup.ca_data_coarse.these_powers = unique_powers;
+%     experiment_setup.ca_data_coarse.power_means = zeros(size(unique_powers))';
+%     
+%     for ii = 1:length(unique_powers)
+%         
+%         these_trials = find(abs(experiment_setup.ca_data_coarse.stim_size{1} - unique_powers(ii)) < .005);
+% 
+%         experiment_setup.ca_data_coarse.power_means(ii) = nanmean(experiment_setup.ca_data_coarse.spike_times{1}(these_trials));
+%         experiment_setup.ca_data_coarse.power_ranges(ii) = max(experiment_setup.ca_data_coarse.spike_times{1}(these_trials)) - min(experiment_setup.ca_data_coarse.spike_times{1}(these_trials));
+%         experiment_setup.ca_data_coarse.power_jitter(ii) = nanstd(experiment_setup.ca_data_coarse.spike_times{1}(these_trials));
+%         experiment_setup.ca_data_coarse.prob_spike(ii) = sum(~isnan(experiment_setup.ca_data_coarse.spike_times{1}(these_trials)))/length(these_trials);
+%                 
+%     end
+%     
+%     max_expected_latency = 8*20;
+%     mean_latencies = experiment_setup.ca_data_coarse.power_means;
+%     mean_latencies(isnan(mean_latencies)) = max_expected_latency
+%     [max_latency_change, fine_search_bin] = min(diff(mean_latencies))
+%     old_powers_vec = [strread(init_powers) .48 .60];
+%     new_powers = linspace(old_powers_vec(fine_search_bin),old_powers_vec(fine_search_bin+1),5);
+%     new_powers = [new_powers(2:4) mean(old_powers_vec(fine_search_bin+1:fine_search_bin+2))];
+%     new_powers_str = mat2str(new_powers);
+%     new_powers_str = new_powers_str(2:end-1)
+%     current_powers = sort(union([strread(init_powers) .48],new_powers));
+%     current_powers_str = mat2str(current_powers);
+%     current_powers_str = current_powers_str(2:end-1)
+%     
+%     experiment_setup.start_powers = old_powers_vec;
+%     experiment_setup.fine_powers = new_powers;
+%     experiment_setup.current_powers = current_powers;
+%     
+%     set(handles.target_intensity,'String',new_powers_str)
+%     
+%     [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+%     this_seq = acq_gui_data.data.sequence;
+%     total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+% 
+%     set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+%     acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+%     guidata(hObject,handles)
+% 
+%     acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+%     waitfor(acq_gui_data.run,'String','Start')
+%     guidata(acq_gui,acq_gui_data)
+    
+    handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+    [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+    % stim it
+    % set params
+    
+%     set(handles.target_intensity,'String',current_powers_str)
+    set(handles.num_repeats,'String',num2str(2));
+    set(handles.tf_flag,'Value',1)
+    set(handles.set_seq_trigger,'Value',1)
+    set(handles.num_stim,'String',num2str(1));
+    set(handles.rand_order,'Value',1);
+    set(handles.duration,'String',num2str(.003));
+    set(handles.iti,'String',num2str(2.0));
+    set(handles.ind_offset,'String',0);
+    
+    set(acq_gui_data.test_pulse,'Value',1)
+    set(acq_gui_data.loop,'Value',1)
+    set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+    set(acq_gui_data.trigger_seq,'Value',1)
+    set(acq_gui_data.loop_count,'String',num2str(1))
+    
+    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+    this_seq = acq_gui_data.data.sequence;
+    total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+    set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+    guidata(hObject,handles)
+
+    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+    waitfor(acq_gui_data.run,'String','Start')
+    guidata(acq_gui,acq_gui_data)
+    
+%     acq_gui_data = guidata(acq_gui);
+%     trial = acq_gui_data.data.sweep_counter;
+%     experiment_setup.cc_traces{experiment_setup.pos_order(i)} = ...
+%         get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
+    
+    data = handles.data;
+    save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+    
+end
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in target_error_test.
+function target_error_test_Callback(hObject, eventdata, handles)
+% hObject    handle to target_error_test (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+set(handles.close_socket_check,'Value',0)
+guidata(hObject,handles);
+
+experiment_setup.exp_root = 'C:\data\Shababo\';
+experiment_setup.trials.Fs = 20000;
+experiment_setup.trials.max_time_sec = .050;
+
+clock_array = clock;
+experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5))];
+experiment_setup.exp.fullsavefile = ...
+    fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
+
+wrndlg = warndlg('Neuron Under Target and piezo at 30 um?');
+waitfor(wrndlg)
+
+answer = inputdlg('Which quandrant is this cell in?');
+experiment_setup.quadrant = str2num(answer{1});
+
+experiment_setup.all_center_pos_um = [-75 75
+                  75 75
+                  75 -75
+                  -75 -75];
+experiment_setup.piezo_center = 30;
+
+experiment_setup.center_pos_um = experiment_setup.all_center_pos_um(experiment_setup.quadrant,:);
+measure_points_xy = [-25 -15 -10 -5 -3 0 3 5 10 15 25];
+measure_points_z = [-8 0 8];
+num_targets = length(measure_points_xy)*length(measure_points_xy)*length(measure_points_z);
+num_xy_targets = length(measure_points_xy)*length(measure_points_xy);
+num_z_targets = length(measure_points_z);
+all_xy_targets = ...
+    zeros(num_xy_targets,2);
+
+count = 1;
+for i = 1:length(measure_points_xy)
+    for j = 1:length(measure_points_xy)
+
+        all_xy_targets(count,:) = experiment_setup.center_pos_um + ...
+            [measure_points_xy(i) measure_points_xy(j)];
+        count = count + 1;
+
+    end
+end
+experiment_setup.all_xy_targets = all_xy_targets;
+xy_ids = repmat(1:num_xy_targets,1,num_z_targets);
+z_ids = [];
+for i = 1:num_z_targets
+    z_ids = [z_ids i*ones(1,num_xy_targets)];
+end
+
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
+
+stim_order = randperm(num_targets);
+xy_id_order = xy_ids(stim_order);
+z_id_order = z_ids(stim_order);
+num_sweeps = length(measure_points_z);
+trials_per_sweep = num_targets/num_sweeps;
+% target_list = 1:num_targets;
+% trial_targets = [];
+% for i = 1:num_sweeps
+%     trial_targets = ...
+%         [trial_targets; target_list(stim_order(1+(i-1)*trials_per_sweep:i*trials_per_sweep))];
+% end
+
+% take stack
+clear instruction
+instruction.type = 92;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+experiment_setup.stack = return_info.image;
+        
+% load holograms
+clear instruction
+instruction.type = 86;
+instruction.targets = experiment_setup.all_xy_targets;
+instruction.get_return = 0;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+
+handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+num_maps = 2;
+
+experiment_setup.xy_ids = repmat(1:num_xy_targets,1,num_z_targets);
+experiment_setup.z_ids = [];
+for i = 1:num_z_targets
+    z_ids = [z_ids i*ones(1,num_xy_targets)];
+end
+
+experiment_setup.stim_order = stim_order;
+experiment_setup.xy_id_order = xy_id_order;
+experiment_setup.z_id_order = z_id_order;
+experiment_setup.num_sweeps = num_sweeps;
+experiment_setup.trials_per_sweep = trials_per_sweep;
+experiment_setup.num_maps = num_maps;
+
+data = handles.data;
+save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+experiment_setup.these_trials = cell(0);
+
+for ii = 1:num_maps
+    for i = 1:num_sweeps
+
+        % stim it
+        % set params
+        these_trials = (i-1)*trials_per_sweep+1:i*trials_per_sweep
+%         experiment_setup.these_trials
+        handles.data.piezo_z = ...
+            measure_points_z(z_id_order(these_trials)) + experiment_setup.piezo_center;
+        handles.data.precomputed_target_order = xy_id_order(these_trials);
+        experiment_setup.these_trials{end+1} = these_trials;
+        set(handles.target_intensity,'String','.30')
+        set(handles.num_repeats,'String',num2str(1));
+        set(handles.tf_flag,'Value',1)
+        set(handles.set_seq_trigger,'Value',1)
+        set(handles.num_stim,'String',num2str(trials_per_sweep));
+        set(handles.rand_order,'Value',0);
+        set(handles.duration,'String',num2str(.003));
+        set(handles.iti,'String',num2str(0.5));
+        set(handles.ind_offset,'String',0);
+
+        set(acq_gui_data.test_pulse,'Value',1)
+        set(acq_gui_data.loop,'Value',1)
+        set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+        set(acq_gui_data.trigger_seq,'Value',1)
+        set(acq_gui_data.loop_count,'String',num2str(1))
+
+        [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+%         this_seq = acq_gui_data.data.sequence;
+%         total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+% 
+%         set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+        set(acq_gui_data.trial_length,'String',num2str(70))
+        acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+        guidata(hObject,handles)
+        
+        pause(2.0)
+        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        waitfor(acq_gui_data.run,'String','Start')
+        guidata(acq_gui,acq_gui_data)
+
+        acq_gui_data = guidata(acq_gui);
+        trial = acq_gui_data.data.sweep_counter;
+
+        data = handles.data;
+        save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+
+    end
 end
 
 set(handles.close_socket_check,'Value',1);

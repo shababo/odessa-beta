@@ -35,11 +35,13 @@ if get(handles.test_pulse,'Value')
 else
     pulse_over_sample = 1;
 end
+pulse_over_sample
 %timebase = handles.data.timebase;
 timebase = (0:length(handles.data.ch1sweep)-1)/handles.defaults.Fs;
 
 stim_sweep = handles.data.stim_sweep;
-
+length(stim_sweep)
+length(timebase)
 % if get(handles.use_lut,'Value')
 %     disp('lut_use?')
 %     stim_sweep = stim_sweep/max(stim_sweep)*handles.data.trial_metadata(end).pulseamp;

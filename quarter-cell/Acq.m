@@ -64,7 +64,7 @@ end
 
 % create experiment structs
 [handles.defaults, handles.s, handles.data] = load_defaults(Fs);
-
+guidata(hObject,handles)
 % generate analog outputs
 handles.data = setup_input_output(handles.data, handles.defaults);
 
@@ -303,7 +303,7 @@ switch handles.run_type
             
             [AO0, AO1, AO2, AO3] = analogoutput_gen(handles);
 
-            handles.io_data = io(handles.s,[AO0, AO1,AO2,AO3]);
+            handles.io_data = io(handles,[AO0, AO1,AO2,AO3]);
 %             while etime(clock, start_time) < wait_time
 %             end
             handles.data.tmp.cond_ind = cond_ind;

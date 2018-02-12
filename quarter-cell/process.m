@@ -199,7 +199,7 @@ handles.data.ch1sweep = thissweep(:,1);
 handles.data.ch2sweep = thissweep(:,2);
 
 if get(handles.use_LED,'Value')
-    handles.data.stim_sweep = stim_output;%    thissweep(:,4);
+    handles.data.stim_sweep = thissweep(:,9);%    thissweep(:,4);
 else
 
     handles.data.stim_sweep = thissweep(:,3);

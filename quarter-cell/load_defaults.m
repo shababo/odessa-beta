@@ -39,9 +39,9 @@ CCexternalcommandsensitivity = 400;%400;  % for multiclamp
 
 % set default type of output for each analog output channel
 AO0 = 'ch1_out'; 
-AO1 = 'ch2_out';
+AO1 = 'LED';
 AO2 = 'SEQ_TRIGGER';
-AO3 = 'LED';
+AO3 = 'NA';
 
 stim_type = '2P';
 
@@ -98,7 +98,7 @@ data = struct('ch1_output', ch1_output, 'ch2_output', ch2_output, 'exp_name', ex
 s = daq.createSession('ni');
 s.Rate = Fs;
 
-s.addAnalogInputChannel('dev1',[0 1 2 16 4 5 3 6],'Voltage');
+s.addAnalogInputChannel('dev1',[0 1 2 16 4 5 3 6 8],'Voltage');
 
 s.Channels(1).InputType = 'SingleEnded';
 s.Channels(2).InputType = 'SingleEnded';
@@ -108,6 +108,9 @@ s.Channels(5).InputType = 'SingleEnded';
 s.Channels(6).InputType = 'SingleEnded';
 s.Channels(7).InputType = 'SingleEnded';
 s.Channels(8).InputType = 'SingleEnded';
+s.Channels(9).InputType = 'SingleEnded';
 
 
 s.addAnalogOutputChannel('dev1',0:3,'Voltage');
+
+
