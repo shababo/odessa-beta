@@ -110,10 +110,12 @@ full_trans = slm_cam_points\points_vec;
 full_trans = reshape(full_trans,3,2)'         
 
 image_zero_order_coord = inv(full_trans(:,[1 2]))*-full_trans(:,3)
-
+points_zero = [points [0; 0]];
+test_mat_zero = [test_mat; image_zero_order_coord' 1];
 % full_trans_bu*test_mat' - full_trans*test_mat'
 
 points - full_trans*test_mat'
+points_zero - full_trans*test_mat_zero'
 % inv(full_trans)*points
 % slm_cam_trans = pinv(slm_cam_points) * points_vec;
 % slm_cam_trans_sq = reshape(slm_cam_trans,3,2)';
