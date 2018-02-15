@@ -26,7 +26,7 @@ target.relative_power_density = 1;
 target.x = 0; target.y = 0;
 
 for i = 1:length(diskRadii)
-    target.radius = diskRadii(i);
+    target.radius = diskRadii(1);
     isTargetPatternReady = 1;
 %     pause(5)
     diskPhase(:,:,i) = P;
@@ -428,7 +428,7 @@ end
 %% MAKE ALIGNMENT HOLOGRAM
 
 fullF = single(zeros(600,792)); 
-x = 100;
+x = 10;
 locs = [-x -x 0
 %         -x 0 0
 %         x 0 0
@@ -512,10 +512,10 @@ end
 %% take stack of each holo list
 
 loc_inds = [543   537   359   736   224    61];
-for i = 1:6%length(loc_inds)
+for i = 4%length(loc_inds)
         
-        stim_id = i;%loc_inds(i)
-        target = precomputed_target(stim_id);
+        stim_id = loc_inds(i)
+        target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
         isTargetPatternReady = 1;
         pause(1)
         
@@ -531,7 +531,7 @@ end
 %%
 loc_inds = [543   537   359   736   224    61];
 
-for i = 1:length(loc_inds)
+for i = 1% 1:length(loc_inds)
     stim_id = loc_inds(i);%find(tf_spot_key(:,1) == -140 & tf_spot_key(:,2) == 140)
     target.mode = 'Phase'; target.pattern = tf_spot_grid(:,:,stim_id);
 
@@ -543,4 +543,122 @@ for i = 1:length(loc_inds)
     waitfor(wrndlg)
     isSnapImage = 1
     pause(1)
+end
+
+%%
+
+spatial_targets = [
+    80    72     0
+    53    72     0
+   105    71     0
+    81    47     0
+    81    96     0];
+
+% x = 34;
+% spatial_targets = [-x -x 0
+% %         -x 0 0
+% %         x 0 0
+% %         0 -x 0
+% %         0 x 0
+%         -x x 0
+%         x -x 0
+%         x x 0];
+
+spatial_targets = [
+    -100    100     0
+    100    100     0
+    100    -100     0
+    -100    -100     0];
+
+
+for i = 1:size(spatial_targets,1)
+
+    fullF = single(zeros(600,792)); 
+    
+    this_loc = spatial_targets(i,1:2);
+
+    decval = round(this_loc,-1);
+    unitval = round(this_loc - decval);
+
+    convP = tf_spot_grid(:,:,tf_spot_key(:,1) == decval(1) & ...
+                                                                 tf_spot_key(:,2) == decval(2)) + ...
+                            tf_fine_grid_spots_phase(:,:,tf_fine_grid_spots_key(:,1) == unitval(1) & ...
+                                                                 tf_fine_grid_spots_key(:,2) == unitval(2));
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+    fullF = fullF + exp(1i*convP);
+
+    convP = angle(fullF);
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+
+    target.mode = 'Phase';
+    target.pattern = double(convP);
+
+    isTargetPatternReady = 1;
+    
+    wrndlg = warndlg('Hole made?');
+    pos = get(wrndlg,'position');
+    set(wrndlg,'position',[0 1000 pos(3) pos(4)]);
+    waitfor(wrndlg)
+    isSnapImage = 1
+    pause(1)
+end
+
+%% 
+
+first_image = images{end};
+second_image = temp;
+
+figure
+subplot(131)
+imagesc(first_image)
+subplot(132)
+imagesc(second_image)
+subplot(133)
+imagesc(first_image - second_image)
+
+%%
+
+% spatial_targets = [
+%     80    72     0
+%     105    71     0
+%     53    72     0
+%     81    47     0
+%     81    96     0];
+
+spatial_targets = [
+    -100    100     0
+    100    100     0
+    100    -100     0
+    -100    -100     0];
+
+clear precomputed_target
+
+for i = 1:size(spatial_targets,1)
+        
+        this_loc = spatial_targets(i,1:2);
+        fullF = single(zeros(600,792)); 
+    
+    this_loc = spatial_targets(i,1:2);
+
+    decval = round(this_loc,-1);
+    unitval = round(this_loc - decval);
+
+    convP = tf_disk_grid(:,:,tf_disk_key(:,1) == decval(1) & ...
+                                                                 tf_disk_key(:,2) == decval(2)) + ...
+                            tf_fine_grid_spots_phase(:,:,tf_fine_grid_spots_key(:,1) == unitval(1) & ...
+                                                                 tf_fine_grid_spots_key(:,2) == unitval(2));
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+    fullF = fullF + exp(1i*convP);
+
+    convP = angle(fullF);
+    convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+    convP(convP > pi) = convP(convP > pi) - 2*pi;
+
+    precomputed_target(i).mode = 'Phase';
+    precomputed_target(i).pattern = double(convP);
+
+     
 end

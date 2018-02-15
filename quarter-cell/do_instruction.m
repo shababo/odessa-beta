@@ -28,6 +28,7 @@ PRECOMPUTE_PHASE_MULTI_W_COMBO_SELECT = 82;
 PRECOMPUTE_PHASE_MULTI = 83;
 LOAD_PRECOMPUTED_TARGET = 84;
 LOAD_PRECOMPUTED_TARGET_FROM_FILE = 85;
+PRECOMPUTE_PHASE_SINGLE_UM_LIST = 86;
 TAKE_SNAP = 91;
 TAKE_STACK = 92;
 DETECT_EVENTS_OASIS = 100;
@@ -147,6 +148,10 @@ if success >= 0
                     handles.data.pockels_ratio_refs = evalin('base','pockels_ratio_refs_notf');                
                 end
             end
+%             if instruction.balance_xy
+%                 ratio_map = evalin('base','quandrant_ratios');
+%                 ratio_map = ratio_map(instruction.quadrant,:);
+%             end
 %             pockels_ratio_refs = [pockels_ratio_refs pockels_ratio_refs];
             for i = 1:length(sequence)
                 if sequence(i).power > 2
@@ -450,6 +455,45 @@ if success >= 0
             catch e
                 return_info.bad_file = 1
             end
+        case PRECOMPUTE_PHASE_SINGLE_UM_LIST
+            spatial_targets = instruction.targets;
+            
+            tf_disk_grid = evalin('base','tf_disk_grid');
+            tf_disk_key = evalin('base','tf_disk_key');
+            tf_fine_grid_spots_phase = evalin('base','tf_fine_grid_spots_phase');
+            tf_fine_grid_spots_key = evalin('base','tf_fine_grid_spots_key');
+            
+            for i = 1:size(spatial_targets,1)
+        
+                this_loc = spatial_targets(i,1:2);
+                fullF = single(zeros(600,792)); 
+
+                decval = round(this_loc,-1);
+                unitval = round(this_loc - decval);
+
+                convP = tf_disk_grid(:,:,tf_disk_key(:,1) == decval(1) & ...
+                                                                             tf_disk_key(:,2) == decval(2)) + ...
+                                        tf_fine_grid_spots_phase(:,:,tf_fine_grid_spots_key(:,1) == unitval(1) & ...
+                                                                             tf_fine_grid_spots_key(:,2) == unitval(2));
+                convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+                convP(convP > pi) = convP(convP > pi) - 2*pi;
+                fullF = fullF + exp(1i*convP);
+
+                convP = angle(fullF);
+                convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+                convP(convP > pi) = convP(convP > pi) - 2*pi;
+
+                precomputed_target(i).mode = 'Phase';
+                precomputed_target(i).pattern = double(convP);
+
+            end
+            vars{1} = precomputed_target;
+            names{1} = 'precomputed_target';
+            vars{2} = spatial_targets;
+            names{2} = 'tf_stim_key';
+            assignin_base(names,vars);
+            evalin('base','set_precomp_target_ready')
+
         case TAKE_SNAP
             evalin('base','take_snap')
             handles.snap_image = evalin('base','temp');
