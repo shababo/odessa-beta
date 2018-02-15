@@ -565,10 +565,11 @@ spatial_targets = [
 %         x x 0];
 
 spatial_targets = [
-    -75    75     0
-    75    75     0
-    75    -75     0
-    -75    -75     0];
+    -100    100     0
+    100    100     0
+    100    -100     0
+    -100    -100     0];
+
 
 for i = 1:size(spatial_targets,1)
 
@@ -627,10 +628,10 @@ imagesc(first_image - second_image)
 %     81    96     0];
 
 spatial_targets = [
-    -75    75     0
-    75    75     0
-    75    -75     0
-    -75    -75     0];
+    -100    100     0
+    100    100     0
+    100    -100     0
+    -100    -100     0];
 
 clear precomputed_target
 

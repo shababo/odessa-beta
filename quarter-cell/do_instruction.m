@@ -148,6 +148,10 @@ if success >= 0
                     handles.data.pockels_ratio_refs = evalin('base','pockels_ratio_refs_notf');                
                 end
             end
+%             if instruction.balance_xy
+%                 ratio_map = evalin('base','quandrant_ratios');
+%                 ratio_map = ratio_map(instruction.quadrant,:);
+%             end
 %             pockels_ratio_refs = [pockels_ratio_refs pockels_ratio_refs];
             for i = 1:length(sequence)
                 if sequence(i).power > 2
@@ -485,6 +489,8 @@ if success >= 0
             end
             vars{1} = precomputed_target;
             names{1} = 'precomputed_target';
+            vars{2} = spatial_targets;
+            names{2} = 'tf_stim_key';
             assignin_base(names,vars);
             evalin('base','set_precomp_target_ready')
 
