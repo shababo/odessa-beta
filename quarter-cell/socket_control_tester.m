@@ -23,7 +23,7 @@
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 09-Feb-2018 14:01:32
+% Last Modified by GUIDE v2.5 13-Feb-2018 11:53:45
 
 
 % Begin initialization code - DO NOT EDIT
@@ -395,7 +395,7 @@ end
 time_padding = 5; % in seconds
 total_duration = (sequence(end).start + iti)/1000 + time_padding;
 
-
+clear instruction
 instruction.sequence = sequence;
 instruction.get_return = 1;
 instruction.tf_flag = get(handles.tf_flag,'Value');
@@ -410,6 +410,7 @@ if get(handles.power,'Value')
 else
     instruction.target_power = NaN;
 end
+
 
 instruction.type = 30; %SEND SEQ
 handles.sequence = sequence;
@@ -7843,6 +7844,162 @@ for ii = 1:num_maps
 
     end
 end
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in xy_lines_spikes_cur.
+function xy_lines_spikes_cur_Callback(hObject, eventdata, handles)
+% hObject    handle to xy_lines_spikes_cur (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+set(handles.close_socket_check,'Value',0)
+guidata(hObject,handles);
+
+experiment_setup.exp_root = 'C:\data\Shababo\';
+experiment_setup.trials.Fs = 20000;
+experiment_setup.trials.max_time_sec = .050;
+
+clock_array = clock;
+experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5))];
+experiment_setup.exp.fullsavefile = ...
+    fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
+
+wrndlg = warndlg('Neuron Under Target and piezo at 30 um?');
+waitfor(wrndlg)
+
+answer = inputdlg('Which quandrant is this cell in?');
+experiment_setup.quadrant = str2num(answer{1});
+
+experiment_setup.all_center_pos_um = [-100 100 0
+                  100 100 0
+                  100 -100 0
+                  -100 -100 0];
+experiment_setup.piezo_center = 30;
+
+experiment_setup.center_pos_um = experiment_setup.all_center_pos_um(experiment_setup.quadrant,:);
+measure_points_xy = [-15 -10 -7 -4 -2 0 2 4 7 10 15];
+num_targets = length(measure_points_xy)*2;
+all_targets = ...
+    zeros(num_targets,3);
+
+count = 1;
+for i = 1:length(measure_points_xy)
+
+        all_targets(count,:) = experiment_setup.center_pos_um + ...
+            [measure_points_xy(i) 0 experiment_setup.piezo_center];
+        count = count + 1;
+        all_targets(count,:) = experiment_setup.center_pos_um + ...
+            [0 measure_points_xy(i) experiment_setup.piezo_center];
+        count = count + 1;
+end
+
+experiment_setup.all_targets = all_targets;
+
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
+
+% take stack
+clear instruction
+instruction.type = 92;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+experiment_setup.stack = return_info.image;
+        
+% load holograms
+clear instruction
+instruction.type = 86;
+instruction.targets = experiment_setup.all_targets;
+instruction.get_return = 1;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+
+ % stim it
+% set params
+set(handles.target_intensity,'String','0.35')
+set(handles.num_repeats,'String',num2str(3));
+set(handles.tf_flag,'Value',1)
+set(handles.set_seq_trigger,'Value',1)
+set(handles.num_stim,'String',num2str(num_targets));
+set(handles.rand_order,'Value',1);
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(.5));
+set(handles.ind_offset,'String',num2str(0));%;
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+
+[handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+this_seq = acq_gui_data.data.sequence;
+total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 2.5;
+
+set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(hObject,handles)
+
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+acq_gui_data = guidata(acq_gui);
+trial = acq_gui_data.data.sweep_counter;
+experiment_setup.traces{i} = ...
+    get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
+
+data = handles.data;
+save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+
+handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
+
+
+ % stim it
+% set params
+set(handles.target_intensity,'String','0.35')
+set(handles.num_repeats,'String',num2str(3));
+set(handles.tf_flag,'Value',1)
+set(handles.set_seq_trigger,'Value',1)
+set(handles.num_stim,'String',num2str(num_targets));
+set(handles.rand_order,'Value',1);
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(.5));
+set(handles.ind_offset,'String',num2str(0));%;
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+
+[handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+this_seq = acq_gui_data.data.sequence;
+total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 2.5;
+
+set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(hObject,handles)
+
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+acq_gui_data = guidata(acq_gui);
+trial = acq_gui_data.data.sweep_counter;
+experiment_setup.traces{i} = ...
+    get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
+
+data = handles.data;
+save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
