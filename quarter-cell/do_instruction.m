@@ -141,7 +141,11 @@ if success >= 0
             handles.data.tf_flag = instruction.tf_flag;
             if sequence(1).power > 2
                 if handles.data.tf_flag
-                    handles.data.lut = evalin('base','lut_tf');
+                    if ~isfield(instruction,'lut')
+                        handles.data.lut = evalin('base','lut_tf');
+                    else
+                        handles.data.lut = instruction.lut;
+                    end
                     handles.data.pockels_ratio_refs = evalin('base','pockels_ratio_refs_tf');
                 else
                     handles.data.lut = evalin('base','lut_notf');
@@ -155,7 +159,7 @@ if success >= 0
 %             pockels_ratio_refs = [pockels_ratio_refs pockels_ratio_refs];
             for i = 1:length(sequence)
                 if sequence(i).power > 2
-                    ind = sequence(i).precomputed_target_index
+                    ind = sequence(i).precomputed_target_index;
                     sequence(i).target_power = sequence(i).power;
                     sequence(i).power = round(100*get_voltage(handles.data.lut,...
                         handles.data.pockels_ratio_refs(ind)*sequence(i).power));
@@ -163,7 +167,7 @@ if success >= 0
                         sequence(i).waveform = sprintf(sequence(i).waveform,sequence(i).power);
                     end
                 else
-                    sequence(i).power = sequence(i).power*100;
+                    sequence(i).power = round(sequence(i).power*100);
                 end
                 if isfield(sequence,'waveform')
                     sequence(i).waveform = sprintf(sequence(i).waveform,sequence(i).power);
@@ -463,6 +467,15 @@ if success >= 0
             tf_fine_grid_spots_phase = evalin('base','tf_fine_grid_spots_phase');
             tf_fine_grid_spots_key = evalin('base','tf_fine_grid_spots_key');
             
+            if isfield(instruction,'build_pockels_ref')
+                build_pockels_ref = instruction.build_pockels_ref;
+            else
+                build_pockels_ref = 0;
+            end
+               
+            if build_pockels_ref
+                ratio_map = evalin('base','power_ratio_map'); 
+            end
             for i = 1:size(spatial_targets,1)
         
                 this_loc = spatial_targets(i,1:2);
@@ -485,12 +498,21 @@ if success >= 0
 
                 precomputed_target(i).mode = 'Phase';
                 precomputed_target(i).pattern = double(convP);
+                
+                if build_pockels_ref
+                    pockels_ratio_refs_tf(i) = ratio_map(round(this_loc(1))+ceil(size(ratio_map,1)/2),...
+                        round(this_loc(2))+ceil(size(ratio_map,2)/2));
+                end
 
             end
             vars{1} = precomputed_target;
             names{1} = 'precomputed_target';
             vars{2} = spatial_targets;
             names{2} = 'tf_stim_key';
+            if build_pockels_ref
+                vars{3} = pockels_ratio_refs_tf;
+                names{3} = 'pockels_ratio_refs_tf';
+            end
             assignin_base(names,vars);
             evalin('base','set_precomp_target_ready')
 

@@ -330,8 +330,19 @@ count = 1;
 ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 num_repeats = str2double(get(handles.num_repeats,'String'));
+if ~isfield(handles.data,'piezo_z_center')
+    handles.data.piezo_z_center = 200;
+end
 if ~isfield(handles.data,'piezo_z')
-    handles.data.piezo_z = 30;
+    handles.data.piezo_z = handles.data.piezo_z_center;
+end
+if ~isfield(handles.data,'piezo_z_multiply')
+    handles.data.piezo_z_multiply = 1;
+    num_z_conds = length(handles.data.piezo_z);
+elseif handles.data.piezo_z_multiply
+    num_z_conds = length(handles.data.piezo_z);
+else
+    num_z_conds = 1;
 end
 for k = 1:length(handles.data.group_powers)
     for i = 1:num_stim
@@ -341,7 +352,7 @@ for k = 1:length(handles.data.group_powers)
         else
             this_repeat = 1;
         end
-        for m = 1:length(handles.data.piezo_z)
+        for m = 1:num_z_conds
             for j = 1:this_repeat
                 sequence(count) = sequence_base;
                 sequence(count).power = handles.data.group_powers(k);
@@ -350,7 +361,12 @@ for k = 1:length(handles.data.group_powers)
                 else
                     sequence(count).precomputed_target_index = handles.data.precomputed_target_order(i);
                 end
-                sequence(count).piezo_z = handles.data.piezo_z(m);
+                if handles.data.piezo_z_multiply
+                    z_ind = m;
+                else
+                    z_ind = i;
+                end
+                sequence(count).piezo_z = handles.data.piezo_z(z_ind);
 
         %             if get(handles.power,'Value')
         %                 [~, c_i] = min(abs(x_positions(i) - conversion));
@@ -371,14 +387,12 @@ for k = 1:length(handles.data.group_powers)
 end
 num_stim = length(sequence);
 
-if num_stim > 1 && get(handles.rand_order,'Value')
-    
+if num_stim > 1 && get(handles.rand_order,'Value')    
 %     order = zeros((num_stim*num_repeats,1);
 %     for i = 1:num_repeats
 %         order((i-1)*num_stim+1:i*num_stim) = randperm(num_stim);
 %     end
-    order = randperm(num_stim);
-    
+    order = randperm(num_stim);   
 else
     order = 1:num_stim;%repmat(1:num_stim,1,num_repeats);
     
@@ -386,7 +400,6 @@ end
 
 % precomputed_target = precomputed_target(order);
 sequence = sequence(order);
-
 
 for i = 1:length(sequence)
     sequence(i).start = start_time + (i-1)*(iti + sequence_base.duration);
@@ -411,6 +424,11 @@ else
     instruction.target_power = NaN;
 end
 
+try
+    instruction.lut = evalin('base','lut');
+catch e
+    disp('not sending lut to sequence build')
+end
 
 instruction.type = 30; %SEND SEQ
 handles.sequence = sequence;
@@ -7527,9 +7545,10 @@ for i = 1:num_locs
 %     set(handles.thenewy,'String',num2str(this_loc(2)))
 %     set(handles.thenewz,'String',num2str(this_loc(3)))
 %     [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-    
-    wrndlg = warndlg('Neuron Under Target?');
+    handles.data.piezo_z_center = 200;
+    wrndlg = warndlg(['Neuron under target with piezo set to ' num2str(handles.data.piezo_z_center) ' um?']);
     waitfor(wrndlg)
+    guidata(hObject,handles)
     
     % take snap
     clear instruction
@@ -7540,9 +7559,11 @@ for i = 1:num_locs
     
     % stim it
     % set params
-    init_powers = '.40';
-    init_z = [-30 -15 -10 -5 -2 -1 0 1 2 5 10 15 30]+30;
+    init_powers = '.35';
+    init_z = [-60 -45 -30 -20 -10 0 10 20 30 45 60]+handles.data.piezo_z_center;
     handles.data.piezo_z = init_z;
+    handles.data.piezo_z_multiply = 0;
+    guidata(hObject,handles)
     
     set(handles.target_intensity,'String',init_powers)
     set(handles.num_repeats,'String',num2str(2));
@@ -7715,27 +7736,42 @@ experiment_setup.all_center_pos_um = [-75 75
                   75 75
                   75 -75
                   -75 -75];
-experiment_setup.piezo_center = 30;
+experiment_setup.piezo_center = 200;
 
 experiment_setup.center_pos_um = experiment_setup.all_center_pos_um(experiment_setup.quadrant,:);
-measure_points_xy = [-25 -15 -10 -5 -3 0 3 5 10 15 25];
-measure_points_z = [-8 0 8];
-num_targets = length(measure_points_xy)*length(measure_points_xy)*length(measure_points_z);
-num_xy_targets = length(measure_points_xy)*length(measure_points_xy);
+measure_points_xy_inner = [-10 -7 4 2 0 2 4 7 10];
+measure_points_xy_outer = [-35 -25 -15 -10 -5 0 5 10 15 25 35];
+measure_points_z = [-40 0 40];
+num_xy_targets = length(measure_points_xy_inner).^2 + ...
+    (length(measure_points_xy_outer).^2 - length(measure_points_xy_outer(abs(measure_points_xy_outer) <= max(measure_points_xy_inner))).^2);
 num_z_targets = length(measure_points_z);
+num_targets = num_xy_targets*num_z_targets;
 all_xy_targets = ...
     zeros(num_xy_targets,2);
 
 count = 1;
-for i = 1:length(measure_points_xy)
-    for j = 1:length(measure_points_xy)
+for i = 1:length(measure_points_xy_inner)
+    for j = 1:length(measure_points_xy_inner)
 
         all_xy_targets(count,:) = experiment_setup.center_pos_um + ...
-            [measure_points_xy(i) measure_points_xy(j)];
+            [measure_points_xy_inner(i) measure_points_xy_inner(j)];
         count = count + 1;
 
     end
 end
+for i = 1:length(measure_points_xy_outer)
+    for j = 1:length(measure_points_xy_outer)
+
+        if abs(measure_points_xy_outer(i)) > max(abs(measure_points_xy_inner)) && ...
+                abs(measure_points_xy_outer(j)) > max(abs(measure_points_xy_inner))
+            all_xy_targets(count,:) = experiment_setup.center_pos_um + ...
+                [measure_points_xy_outer(i) measure_points_xy_outer(j)];
+            count = count + 1;
+        end
+
+    end
+end
+
 experiment_setup.all_xy_targets = all_xy_targets;
 xy_ids = repmat(1:num_xy_targets,1,num_z_targets);
 z_ids = [];
@@ -7872,17 +7908,29 @@ experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) .
 experiment_setup.exp.fullsavefile = ...
     fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
 
-wrndlg = warndlg('Neuron Under Target and piezo at 30 um?');
+experiment_setup.piezo_center = 200;
+handles.data.piezo_z_center = experiment_setup.piezo_center;
+wrndlg = warndlg('Neuron Under Target and piezo at 200 um?');
 waitfor(wrndlg)
 
 answer = inputdlg('Which quandrant is this cell in?');
 experiment_setup.quadrant = str2num(answer{1});
 
+choice = questdlg('Calibrate Power?');
+switch choice
+    case 'Yes'
+        experiment_setup.calibrate_power = 1;
+    case 'No'
+        experiment_setup.calibrate_power = 0;
+    case 'Cancel'
+        experiment_setup.calibrate_power = 1;
+end
+
 experiment_setup.all_center_pos_um = [-100 100 0
                   100 100 0
                   100 -100 0
                   -100 -100 0];
-experiment_setup.piezo_center = 30;
+
 
 experiment_setup.center_pos_um = experiment_setup.all_center_pos_um(experiment_setup.quadrant,:);
 measure_points_xy = [-15 -10 -7 -4 -2 0 2 4 7 10 15];
@@ -7923,7 +7971,11 @@ disp('sending instruction...')
 
  % stim it
 % set params
-set(handles.target_intensity,'String','0.35')
+if experiment_setup.calibrate_power
+    set(handles.target_intensity,'String','40')
+else
+    set(handles.target_intensity,'String','0.35')
+end
 set(handles.num_repeats,'String',num2str(3));
 set(handles.tf_flag,'Value',1)
 set(handles.set_seq_trigger,'Value',1)
@@ -7965,7 +8017,11 @@ handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experimen
 
  % stim it
 % set params
-set(handles.target_intensity,'String','0.35')
+if experiment_setup.calibrate_power
+    set(handles.target_intensity,'String','40')
+else
+    set(handles.target_intensity,'String','0.35')
+end
 set(handles.num_repeats,'String',num2str(3));
 set(handles.tf_flag,'Value',1)
 set(handles.set_seq_trigger,'Value',1)
