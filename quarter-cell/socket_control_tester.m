@@ -7536,7 +7536,7 @@ experiment_setup.pos_order = randperm(num_locs);
 
 
 
-for i = 1:num_locs
+% for i = 1:num_locs
     
 %     this_loc = experiment_setup.obj_locations(experiment_setup.pos_order(i),:);
     
@@ -7545,24 +7545,44 @@ for i = 1:num_locs
 %     set(handles.thenewy,'String',num2str(this_loc(2)))
 %     set(handles.thenewz,'String',num2str(this_loc(3)))
 %     [handles,acq_gui,acq_gui_data] = obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-    handles.data.piezo_z_center = 200;
-    wrndlg = warndlg(['Neuron under target with piezo set to ' num2str(handles.data.piezo_z_center) ' um?']);
-    waitfor(wrndlg)
-    guidata(hObject,handles)
+handles.data.piezo_z_center = 200;
+wrndlg = warndlg(['Neuron under target with piezo set to ' num2str(handles.data.piezo_z_center) ' um?']);
+waitfor(wrndlg)
+guidata(hObject,handles)
+
+    answer = inputdlg('Which quandrant is this cell in?');
+experiment_setup.quadrant = str2num(answer{1});
+
+experiment_setup.all_center_pos_um = [-100 100 0
+              100 100 0
+              100 -100 0
+              -100 -100 0];
+
+
+experiment_setup.center_pos_um = experiment_setup.all_center_pos_um(experiment_setup.quadrant,:);
     
-    % take snap
-    clear instruction
-    instruction.type = 92;
-    disp('sending instruction...')
-    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    experiment_setup.images{i} = return_info.image;
+% take snap
+clear instruction
+instruction.type = 92;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+experiment_setup.image = return_info.image;
     
+% load holograms
+clear instruction
+instruction.type = 86;
+experiment_setup.all_targets = experiment_setup.center_pos_um;
+instruction.targets = experiment_setup.all_targets;
+instruction.get_return = 1;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+
     % stim it
     % set params
     init_powers = '.35';
-    init_z = [-60 -45 -30 -20 -10 0 10 20 30 45 60]+handles.data.piezo_z_center;
+    init_z = [-60 -45 -30 -20 -10 0 10 20 30 45 60] + handles.data.piezo_z_center;
     handles.data.piezo_z = init_z;
-    handles.data.piezo_z_multiply = 0;
+    handles.data.piezo_z_multiply = 1;
     guidata(hObject,handles)
     
     set(handles.target_intensity,'String',init_powers)
@@ -7595,6 +7615,7 @@ for i = 1:num_locs
     
     acq_gui_data = guidata(acq_gui);
     trial = acq_gui_data.data.sweep_counter;
+    
 %     experiment_setup.ca_data_coarse = ...
 %         analyze_current_diffraction_map(acq_gui_data.data,1,trial,'spikes');
 %     cell_spike_times = experiment_setup.ca_data_coarse.spike_times{1};
@@ -7696,7 +7717,7 @@ for i = 1:num_locs
     data = handles.data;
     save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
     
-end
+% end
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
