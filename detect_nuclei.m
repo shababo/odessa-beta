@@ -27,7 +27,7 @@ end
 if length(varargin) > 4 && ~isempty(varargin{5})
     fluor_min = varargin{5};
 else
-    fluor_min = 25;
+    fluor_min = 10;
 end
 
 if do_detect

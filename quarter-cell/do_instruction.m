@@ -505,13 +505,15 @@ if success >= 0
                 end
 
             end
-            vars{1} = precomputed_target;
-            names{1} = 'precomputed_target';
-            vars{2} = spatial_targets;
-            names{2} = 'tf_stim_key';
+            vars{1} = spatial_targets;
+            names{1} = 'spatial_targets';
+            vars{2} = precomputed_target;
+            names{2} = 'precomputed_target';
+            vars{3} = spatial_targets;
+            names{3} = 'tf_stim_key';
             if build_pockels_ref
-                vars{3} = pockels_ratio_refs_tf;
-                names{3} = 'pockels_ratio_refs_tf';
+                vars{4} = pockels_ratio_refs_tf;
+                names{4} = 'pockels_ratio_refs_tf';
             end
             assignin_base(names,vars);
             evalin('base','set_precomp_target_ready')
