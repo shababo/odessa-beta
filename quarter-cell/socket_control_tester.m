@@ -7747,20 +7747,20 @@ experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) .
 experiment_setup.exp.fullsavefile = ...
     fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
 
-wrndlg = warndlg('Neuron Under Target and piezo at 30 um?');
+wrndlg = warndlg('Neuron Under Target and piezo at 200 um?');
 waitfor(wrndlg)
 
 answer = inputdlg('Which quandrant is this cell in?');
 experiment_setup.quadrant = str2num(answer{1});
 
-experiment_setup.all_center_pos_um = [-75 75
-                  75 75
-                  75 -75
-                  -75 -75];
+experiment_setup.all_center_pos_um = [-100 100
+                  100 100
+                  100 -100
+                  -100 -100];
 experiment_setup.piezo_center = 200;
 
 experiment_setup.center_pos_um = experiment_setup.all_center_pos_um(experiment_setup.quadrant,:);
-measure_points_xy_inner = [-10 -7 4 2 0 2 4 7 10];
+measure_points_xy_inner = [-10 -7 -4 -2 0 2 4 7 10];
 measure_points_xy_outer = [-35 -25 -15 -10 -5 0 5 10 15 25 35];
 measure_points_z = [-40 0 40];
 num_xy_targets = length(measure_points_xy_inner).^2 + ...
@@ -7783,8 +7783,8 @@ end
 for i = 1:length(measure_points_xy_outer)
     for j = 1:length(measure_points_xy_outer)
 
-        if abs(measure_points_xy_outer(i)) > max(abs(measure_points_xy_inner)) && ...
-                abs(measure_points_xy_outer(j)) > max(abs(measure_points_xy_inner))
+        if ~(abs(measure_points_xy_outer(i)) <= max(abs(measure_points_xy_inner)) && ...
+                abs(measure_points_xy_outer(j)) <= max(abs(measure_points_xy_inner)))
             all_xy_targets(count,:) = experiment_setup.center_pos_um + ...
                 [measure_points_xy_outer(i) measure_points_xy_outer(j)];
             count = count + 1;
@@ -7821,12 +7821,60 @@ instruction.type = 92;
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 experiment_setup.stack = return_info.image;
+
+% load holograms
+clear instruction
+instruction.type = 86;
+instruction.targets = experiment_setup.center_pos_um;
+instruction.get_return = 1;
+instruction.build_pockels_ref = 1;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+
+% stim it
+% set params
+init_powers = '5 10 15 25 35 50';
+set(handles.target_intensity,'String',init_powers)
+set(handles.num_repeats,'String',num2str(3));
+set(handles.tf_flag,'Value',1)
+set(handles.set_seq_trigger,'Value',1)
+set(handles.num_stim,'String',num2str(1));
+set(handles.rand_order,'Value',1);
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(2.0));
+set(handles.ind_offset,'String',0);
+if isfield(handles.data,'precomputed_target_order')
+    handles.data = rmfield(handles.data,'precomputed_target_order');
+end
+
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+
+handles.data.piezo_z = experiment_setup.piezo_center;
+handles.data.piezo_z_multiply = 1;
+
+[handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+this_seq = acq_gui_data.data.sequence;
+total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(hObject,handles)
+
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
         
 % load holograms
 clear instruction
 instruction.type = 86;
 instruction.targets = experiment_setup.all_xy_targets;
 instruction.get_return = 0;
+instruction.build_pockels_ref = 1;
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
@@ -7835,11 +7883,11 @@ handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experimen
 
 num_maps = 2;
 
-experiment_setup.xy_ids = repmat(1:num_xy_targets,1,num_z_targets);
-experiment_setup.z_ids = [];
-for i = 1:num_z_targets
-    z_ids = [z_ids i*ones(1,num_xy_targets)];
-end
+% experiment_setup.xy_ids = repmat(1:num_xy_targets,1,num_z_targets);
+% experiment_setup.z_ids = [];
+% for i = 1:num_z_targets
+%     z_ids = [z_ids i*ones(1,num_xy_targets)];
+% end
 
 experiment_setup.stim_order = stim_order;
 experiment_setup.xy_id_order = xy_id_order;
@@ -7863,12 +7911,12 @@ for ii = 1:num_maps
             measure_points_z(z_id_order(these_trials)) + experiment_setup.piezo_center;
         handles.data.precomputed_target_order = xy_id_order(these_trials);
         experiment_setup.these_trials{end+1} = these_trials;
-        set(handles.target_intensity,'String','.30')
+        set(handles.target_intensity,'String','50')
         set(handles.num_repeats,'String',num2str(1));
         set(handles.tf_flag,'Value',1)
         set(handles.set_seq_trigger,'Value',1)
         set(handles.num_stim,'String',num2str(trials_per_sweep));
-        set(handles.rand_order,'Value',0);
+        set(handles.rand_order,'Value',1);
         set(handles.duration,'String',num2str(.003));
         set(handles.iti,'String',num2str(0.5));
         set(handles.ind_offset,'String',0);
@@ -7878,13 +7926,14 @@ for ii = 1:num_maps
         set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
         set(acq_gui_data.trigger_seq,'Value',1)
         set(acq_gui_data.loop_count,'String',num2str(1))
+        handles.data.piezo_z_multiply = 0;
 
         [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
-%         this_seq = acq_gui_data.data.sequence;
-%         total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+        this_seq = acq_gui_data.data.sequence;
+        total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 10;
 % 
-%         set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
-        set(acq_gui_data.trial_length,'String',num2str(70))
+        set(acq_gui_data.trial_length,'String',num2str(total_duration))
+%         set(acq_gui_data.trial_length,'String',num2str(70))
         acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
         guidata(hObject,handles)
         
