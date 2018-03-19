@@ -474,7 +474,7 @@ if success >= 0
             end
                
             if build_pockels_ref
-                ratio_map = evalin('base','power_ratio_map'); 
+                ratio_map = evalin('base','ratio_map'); 
             end
             for i = 1:size(spatial_targets,1)
         

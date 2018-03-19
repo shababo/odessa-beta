@@ -270,7 +270,7 @@ clear tf_phase
 
 %% make disk
 clear target
-stim_id = find(tf_disk_key(:,1) == 60 & tf_disk_key(:,2) == 0)
+stim_id = find(tf_disk_key(:,1) == 30 & tf_disk_key(:,2) == 30)
 target.mode = 'Phase'; target.pattern = tf_disk_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;

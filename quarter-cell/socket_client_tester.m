@@ -165,7 +165,9 @@ end
 assignin('base','return_info',return_info)
 disp('sending return info')
 
-mssend(handles.sock,return_info);
+if ~isfield(instruction,'get_return') || instruction.get_return
+    mssend(handles.sock,return_info);
+end
 if instruction.type == 401
     disp('sent')
     return_info.batch_found
