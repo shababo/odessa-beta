@@ -9,7 +9,7 @@ end
 if length(varargin) > 1 && ~isempty(varargin{2})
     image_zero_order_coord = varargin{2};
 else
-    image_zero_order_coord = [147 145]';
+    image_zero_order_coord = [124.5 118.2]';
 end
 
 if length(varargin) > 2 && ~isempty(varargin{3})
@@ -30,6 +30,12 @@ else
     fluor_min = 10;
 end
 
+if length(varargin) > 5 && ~isempty(varargin{6})
+    plot_results = varargin{6};
+else
+    plot_results = 1;
+end
+
 if do_detect
     peak_detection_12(filename);
 end
@@ -45,8 +51,8 @@ nuclear_locs([1 2],:) = ...
     bsxfun(@minus,nuclear_locs([1 2],:),image_zero_order_coord)*image_um_per_px;
 nuclear_locs([3],:) = nuclear_locs([3],:)*stack_um_per_slice;
 
-out_of_range = find(abs(nuclear_locs(1,:)) > 160 | ...
-                    abs(nuclear_locs(2,:)) > 160);
+out_of_range = find(abs(nuclear_locs(1,:)) > 170 | ...
+                    abs(nuclear_locs(2,:)) > 170);
 nuclear_locs(:,out_of_range) = [];
 nuclear_locs = nuclear_locs';
 % nuclear_locs(:,[1 2]) = nuclear_locs(:,[2 1]);
@@ -81,21 +87,23 @@ fluor_vals(out_of_range) = [];
 % 
 % nuclear_locs(:,4) = nuclear_locs(:,3) - (plane_fit(1)*nuclear_locs(:,1) + plane_fit(2)*nuclear_locs(:,2) + plane_fit(3));
 
-figure; 
-% subplot(121)
-% mesh(X,Y,-Z,'facealpha',0,'Cdata',repmat(reshape([0 0 1],1,1,3),31,31,1));
-% hold on; 
-scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,3),5,'filled')
-xlabel('x (um)'); ylabel('y (um)'); zlabel('depth (um)')
-% subplot(122)
-% mesh(X,Y,Z,'facealpha',0,'Cdata',repmat(reshape([0 0 1],1,1,3),31,31,1));
-% hold on; 
-% scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,4),min(fluor_vals/6),'filled')
+if plot_results
+%     figure; 
+    % subplot(121)
+    % mesh(X,Y,-Z,'facealpha',0,'Cdata',repmat(reshape([0 0 1],1,1,3),31,31,1));
+    % hold on; 
+%     scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,3),5,'filled')
+%     xlabel('x (um)'); ylabel('y (um)'); zlabel('depth (um)')
+    % subplot(122)
+    % mesh(X,Y,Z,'facealpha',0,'Cdata',repmat(reshape([0 0 1],1,1,3),31,31,1));
+    % hold on; 
+    % scatter3(nuclear_locs(:,1),nuclear_locs(:,2),-nuclear_locs(:,4),min(fluor_vals/6),'filled')
 
 
-% end
+    % end
 
-% detect_img = [];
+    % detect_img = [];
 
-detect_img = plot_nuclear_detect_3D([filename '.tif'],nuclear_locs_image_coord);%,[],ceil(fluor_vals/10) + 1,fluor_vals);
+    detect_img = plot_nuclear_detect_3D([filename '.tif'],nuclear_locs_image_coord);%,[],ceil(fluor_vals/10) + 1,fluor_vals);
+end
 
