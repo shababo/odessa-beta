@@ -41,6 +41,7 @@ if take_new_stack
         handles.data.image_um_per_px = return_info.image_um_per_px;
         handles.data.stack_um_per_slice = return_info.stack_um_per_slice; 
     end
+    
 %     handles.data.stack = return_info.image;
     
     guidata(hObject,handles);

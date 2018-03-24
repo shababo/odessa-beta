@@ -23,7 +23,7 @@
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 13-Feb-2018 11:53:45
+% Last Modified by GUIDE v2.5 06-Mar-2018 10:36:14
 
 
 % Begin initialization code - DO NOT EDIT
@@ -8126,6 +8126,229 @@ experiment_setup.traces{i} = ...
 
 data = handles.data;
 save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+
+set(handles.close_socket_check,'Value',1);
+instruction.type = 00;
+instruction.string = 'done';
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in current_vs_power_multispot.
+function current_vs_power_multispot_Callback(hObject, eventdata, handles)
+% hObject    handle to current_vs_power_multispot (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+wrndlg = warndlg('Set 0 position by going to top of slice with piezo = 0');
+waitfor(wrndlg)
+
+answer = inputdlg('Go to cell z depth. What is piezo z depth for cell in um?');
+experiment_setup.cell_z = str2num(answer{1});
+
+clear instruction
+instruction.type = 73;
+instruction.num_targs = 1;
+instruction.get_return = 1;
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+experiment_setup.cell_loc = return_info.nuclear_locs + [0 0 experiment_setup.cell_z];
+
+set(handles.close_socket_check,'Value',0)
+guidata(hObject,handles);
+
+experiment_setup.exp_root = 'C:\data\Shababo\';
+experiment_setup.trials.Fs = 20000;
+experiment_setup.trials.max_time_sec = .050;
+
+clock_array = clock;
+experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5))];
+experiment_setup.exp.fullsavefile = ...
+    fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
+                  
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
+
+num_locs = 1;%size(experiment_setup.obj_locations,1);
+experiment_setup.pos_order = randperm(num_locs);
+
+% take snap
+% clear instruction
+% instruction.type = 92;
+% disp('sending instruction...')
+% [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+% experiment_setup.images{i} = return_info.image;
+
+instruction = struct();
+instruction.type = 92;
+instruction.get_return = 1;
+instruction.filename = [experiment_setup.exp_id '_stack'];
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+experiment_setup.stack = return_info.image;
+if isfield(return_info,'image_zero_order_coord')
+    acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
+    acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
+    acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
+    handles.data.image_zero_order_coord = return_info.image_zero_order_coord;
+    handles.data.image_um_per_px = return_info.image_um_per_px;
+    handles.data.stack_um_per_slice = return_info.stack_um_per_slice; 
+end
+
+clear instruction
+instruction.get_return = 1;
+instruction.filename = [experiment_setup.exp_id '_stack'];
+experiment_setup.image_um_per_px = handles.data.image_um_per_px;
+experiment_setup.image_zero_order_coord = handles.data.image_zero_order_coord;
+experiment_setup.stack_um_per_slice = handles.data.stack_um_per_slice;
+instruction.experiment_setup = experiment_setup;
+instruction.type = 75; % DETECT_NUC_FROM_MAT
+[return_info,success,handles] = do_instruction_analysis(instruction,handles);
+experiment_setup.nuclear_locs = return_info.nuclear_locs;
+experiment_setup.fluor_vals = return_info.fluor_vals;
+
+offsets = bsxfun(@minus,experiment_setup.nuclear_locs,experiment_setup.cell_loc);
+
+[targ_error, index] = min(sqrt(sum(offsets.^2,1)));
+experiment_setup.fluor_val = experiment_setup.fluor_vals(index);
+experiment_setup.cell_pos_detected = experiment_setup.nuclear_locs(index,:);
+
+
+% stim it
+% set params
+init_powers = '0 .21 .30 .40';
+set(handles.target_intensity,'String',init_powers)
+set(handles.num_repeats,'String',num2str(3));
+set(handles.tf_flag,'Value',1)
+set(handles.set_seq_trigger,'Value',1)
+set(handles.num_stim,'String',num2str(1));
+set(handles.rand_order,'Value',1);
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(2.0));
+set(handles.ind_offset,'String',0);
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+
+[handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+this_seq = acq_gui_data.data.sequence;
+total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(hObject,handles)
+
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+acq_gui_data = guidata(acq_gui);
+trial = acq_gui_data.data.sweep_counter;
+experiment_setup.ca_data_coarse = ...
+    analyze_current_diffraction_map(acq_gui_data.data,1,trial,'spikes');
+cell_spike_times = experiment_setup.ca_data_coarse.spike_times{1};
+experiment_setup.ca_data_coarse.spike_times{1} = zeros(size(experiment_setup.ca_data_coarse.spike_times{1}));
+for ii = 1:length(cell_spike_times)
+    if ~isempty(cell_spike_times{ii})
+        experiment_setup.ca_data_coarse.spike_times{1}(ii) = cell_spike_times{ii};
+    else
+        experiment_setup.ca_data_coarse.spike_times{1}(ii) = NaN;
+    end
+end
+experiment_setup.ca_data_coarse.power = {zeros(size(experiment_setup.ca_data_coarse.stim_size{1}))};
+
+unique_powers = unique(round(experiment_setup.ca_data_coarse.stim_size{1},2));
+experiment_setup.ca_data_coarse.these_powers = unique_powers;
+experiment_setup.ca_data_coarse.power_means = zeros(size(unique_powers))';
+
+for ii = 1:length(unique_powers)
+
+    these_trials = find(abs(experiment_setup.ca_data_coarse.stim_size{1} - unique_powers(ii)) < .005);
+
+    experiment_setup.ca_data_coarse.power_means(ii) = nanmean(experiment_setup.ca_data_coarse.spike_times{1}(these_trials));
+    experiment_setup.ca_data_coarse.power_ranges(ii) = max(experiment_setup.ca_data_coarse.spike_times{1}(these_trials)) - min(experiment_setup.ca_data_coarse.spike_times{1}(these_trials));
+    experiment_setup.ca_data_coarse.power_jitter(ii) = nanstd(experiment_setup.ca_data_coarse.spike_times{1}(these_trials));
+    experiment_setup.ca_data_coarse.prob_spike(ii) = sum(~isnan(experiment_setup.ca_data_coarse.spike_times{1}(these_trials)))/length(these_trials);
+
+end
+
+max_expected_latency = 8*20;
+mean_latencies = experiment_setup.ca_data_coarse.power_means;
+mean_latencies(isnan(mean_latencies)) = max_expected_latency
+[max_latency_change, fine_search_bin] = min(diff(mean_latencies))
+old_powers_vec = [strread(init_powers) .48 .60];
+new_powers = linspace(old_powers_vec(fine_search_bin),old_powers_vec(fine_search_bin+1),5);
+new_powers = [new_powers(2:4) mean(old_powers_vec(fine_search_bin+1:fine_search_bin+2))];
+new_powers_str = mat2str(new_powers);
+new_powers_str = new_powers_str(2:end-1)
+current_powers = sort(union([strread(init_powers) .48],new_powers));
+current_powers_str = mat2str(current_powers);
+current_powers_str = current_powers_str(2:end-1)
+
+experiment_setup.start_powers = old_powers_vec;
+experiment_setup.fine_powers = new_powers;
+experiment_setup.current_powers = current_powers;
+
+set(handles.target_intensity,'String',new_powers_str)
+
+[handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+this_seq = acq_gui_data.data.sequence;
+total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(hObject,handles)
+
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+% stim it
+% set params
+
+set(handles.target_intensity,'String',current_powers_str)
+set(handles.num_repeats,'String',num2str(3));
+set(handles.tf_flag,'Value',1)
+set(handles.set_seq_trigger,'Value',1)
+set(handles.num_stim,'String',num2str(1));
+set(handles.rand_order,'Value',1);
+set(handles.duration,'String',num2str(.003));
+set(handles.iti,'String',num2str(2.0));
+set(handles.ind_offset,'String',0);
+
+set(acq_gui_data.test_pulse,'Value',1)
+set(acq_gui_data.loop,'Value',1)
+set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+set(acq_gui_data.trigger_seq,'Value',1)
+set(acq_gui_data.loop_count,'String',num2str(1))
+
+[handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
+this_seq = acq_gui_data.data.sequence;
+total_duration = (this_seq(end).start + this_seq(end).duration)/1000 + 5;
+
+set(acq_gui_data.trial_length,'String',num2str(total_duration + 1.0))
+acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+guidata(hObject,handles)
+
+acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+waitfor(acq_gui_data.run,'String','Start')
+guidata(acq_gui,acq_gui_data)
+
+%     acq_gui_data = guidata(acq_gui);
+%     trial = acq_gui_data.data.sweep_counter;
+%     experiment_setup.cc_traces{experiment_setup.pos_order(i)} = ...
+%         get_traces(acq_gui_data.data,trial,experiment_setup.trials.Fs,experiment_setup.trials.max_time_sec);
+
+data = handles.data;
+save(experiment_setup.exp.fullsavefile,'data','experiment_setup')
+    
+
 
 set(handles.close_socket_check,'Value',1);
 instruction.type = 00;
