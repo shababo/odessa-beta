@@ -27,7 +27,7 @@ end
 if length(varargin) > 4 && ~isempty(varargin{5})
     fluor_min = varargin{5};
 else
-    fluor_min = 10;
+    fluor_min = 0;
 end
 
 if length(varargin) > 5 && ~isempty(varargin{6})

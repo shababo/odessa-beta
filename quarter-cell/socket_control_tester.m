@@ -7732,7 +7732,6 @@ function target_error_test_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
 set(handles.close_socket_check,'Value',0)
 guidata(hObject,handles);
 
@@ -8039,7 +8038,7 @@ instruction.get_return = 1;
 disp('sending instruction...')
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
- % stim it
+% stim it
 % set params
 if experiment_setup.calibrate_power
     set(handles.target_intensity,'String','40')
@@ -8355,3 +8354,122 @@ instruction.type = 00;
 instruction.string = 'done';
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
+
+function new_calib_func(hObject,eventdata,handles)
+
+wrndlg = warndlg('Set 0 position by going to top of slice with piezo = 0');
+waitfor(wrndlg)
+
+answer = inputdlg('Go to cell z depth. What is piezo z depth for cell in um?');
+experiment_setup.cell_z = str2num(answer{1});
+
+wrndlg = warndlg('Set 0 position by going to top of slice with piezo = 0');
+waitfor(wrndlg)
+
+experiment_setup.exp_root = 'C:\data\Shababo\';
+experiment_setup.trials.Fs = 20000;
+experiment_setup.trials.max_time_sec = .050;
+
+clock_array = clock;
+experiment_setup.exp_id = [num2str(clock_array(2)) '_' num2str(clock_array(3)) ...
+    '_' num2str(clock_array(4)) ...
+    '_' num2str(clock_array(5))];
+experiment_setup.exp.fullsavefile = ...
+    fullfile(experiment_setup.exp_root,[experiment_setup.exp_id '_data.mat']);
+
+experiment_setup.enable_user_breaks = 0;
+
+eventdata = [];
+disp('Get objective ref position...')
+[experiment_setup, handles] = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+disp('Take stack...')
+[handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+
+% show detection results and get cell selection
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% choose spike protocols
+spike_prot_choices = choose_spike_timing_calibration_types
+
+% choose current protocols
+current_prot_choices = choose_current_calibration_types
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[acq_gui, acq_gui_data] = get_acq_gui_data;
+figure(acq_gui)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
