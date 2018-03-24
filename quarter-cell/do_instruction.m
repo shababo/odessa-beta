@@ -307,8 +307,8 @@ if success >= 0
         case CLICK_LOCS
              evalin('base','take_snap')
              handles.snap_image = evalin('base','temp');
-             return_info.snap_image = evalin('base','temp');
-             this_image = evalin('base','temp');
+             return_info.snap_image = handles.snap_image;
+             this_image = handles.snap_image;
              figure; imagesc(this_image)
              if instruction.num_targs
                  num_targs = instruction.num_targs;
