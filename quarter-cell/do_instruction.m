@@ -460,12 +460,19 @@ if success >= 0
                 return_info.bad_file = 1
             end
         case PRECOMPUTE_PHASE_SINGLE_UM_LIST
+            
             spatial_targets = instruction.targets;
             
-            tf_disk_grid = evalin('base','tf_disk_grid');
-            tf_disk_key = evalin('base','tf_disk_key');
-            tf_fine_grid_spots_phase = evalin('base','tf_fine_grid_spots_phase');
-            tf_fine_grid_spots_key = evalin('base','tf_fine_grid_spots_key');
+            if ~isfield(instruction,'make_phase_masks')
+                instruction.make_phase_masks = 1;
+            end
+            
+            if instruction.make_phase_masks
+                tf_disk_grid = evalin('base','tf_disk_grid');
+                tf_disk_key = evalin('base','tf_disk_key');
+                tf_fine_grid_spots_phase = evalin('base','tf_fine_grid_spots_phase');
+                tf_fine_grid_spots_key = evalin('base','tf_fine_grid_spots_key');
+            end
             
             if isfield(instruction,'build_pockels_ref')
                 build_pockels_ref = instruction.build_pockels_ref;
@@ -476,28 +483,32 @@ if success >= 0
             if build_pockels_ref
                 ratio_map = evalin('base','ratio_map'); 
             end
+            precomputed_target = struct();
             for i = 1:size(spatial_targets,1)
         
                 this_loc = spatial_targets(i,1:2);
-                fullF = single(zeros(600,792)); 
+                
+                    if instruction.make_phase_masks
+                        fullF = single(zeros(600,792)); 
 
-                decval = round(this_loc,-1);
-                unitval = round(this_loc - decval);
+                        decval = round(this_loc,-1);
+                        unitval = round(this_loc - decval);
 
-                convP = tf_disk_grid(:,:,tf_disk_key(:,1) == decval(1) & ...
-                                                                             tf_disk_key(:,2) == decval(2)) + ...
-                                        tf_fine_grid_spots_phase(:,:,tf_fine_grid_spots_key(:,1) == unitval(1) & ...
-                                                                             tf_fine_grid_spots_key(:,2) == unitval(2));
-                convP(convP < -pi) = convP(convP < -pi) + 2*pi;
-                convP(convP > pi) = convP(convP > pi) - 2*pi;
-                fullF = fullF + exp(1i*convP);
+                        convP = tf_disk_grid(:,:,tf_disk_key(:,1) == decval(1) & ...
+                                                                                     tf_disk_key(:,2) == decval(2)) + ...
+                                                tf_fine_grid_spots_phase(:,:,tf_fine_grid_spots_key(:,1) == unitval(1) & ...
+                                                                                     tf_fine_grid_spots_key(:,2) == unitval(2));
+                        convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+                        convP(convP > pi) = convP(convP > pi) - 2*pi;
+                        fullF = fullF + exp(1i*convP);
 
-                convP = angle(fullF);
-                convP(convP < -pi) = convP(convP < -pi) + 2*pi;
-                convP(convP > pi) = convP(convP > pi) - 2*pi;
+                        convP = angle(fullF);
+                        convP(convP < -pi) = convP(convP < -pi) + 2*pi;
+                        convP(convP > pi) = convP(convP > pi) - 2*pi;
 
-                precomputed_target(i).mode = 'Phase';
-                precomputed_target(i).pattern = double(convP);
+                        precomputed_target(i).mode = 'Phase';
+                        precomputed_target(i).pattern = double(convP);
+                    end
                 
                 if build_pockels_ref
                     pockels_ratio_refs_tf(i) = ratio_map(round(this_loc(1))+ceil(size(ratio_map,1)/2),...
@@ -516,7 +527,9 @@ if success >= 0
                 names{4} = 'pockels_ratio_refs_tf';
             end
             assignin_base(names,vars);
-            evalin('base','set_precomp_target_ready')
+            if instruction.make_phase_masks
+                evalin('base','set_precomp_target_ready')
+            end
 
         case TAKE_SNAP
             evalin('base','take_snap')
