@@ -1,7 +1,7 @@
 function run_mapping_experiment(experiment_setup,varargin)
 
 disp('Experiment start...')
-
+%%
 switch experiment_setup.experiment_type
     case 'pilot'
         
@@ -22,8 +22,6 @@ switch experiment_setup.experiment_type
         
         experiment_setup.is_exp = 1;
         set(handles.close_socket_check,'Value',0)
-        
-        
         
         experiment_setup.enable_user_breaks = 0;
         if ~fast_start
@@ -80,7 +78,6 @@ switch experiment_setup.experiment_type
                 experiment_setup.is_exp = 1;
                 guidata(hObject,handles)
             end
-            
             load_exp = 0;
             if experiment_setup.enable_user_breaks
                 choice = questdlg('Load an experiment?',...
@@ -105,7 +102,6 @@ switch experiment_setup.experiment_type
                         load_exp = 0;
                 end
             end
-            
             if load_exp
                 [data_filename,data_pathname] = uigetfile('*.mat','Select data .mat file...');
                 load(fullfile(data_pathname,data_filename),'exp_data')
@@ -119,10 +115,8 @@ switch experiment_setup.experiment_type
                 end
                 experiment_setup.enable_user_breaks = enable_user_breaks;
                 experiment_setup.is_exp = 1;
-                experiment_setup.terminator=@check_all_learned;
-                
+                experiment_setup.terminator=@check_all_learned; 
             end
-            
             guidata(hObject,handles)
             
         end
@@ -144,7 +138,7 @@ switch experiment_setup.experiment_type
         
 end
 
-
+%%
 get_neurons = 1;
 if experiment_setup.enable_user_breaks
     choice = questdlg('Get presynaptic neurons?',...
@@ -174,7 +168,6 @@ disp('Get presynaptic neurons...')
 
 if get_neurons
     if experiment_setup.is_exp
-        
         eventdata = [];
         disp('Get objective ref position...')
         [experiment_setup, handles] = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
@@ -182,9 +175,7 @@ if get_neurons
         
         disp('Take stack...')
         [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-        [acq_gui, acq_gui_data] = get_acq_gui_data;
-        
-        
+        [acq_gui, acq_gui_data] = get_acq_gui_data; 
     end
 
     switch experiment_setup.experiment_type
@@ -207,7 +198,7 @@ if get_neurons
 
 end
 
-
+%%
 if ~exist('neighbourhoods','var')
     
     load_neighbourhoods_flag= false;
@@ -245,12 +236,12 @@ if isfield(experiment_setup, 'stack')
 end
 
 if strcmp(experiment_setup.experiment_type,'simulation')
-    handles.fighandle = figure;
-    for i = 1:length(neighbourhoods)
-        plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
-    end
+%     handles.fighandle = figure;
+%     for i = 1:length(neighbourhoods)
+%         plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
+%     end
 end
-
+%%
 if ~experiment_setup.is_exp
     
     load_trials_flag=false;
@@ -400,14 +391,12 @@ else
     
 end
 
-
+%%
 not_terminated = 1;
 loop_count = -1;
 batch_found = 0;
 
-
-while not_terminated 
-    
+while not_terminated     
     loop_count = loop_count + 1;
     
     % FIND BATCH AND LOAD PHASE MASKS IF NEEDED
@@ -446,6 +435,10 @@ while not_terminated
                 neighbourhood.neurons(i_cell).PR_params;
             experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).gain_params=...
                 neighbourhood.neurons(i_cell).gain_params;
+            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).delay_mu_params=...
+                neighbourhood.neurons(i_cell).delay_mu_params;
+            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).delay_sigma_params=...
+                neighbourhood.neurons(i_cell).delay_sigma_params;
         end
     end
     
@@ -466,6 +459,18 @@ while not_terminated
                     experiment_setup.neurons(temp_ID).gain_params(end);
             end
         end
+        if  isfield(experiment_setup.neurons(temp_ID),'delay_mu_params')
+            if ~isempty(experiment_setup.neurons(temp_ID).delay_mu_params)
+                neighbourhood.neurons(i_cell).gain_params(end)=...
+                    experiment_setup.neurons(temp_ID).delay_mu_params(end);
+            end
+        end
+        if  isfield(experiment_setup.neurons(temp_ID),'delay_sigma_params')
+            if ~isempty(experiment_setup.neurons(temp_ID).delay_sigma_params)
+                neighbourhood.neurons(i_cell).gain_params(end)=...
+                    experiment_setup.neurons(temp_ID).delay_sigma_params(end);
+            end
+        end
     end
     
     %Update plots
@@ -479,13 +484,13 @@ while not_terminated
             end
  
         end
-        plot_one_neighbourhood(neighbourhood,handles.fighandle)
-        if experiment_setup.sim.visualize
-            digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
-            figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
-            save_path=experiment_setup.exp_root;
-            experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
-        end
+%         plot_one_neighbourhood(neighbourhood,handles.fighandle)
+%         if experiment_setup.sim.visualize
+%             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
+%             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+%             save_path=experiment_setup.exp_root;
+%             experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
+%         end
     end
     %     drawnow
     
