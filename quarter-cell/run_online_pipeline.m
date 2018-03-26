@@ -16,7 +16,6 @@ elseif length(varargin) == 3
     
 end
 
-
     
 
 % rebuild function links :(
@@ -24,7 +23,7 @@ group_names = experiment_setup.group_names;
 for i = 1:length(group_names)
     experiment_setup.groups.(group_names{i}) = eval(['get_' group_names{i}]);
 end
-experiment_setup.prior_info.induced_intensity.linkfunc={@link_sig, @derlink_sig, @invlink_sig,@derinvlink_sig};
+% experiment_setup.prior_info.induced_intensity.linkfunc={@link_sig, @derlink_sig, @invlink_sig,@derinvlink_sig};
 
 gen_psc_flag = false;
 switch experiment_setup.experiment_type
@@ -39,7 +38,7 @@ switch experiment_setup.experiment_type
 end
 
 if gen_psc_flag
-    experiment_query=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
+    experiment_query=generate_psc_data_dev(experiment_query,experiment_setup,neighbourhood);
 end
 
 % FOR LOOP BELOW IS GENERAL ANALYSIS CASE (NOT DEBUGGED)

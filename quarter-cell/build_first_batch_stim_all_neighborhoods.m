@@ -46,10 +46,14 @@ end
     end
     
     if ~follow_instructions
+        
         for i = 1:length(neighbourhoods)
             [experiment_query(i,1), neighbourhoods(i)] = run_online_pipeline(neighbourhoods(i),...
                 empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group)),...
                 experiment_setup);
+        end
+        for i =1:length(neighbourhoods)
+           experiment_query(i,1).batch_trial_rate=[]; 
         end
     else
         instruction.type = 300; 
