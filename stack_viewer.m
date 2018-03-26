@@ -22,7 +22,7 @@ function varargout = stack_viewer(varargin)
 
 % Edit the above text to modify the response to help stack_viewer
 
-% Last Modified by GUIDE v2.5 26-Mar-2018 14:21:26
+% Last Modified by GUIDE v2.5 26-Mar-2018 15:32:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -201,4 +201,3 @@ function select_cell_proj_Callback(hObject, eventdata, handles)
 axes(handles.maxproj_axes)
 
 [y x] = ginput(1);
-
