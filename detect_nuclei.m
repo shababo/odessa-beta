@@ -1,4 +1,5 @@
-function [nuclear_locs,fluor_vals,nuclear_locs_image_coord,plane_fit] = detect_nuclei(filename,varargin)
+function [nuclear_locs,fluor_vals,nuclear_locs_image_coord,plane_fit] = ...
+    detect_nuclei(filename,varargin)
 
 if ~isempty(varargin) && ~isempty(varargin{1})
     image_um_per_px = varargin{1};
@@ -58,6 +59,7 @@ nuclear_locs = nuclear_locs';
 % nuclear_locs(:,[1 2]) = nuclear_locs(:,[2 1]);
 
 nuclear_locs_image_coord(:,out_of_range) = [];
+nuclear_locs_image_coord = nuclear_locs_image_coord';
 fluor_vals(out_of_range) = [];
 
 

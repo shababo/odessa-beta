@@ -31,8 +31,14 @@ if take_new_stack
     instruction.type = 92;
     instruction.get_return = 1;
     instruction.filename = [experiment_setup.exp_id '_stack'];
+    if isfield(experiment_setup,'get_ch2')
+        instruction.get_ch2 = experiment_setup.get_ch2;
+    end
     [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
     experiment_setup.stack = return_info.image;
+    if isfield(experiment_setup,'get_ch2') && experiment_setup.get_ch2
+        experiment_setup.stack_ch2 = return_info.image_ch2;
+    end
     if isfield(return_info,'image_zero_order_coord')
         acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
         acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;

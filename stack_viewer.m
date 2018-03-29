@@ -22,7 +22,7 @@ function varargout = stack_viewer(varargin)
 
 % Edit the above text to modify the response to help stack_viewer
 
-% Last Modified by GUIDE v2.5 26-Mar-2018 15:32:32
+% Last Modified by GUIDE v2.5 28-Mar-2018 13:09:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -56,24 +56,54 @@ function stack_viewer_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 handles.data.image = varargin{1};
-if length(varargin) > 2 && ~isempty(varargin{3})
-    handles.data.parent_handles = varargin{3};
-end
 if length(varargin) > 1 && ~isempty(varargin{2})
-    handles.data.slice_ind = varargin{2};
+    handles.data.nuc_locs_image_coord = varargin{2};
+else
+    handles.data.nuc_locs_image_coord = [];
+end
+if length(varargin) > 2 && ~isempty(varargin{3})
+    handles.data.slice_ind = varargin{3};
 else
     handles.data.slice_ind = 1;
 end 
+if length(varargin) > 3 && ~isempty(varargin{4})
+    handles.data.image_g = varargin{4};
+    set(handles.overlay_green_check,'enable','on')
+end
+if length(varargin) > 4 && ~isempty(varargin{5})
+    handles.data.parent_obj = varargin{5};
+    handles.data.parent_handles = guidata(handles.data.parent_obj);
+end
+
 
 handles.data.proj_top = 1;
 handles.data.slice_max = size(handles.data.image,3);
 handles.data.proj_bottom = handles.data.slice_max;
 set(handles.proj_bottom,'String',num2str(handles.data.proj_bottom));
 
+maxval = 12500;
+linvals = linspace(0,1,maxval)';
+handles.data.red_colormap = ...
+    horzcat(linvals, zeros(size(linvals)) , zeros(size(linvals)));
+
+handles.data.selected_cell_pos = [];
+handles.data.clim_min = 0; 
+handles.data.clim_max = 1000;
+set(handles.clim_max_slider,'Value',handles.data.clim_max)
+
+set(handles.z_slice_slider,'Min',1)
+set(handles.z_slice_slider,'Max',handles.data.slice_max)
+set(handles.z_slice_slider,'Value',handles.data.slice_ind)
+set(handles.z_slice_slider,'SliderStep',[1/(handles.data.slice_max - 1) 1])
+
+handles.data.show_green = 0;
+
+handles.data.init = 1;
+draw_all(handles)
+handles.data.init = 0;
+
 % Update handles structure
 guidata(hObject, handles);
-
-draw_all(handles)
 
 
 
@@ -93,28 +123,101 @@ function varargout = stack_viewer_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 function draw_all(handles)
+set(handles.selected_cell_text,'String',mat2str(round(handles.data.selected_cell_pos)))
 draw_slice(handles)
 draw_proj(handles)
 
 function draw_slice(handles)
+
 axes(handles.slice_axes)
-imagesc(handles.data.image(:,:,handles.data.slice_ind));
+if ~handles.data.init
+    xlims = get(handles.slice_axes,'xlim');
+    ylims = get(handles.slice_axes,'ylim');
+end
+% plot slice
+this_image = handles.data.image(:,:,handles.data.slice_ind);
+if handles.data.show_green
+    this_image_g = handles.data.image_g(:,:,handles.data.slice_ind);
+    rg_image = imfuse(this_image,this_image_g,'falsecolor','ColorChannels',[1 2 0]);
+    imagesc(rg_image)
+else
+
+    imagesc(this_image)
+    hold on
+
+    colormap(handles.data.red_colormap)
+end
+set(handles.z_slice_text,'String',num2str(handles.data.slice_ind))
+
+% caxis([handles.data.clim_min handles.data.clim_max])
+
+% plot cells
+% slice_dist = abs(handles.data.nuc_locs_image_coord(:,3) - handles.data.slice_ind);
+% these_cell_i = slice_dist < 5;
+% handles.data.slice_cell_i = these_cell_i;
+% these_cell_coord = handles.data.nuc_locs_image_coord(these_cell_i,:);
+% scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
+%     5,...
+%     [1 1 1],'filled');
+% 
+% if ~isempty(handles.data.selected_cell_pos)
+%     scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
+% end
+
+hold off
+if ~handles.data.init
+    set(handles.slice_axes,'xlim',xlims)
+    set(handles.slice_axes,'ylim',ylims)
+end
+
+guidata(handles.slice_axes,handles)
+
 
 function draw_proj(handles)
 
 handles.data.proj_top = str2double(get(handles.proj_top,'String'));
+if handles.data.proj_top < 1
+    handles.data.proj_top = 1;
+end
 
 handles.data.proj_bottom = str2double(get(handles.proj_bottom,'String'));
-if handles.data.proj_bottom < 1
-    handles.data.proj_bottom = 1;
-end
-handles.data.proj_top = str2double(get(handles.proj_top,'String'));
-if handles.data.proj_top > handles.data.slice_max
+if handles.data.proj_bottom > handles.data.slice_max
     handles.data.proj_bottom = handles.data.slice_max;
 end
+
 axes(handles.maxproj_axes)
+if ~handles.data.init
+    xlims = get(handles.maxproj_axes,'xlim');
+    ylims = get(handles.maxproj_axes,'ylim');
+end
+
+% plot proj
 imagesc(max(...
     handles.data.image(:,:,handles.data.proj_top:handles.data.proj_bottom),[],3));
+hold on
+
+caxis([handles.data.clim_min handles.data.clim_max])
+colormap(handles.data.red_colormap)
+
+% plot cells
+these_cell_i = handles.data.nuc_locs_image_coord(:,3) < (handles.data.proj_bottom + 3) & ...
+    handles.data.nuc_locs_image_coord(:,3) > (handles.data.proj_top - 3);
+handles.data.proj_cell_i = these_cell_i;
+these_cell_coord = handles.data.nuc_locs_image_coord(these_cell_i,:);
+scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
+    5,...
+    [1 1 1],'filled');
+
+if ~isempty(handles.data.selected_cell_pos)
+    scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
+end
+
+hold off
+if ~handles.data.init
+    set(handles.maxproj_axes,'xlim',xlims)
+    set(handles.maxproj_axes,'ylim',ylims)
+end
+guidata(handles.maxproj_axes,handles)
 
 % --- Executes on button press in stack_down.
 function stack_down_Callback(hObject, eventdata, handles)
@@ -198,6 +301,211 @@ function select_cell_proj_Callback(hObject, eventdata, handles)
 % hObject    handle to select_cell_proj (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-axes(handles.maxproj_axes)
 
-[y x] = ginput(1);
+axes(handles.maxproj_axes)
+[col row] = ginput(1);
+
+these_cells = handles.data.nuc_locs_image_coord(handles.data.proj_cell_i,1:2);
+offsets = bsxfun(@minus,these_cells,[col row]);
+
+[targ_error, index] = min(sqrt(sum(offsets.^2,2)));
+
+cell_inds = find(handles.data.proj_cell_i);
+index = cell_inds(index);
+% handles.data.fluor_val = fluor_vals(index);
+handles.data.selected_cell_pos = handles.data.nuc_locs_image_coord(index,:);
+
+guidata(hObject,handles)
+draw_all(handles)
+
+
+% --- Executes on slider movement.
+function z_slice_slider_Callback(hObject, eventdata, handles)
+% hObject    handle to z_slice_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+handles.data.slice_ind = round(get(hObject,'Value'));
+guidata(hObject,handles)
+draw_all(handles)
+
+% --- Executes during object creation, after setting all properties.
+function z_slice_slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to z_slice_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on slider movement.
+function clim_min_slider_Callback(hObject, eventdata, handles)
+% hObject    handle to clim_min_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+handles.data.clim_min = get(hObject,'Value');
+set(handles.clim_max_slider,'min',handles.data.clim_min)
+guidata(hObject,handles)
+draw_all(handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function clim_min_slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to clim_min_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on slider movement.
+function proj_axes_clim_slider_Callback(hObject, eventdata, handles)
+% hObject    handle to proj_axes_clim_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function proj_axes_clim_slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to proj_axes_clim_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on button press in link_axes_check.
+function link_axes_check_Callback(hObject, eventdata, handles)
+% hObject    handle to link_axes_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of link_axes_check
+
+if get(hObject,'Value')
+    option = 'xy';
+else
+    option = 'off';
+end
+
+linkaxes([handles.slice_axes handles.maxproj_axes],option)
+
+
+% --- Executes on button press in checkbox2.
+function checkbox2_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox2
+
+
+% --- Executes on slider movement.
+function clim_max_slider_Callback(hObject, eventdata, handles)
+% hObject    handle to clim_max_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+handles.data.clim_max = get(hObject,'Value');
+set(handles.clim_min_slider,'max',handles.data.clim_max)
+
+guidata(hObject,handles)
+
+draw_all(handles)
+
+% --- Executes during object creation, after setting all properties.
+function clim_max_slider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to clim_max_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+
+function clim_max_val_Callback(hObject, eventdata, handles)
+% hObject    handle to clim_max_val (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of clim_max_val as text
+%        str2double(get(hObject,'String')) returns contents of clim_max_val as a double
+
+new_max = str2double(get(hObject,'String'));
+set(handles.clim_max_slider,'max',new_max)
+
+
+% --- Executes during object creation, after setting all properties.
+function clim_max_val_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to clim_max_val (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function clim_min_val_Callback(hObject, eventdata, handles)
+% hObject    handle to clim_min_val (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of clim_min_val as text
+%        str2double(get(hObject,'String')) returns contents of clim_min_val as a double
+
+new_min = str2double(get(hObject,'String'));
+set(handles.clim_max_slider,'min',new_min)
+
+% --- Executes during object creation, after setting all properties.
+function clim_min_val_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to clim_min_val (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in overlay_green_check.
+function overlay_green_check_Callback(hObject, eventdata, handles)
+% hObject    handle to overlay_green_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of overlay_green_check
+
+handles.data.show_green = get(hObject,'Value');
+guidata(hObject,handles)
+draw_all(handles)
