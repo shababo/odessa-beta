@@ -37,8 +37,14 @@ else
     plot_results = 1;
 end
 
+if length(varargin) > 6 && ~isempty(varargin{7})
+    params = varargin{7};
+else
+    params = [];
+end
+
 if do_detect
-    peak_detection_12(filename);
+    peak_detection_12(filename,params);
 end
 
 load([filename '.mat'])

@@ -22,7 +22,7 @@ function varargout = stack_viewer(varargin)
 
 % Edit the above text to modify the response to help stack_viewer
 
-% Last Modified by GUIDE v2.5 28-Mar-2018 13:09:33
+% Last Modified by GUIDE v2.5 10-Apr-2018 12:31:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -56,22 +56,51 @@ function stack_viewer_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 handles.data.image = varargin{1};
+
+if ischar(handles.data.image)
+    filename = handles.data.image;
+    info = imfinfo(filename);
+    handles.data.image = zeros(info(1).Height,info(1).Width,length(info),'uint16');
+    for i = 1:length(info)
+        handles.data.image(:,:,i) = imread(filename,i);
+    end
+end
+
 if length(varargin) > 1 && ~isempty(varargin{2})
     handles.data.nuc_locs_image_coord = varargin{2};
+    if length(varargin) > 2 && ~isempty(varargin{3})
+        handles.data.fluor_vals = varargin{3};
+    else
+        for i = 1:length(handles.data.nuc_locs_image_coord)
+            handles.data.fluor_vals{i} = Inf*ones(size(handles.data.nuc_locs_image_coord{i},1),1);
+        end
+    end
 else
     handles.data.nuc_locs_image_coord = [];
+    handles.data.fluor_vals = [];
 end
-if length(varargin) > 2 && ~isempty(varargin{3})
-    handles.data.slice_ind = varargin{3};
+handles.data.fluor_thresh = 0;
+
+if length(varargin) > 3 && ~isempty(varargin{4})
+    handles.data.slice_ind = varargin{4};
 else
     handles.data.slice_ind = 1;
 end 
-if length(varargin) > 3 && ~isempty(varargin{4})
-    handles.data.image_g = varargin{4};
-    set(handles.overlay_green_check,'enable','on')
-end
+
 if length(varargin) > 4 && ~isempty(varargin{5})
-    handles.data.parent_obj = varargin{5};
+    handles.data.image_g = varargin{5};
+    set(handles.overlay_green_check,'enable','on')
+    if ischar(handles.data.image_g)
+        filename = handles.data.image_g;
+        info = imfinfo(filename);
+        handles.data.image_g = zeros(info(1).Height,info(1).Width,length(info),'uint16');
+        for i = 1:length(info)
+            handles.data.image_g(:,:,i) = imread(filename,i);
+        end
+    end
+end
+if length(varargin) > 5 && ~isempty(varargin{6})
+    handles.data.parent_obj = varargin{6};
     handles.data.parent_handles = guidata(handles.data.parent_obj);
 end
 
@@ -97,6 +126,9 @@ set(handles.z_slice_slider,'Value',handles.data.slice_ind)
 set(handles.z_slice_slider,'SliderStep',[1/(handles.data.slice_max - 1) 1])
 
 handles.data.show_green = 0;
+
+handles.data.scatter_shapes = {'o','x'};
+handles.data.scatter_colors = {'w','g'};
 
 handles.data.init = 1;
 draw_all(handles)
@@ -140,29 +172,37 @@ if handles.data.show_green
     this_image_g = handles.data.image_g(:,:,handles.data.slice_ind);
     rg_image = imfuse(this_image,this_image_g,'falsecolor','ColorChannels',[1 2 0]);
     imagesc(rg_image)
+    hold on
 else
 
     imagesc(this_image)
     hold on
-
-    colormap(handles.data.red_colormap)
 end
+    colormap(handles.data.red_colormap)
+    caxis([handles.data.clim_min handles.data.clim_max])
+    
+    % plot cells
+    
+    for i = 1:length(handles.data.nuc_locs_image_coord)
+        slice_dist = abs(handles.data.nuc_locs_image_coord{i}(:,3) - handles.data.slice_ind);
+        these_cell_i = slice_dist < 4 & handles.data.fluor_vals{i} > handles.data.fluor_thresh;
+        handles.data.slice_cell_i = these_cell_i;
+        these_cell_coord = handles.data.nuc_locs_image_coord{i}(these_cell_i,:);
+        scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
+            40,...
+            handles.data.scatter_colors{i},handles.data.scatter_shapes{i});
+
+        if ~isempty(handles.data.selected_cell_pos)
+            scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
+        end
+    end
+    
+% end
 set(handles.z_slice_text,'String',num2str(handles.data.slice_ind))
 
-% caxis([handles.data.clim_min handles.data.clim_max])
 
-% plot cells
-% slice_dist = abs(handles.data.nuc_locs_image_coord(:,3) - handles.data.slice_ind);
-% these_cell_i = slice_dist < 5;
-% handles.data.slice_cell_i = these_cell_i;
-% these_cell_coord = handles.data.nuc_locs_image_coord(these_cell_i,:);
-% scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
-%     5,...
-%     [1 1 1],'filled');
-% 
-% if ~isempty(handles.data.selected_cell_pos)
-%     scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
-% end
+
+
 
 hold off
 if ~handles.data.init
@@ -200,16 +240,19 @@ caxis([handles.data.clim_min handles.data.clim_max])
 colormap(handles.data.red_colormap)
 
 % plot cells
-these_cell_i = handles.data.nuc_locs_image_coord(:,3) < (handles.data.proj_bottom + 3) & ...
-    handles.data.nuc_locs_image_coord(:,3) > (handles.data.proj_top - 3);
-handles.data.proj_cell_i = these_cell_i;
-these_cell_coord = handles.data.nuc_locs_image_coord(these_cell_i,:);
-scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
-    5,...
-    [1 1 1],'filled');
+for i = 1:length(handles.data.nuc_locs_image_coord)
+    these_cell_i = handles.data.nuc_locs_image_coord{i}(:,3) < (handles.data.proj_bottom + 5) & ...
+        handles.data.nuc_locs_image_coord{i}(:,3) > (handles.data.proj_top - 5);
+    these_cell_i = these_cell_i & handles.data.fluor_vals{i} > handles.data.fluor_thresh;
+    handles.data.proj_cell_i = these_cell_i;
+    these_cell_coord = handles.data.nuc_locs_image_coord{i}(these_cell_i,:);
+    scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
+        40,...
+        handles.data.scatter_colors{i},handles.data.scatter_shapes{i});
 
-if ~isempty(handles.data.selected_cell_pos)
-    scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
+    if ~isempty(handles.data.selected_cell_pos)
+        scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
+    end
 end
 
 hold off
@@ -305,7 +348,7 @@ function select_cell_proj_Callback(hObject, eventdata, handles)
 axes(handles.maxproj_axes)
 [col row] = ginput(1);
 
-these_cells = handles.data.nuc_locs_image_coord(handles.data.proj_cell_i,1:2);
+these_cells = handles.data.nuc_locs_image_coord{1}(handles.data.proj_cell_i,1:2);
 offsets = bsxfun(@minus,these_cells,[col row]);
 
 [targ_error, index] = min(sqrt(sum(offsets.^2,2)));
@@ -313,7 +356,7 @@ offsets = bsxfun(@minus,these_cells,[col row]);
 cell_inds = find(handles.data.proj_cell_i);
 index = cell_inds(index);
 % handles.data.fluor_val = fluor_vals(index);
-handles.data.selected_cell_pos = handles.data.nuc_locs_image_coord(index,:);
+handles.data.selected_cell_pos = handles.data.nuc_locs_image_coord{1}(index,:);
 
 guidata(hObject,handles)
 draw_all(handles)
@@ -509,3 +552,30 @@ function overlay_green_check_Callback(hObject, eventdata, handles)
 handles.data.show_green = get(hObject,'Value');
 guidata(hObject,handles)
 draw_all(handles)
+
+
+
+function fluor_thresh_Callback(hObject, eventdata, handles)
+% hObject    handle to fluor_thresh (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of fluor_thresh as text
+%        str2double(get(hObject,'String')) returns contents of fluor_thresh as a double
+
+handles.data.fluor_thresh = str2double(get(hObject,'String'));
+guidata(hObject,handles)
+draw_all(handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function fluor_thresh_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to fluor_thresh (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
