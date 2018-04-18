@@ -247,10 +247,10 @@ if success >= 0
                 max_dist = 180; %um from zero order
             end
 
-            max_px_val = max_dist/experiment_setup.image_um_per_px + experiment_setup.image_zero_order_coord(2:-1:1);
+            max_px_val = max_dist/experiment_setup.image_um_per_px + experiment_setup.image_zero_order_coord;
             min_px_val = max_px_val - 2*max_dist/experiment_setup.image_um_per_px;
             image_zero_order_coord = (max_px_val - min_px_val)/2;
-            image_zero_order_coord = image_zero_order_coord(2:-1:1);
+            image_zero_order_coord = image_zero_order_coord;
             image_px_bounds = round([min_px_val max_px_val]);
 
 

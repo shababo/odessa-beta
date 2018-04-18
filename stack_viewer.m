@@ -185,7 +185,7 @@ end
     
     for i = 1:length(handles.data.nuc_locs_image_coord)
         slice_dist = abs(handles.data.nuc_locs_image_coord{i}(:,3) - handles.data.slice_ind);
-        these_cell_i = slice_dist < 4 & handles.data.fluor_vals{i} > handles.data.fluor_thresh;
+        these_cell_i = slice_dist < 7 & handles.data.fluor_vals{i} > handles.data.fluor_thresh;
         handles.data.slice_cell_i = these_cell_i;
         these_cell_coord = handles.data.nuc_locs_image_coord{i}(these_cell_i,:);
         scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
