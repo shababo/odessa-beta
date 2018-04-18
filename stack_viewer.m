@@ -22,10 +22,10 @@ function varargout = stack_viewer(varargin)
 
 % Edit the above text to modify the response to help stack_viewer
 
-% Last Modified by GUIDE v2.5 10-Apr-2018 12:31:56
+% Last Modified by GUIDE v2.5 17-Apr-2018 10:06:48
 
 % Begin initialization code - DO NOT EDIT
-gui_Singleton = 1;
+gui_Singleton = 0;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
                    'gui_OpeningFcn', @stack_viewer_OpeningFcn, ...
