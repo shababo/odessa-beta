@@ -40,18 +40,18 @@ if take_new_stack
         experiment_setup.stack_ch2 = return_info.image_ch2;
     end
     if isfield(return_info,'image_zero_order_coord')
-        acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
-        acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
-        acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
-        handles.data.image_zero_order_coord = return_info.image_zero_order_coord;
-        handles.data.image_um_per_px = return_info.image_um_per_px;
-        handles.data.stack_um_per_slice = return_info.stack_um_per_slice; 
+%         acq_gui_data.data.image_zero_order_coord = return_info.image_zero_order_coord;
+%         acq_gui_data.data.image_um_per_px = return_info.image_um_per_px;
+%         acq_gui_data.data.stack_um_per_slice = return_info.stack_um_per_slice;     
+        experiment_setup.image_zero_order_coord = return_info.image_zero_order_coord;
+        experiment_setup.image_um_per_px = return_info.image_um_per_px;
+        experiment_setup.stack_um_per_slice = return_info.stack_um_per_slice; 
     end
     
 %     handles.data.stack = return_info.image;
     
-    guidata(hObject,handles);
-    guidata(acq_gui, acq_gui_data);
+%     guidata(hObject,handles);
+%     guidata(acq_gui, acq_gui_data);
     handles.data.experiment_setup = experiment_setup;
     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
     

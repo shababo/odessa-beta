@@ -1549,7 +1549,7 @@ function neural_resp_prot_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 experiment_setup = get_response_model_calib_setup;
-
+neural_response_calibration(experiment_setup,handles,hObject)
 
 
 

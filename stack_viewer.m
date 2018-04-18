@@ -22,7 +22,7 @@ function varargout = stack_viewer(varargin)
 
 % Edit the above text to modify the response to help stack_viewer
 
-% Last Modified by GUIDE v2.5 10-Apr-2018 12:31:56
+% Last Modified by GUIDE v2.5 12-Apr-2018 18:31:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -79,6 +79,7 @@ else
     handles.data.nuc_locs_image_coord = [];
     handles.data.fluor_vals = [];
 end
+
 handles.data.fluor_thresh = 0;
 
 if length(varargin) > 3 && ~isempty(varargin{4})
@@ -100,8 +101,8 @@ if length(varargin) > 4 && ~isempty(varargin{5})
     end
 end
 if length(varargin) > 5 && ~isempty(varargin{6})
-    handles.data.parent_obj = varargin{6};
-    handles.data.parent_handles = guidata(handles.data.parent_obj);
+    handles.data.parent_handles = varargin{6};
+    handles.data.parent_hObject = varargin{7};
 end
 
 
@@ -129,15 +130,14 @@ handles.data.show_green = 0;
 
 handles.data.scatter_shapes = {'o','x'};
 handles.data.scatter_colors = {'w','g'};
+guidata(hObject, handles);
 
 handles.data.init = 1;
 draw_all(handles)
 handles.data.init = 0;
-
-% Update handles structure
 guidata(hObject, handles);
 
-
+% Update handles structure
 
 
 % UIWAIT makes stack_viewer wait for user response (see UIRESUME)
@@ -152,12 +152,15 @@ function varargout = stack_viewer_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
+
 varargout{1} = handles.output;
+% delete(handles.figure1)
 
 function draw_all(handles)
 set(handles.selected_cell_text,'String',mat2str(round(handles.data.selected_cell_pos)))
 draw_slice(handles)
 draw_proj(handles)
+
 
 function draw_slice(handles)
 
@@ -229,6 +232,9 @@ axes(handles.maxproj_axes)
 if ~handles.data.init
     xlims = get(handles.maxproj_axes,'xlim');
     ylims = get(handles.maxproj_axes,'ylim');
+else
+    xlim([1 256])
+    ylim([1 256])
 end
 
 % plot proj
@@ -259,6 +265,9 @@ hold off
 if ~handles.data.init
     set(handles.maxproj_axes,'xlim',xlims)
     set(handles.maxproj_axes,'ylim',ylims)
+else
+    xlim([1 256])
+    ylim([1 256])
 end
 guidata(handles.maxproj_axes,handles)
 
@@ -356,7 +365,14 @@ offsets = bsxfun(@minus,these_cells,[col row]);
 cell_inds = find(handles.data.proj_cell_i);
 index = cell_inds(index);
 % handles.data.fluor_val = fluor_vals(index);
+handles.data.selected_cell_index_full = index;
 handles.data.selected_cell_pos = handles.data.nuc_locs_image_coord{1}(index,:);
+
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_index_full = handles.data.selected_cell_index_full;
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_pos = handles.data.selected_cell_pos;
+handles.data.parent_handles.data.stack_viewer_output.fluor_thresh = str2double(get(handles.fluor_thresh,'String'));
+
+guidata(handles.data.parent_hObject,handles.data.parent_handles)
 
 guidata(hObject,handles)
 draw_all(handles)
@@ -579,3 +595,16 @@ function fluor_thresh_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes when user attempts to close figure1.
+function figure1_CloseRequestFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: delete(hObject) closes the figure
+
+delete(hObject)
+
+

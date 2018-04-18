@@ -559,7 +559,6 @@ while not_terminated
                 guidata(acq_gui,acq_gui_data)
                 
                 set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-                
                 acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
                 
                 guidata(hObject,handles)
