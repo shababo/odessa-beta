@@ -248,7 +248,7 @@ if success >= 0
             end
             if ~instruction.dummy_targs
                 disp('detecting nucs')
-                [nuclear_locs, fluor_vals] = ...
+                [nuclear_locs, fluor_vals, nuclear_locs_image_coord] = ...
                     detect_nuclei(['/media/shababo/data/' instruction.filename],...
                     experiment_setup.image_um_per_px,experiment_setup.image_zero_order_coord,...
                     experiment_setup.stack_um_per_slice);
@@ -268,6 +268,7 @@ if success >= 0
                 return_info.neurons = neurons;
             end
             return_info.nuclear_locs = nuclear_locs;
+            return_info.nuclear_locs_image_coord = nuclear_locs_image_coord;
             return_info.fluor_vals = fluor_vals;
             
 %             return_info.detect_img = detect_img;
@@ -468,8 +469,16 @@ if success >= 0
             end
             
             if instruction.make_phase_masks
-                tf_disk_grid = evalin('base','tf_disk_grid');
-                tf_disk_key = evalin('base','tf_disk_key');
+                if isfield(instruction,'use_spots') && instruction.use_spots
+                    tf_disk_grid = evalin('base','tf_spot_grid');
+                else
+                    tf_disk_grid = evalin('base','tf_disk_grid');
+                end
+                if isfield(instruction,'use_spots') && instruction.use_spots
+                    tf_disk_key = evalin('base','tf_spot_key');
+                else
+                    tf_disk_key = evalin('base','tf_disk_key');;
+                end
                 tf_fine_grid_spots_phase = evalin('base','tf_fine_grid_spots_phase');
                 tf_fine_grid_spots_key = evalin('base','tf_fine_grid_spots_key');
             end
@@ -541,12 +550,15 @@ if success >= 0
 %             pause(.1)
             evalin('base','take_stack')
             image_all_ch = evalin('base','acquiredImage');
-            return_info.image = 0;%image_all_ch(:,:,:,1)/9999*2^16; % scale to 16-bit
+            return_info.image = image_all_ch(:,:,:,1)/9999*2^16; % scale to 16-bit
+            if isfield(instruction,'get_ch2') && instruction.get_ch2
+                return_info.image_ch2 = image_all_ch(:,:,:,2)/9999*2^16;
+            end
             try
                 return_info.image_zero_order_coord = round(evalin('base','image_zero_order_coord'));
                 return_info.image_um_per_px = evalin('base','image_um_per_px');
                 return_info.stack_um_per_slice = evalin('base','stack_um_per_slice');
-            catch exception
+            catch e
             end
 %             write_tiff_stack([instruction.filename '.tif'],uint16(image_all_ch(:,:,:,1)));
 %             copyfile([instruction.filename '.tif'], ['Y:\shababo\' instruction.filename '.tif']);
@@ -698,7 +710,7 @@ if success >= 0
             end
             if ~instruction.dummy_targs
                 disp('detecting nucs')
-                [nuclear_locs, fluor_vals] = ...
+                [nuclear_locs, fluor_vals, nuclear_locs_image_coord] = ...
                     detect_nuclei(['/media/shababo/data/' instruction.filename],...
                     experiment_setup.image_um_per_px,experiment_setup.image_zero_order_coord,...
                     experiment_setup.stack_um_per_slice);

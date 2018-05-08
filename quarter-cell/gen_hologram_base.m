@@ -28,7 +28,7 @@ target.x = 0; target.y = 0;
 for i = 1:length(diskRadii)
     target.radius = diskRadii(1);
     isTargetPatternReady = 1;
-%     pause(5)
+    pause(2)
     diskPhase(:,:,i) = P;
     
 end
@@ -277,7 +277,7 @@ isTargetPatternReady = 1;
 
 %% make spot
 clear target
-stim_id = find(tf_spot_key(:,1) == 150 & tf_spot_key(:,2) ==30)
+stim_id = find(tf_spot_key(:,1) == 80 & tf_spot_key(:,2) == -100)
 target.mode = 'Phase'; target.pattern = tf_spot_grid(:,:,stim_id);
 
 isTargetPatternReady = 1;
