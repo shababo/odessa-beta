@@ -319,7 +319,7 @@ handles.data.group_powers = strread(get(handles.target_intensity,'String'));
 sequence_base.power = handles.data.group_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
-sequence_base.piezo_z = 30;
+sequence_base.piezo_z = 0;
 % sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
 iti = str2double(get(handles.iti,'String'))*1000;
@@ -331,7 +331,7 @@ ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 num_repeats = str2double(get(handles.num_repeats,'String'));
 if ~isfield(handles.data,'piezo_z_center')
-    handles.data.piezo_z_center = 200;
+    handles.data.piezo_z_center = 0;
 end
 if ~isfield(handles.data,'piezo_z')
     handles.data.piezo_z = handles.data.piezo_z_center;
@@ -986,13 +986,40 @@ function precompute_grid_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-instruction.type = 50; 
 fields_to_get = {'x_start','x_stop','y_start','y_stop',...
     'x_spacing','y_spacing','roi_radius'};
 for i = 1:length(fields_to_get)
-    instruction.(fields_to_get{i}) = str2double(get(handles.(fields_to_get{i}),'String'));
+    params.(fields_to_get{i}) = str2double(get(handles.(fields_to_get{i}),'String'));
 end
-instruction.tf_flag = get(handles.tf_flag,'Value');
+measure_points_x = params.x_start:params.x_spacing:params.x_stop;
+measure_points_y = params.y_start:params.y_spacing:params.y_stop;
+
+num_xy_targets = length(measure_points_x) * length(measure_points_y);
+all_xy_targets = ...
+    zeros(num_xy_targets,3);
+
+count = 1;
+for i = 1:length(measure_points_x)
+    for j = 1:length(measure_points_y)
+
+        all_xy_targets(count,:) = [measure_points_x(i) measure_points_y(j) 0];
+        count = count + 1;
+
+    end
+end
+assignin('base','all_xy_targets',all_xy_targets)
+
+clear instruction
+instruction.type = 86;
+instruction.targets = all_xy_targets;
+instruction.build_pockels_ref = 1;
+instruction.make_phase_masks = 1;
+instruction.get_return = 1;
+instruction.use_spots = 1;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+
+
 
 
 function y_start_Callback(hObject, eventdata, handles)

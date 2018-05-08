@@ -92,7 +92,7 @@ switch experiment_setup.experiment_type
             disp('sending instruction...')
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
-            init_powers = '2.5 10 25 50 80'; %2.5 is the same as min power!
+            init_powers = '2.5 5 10 18 25 50 80'; %2.5 is the same as min power!
             set(handles.target_intensity,'String',init_powers)
             set(handles.num_repeats,'String',num2str(3));
             set(handles.tf_flag,'Value',1)
@@ -296,10 +296,10 @@ switch experiment_setup.experiment_type
         acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
         guidata(hObject,handles)
 
-        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
         waitfor(acq_gui_data.run,'String','Start')
-        guidata(acq_gui,acq_gui_data)
-
+%         guidata(acq_gui,acq_gui_data)
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
         % setup patches/take intrinsics
         handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
         [acq_gui, acq_gui_data] = get_acq_gui_data;
@@ -343,9 +343,9 @@ switch experiment_setup.experiment_type
         acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
         guidata(hObject,handles)
 
-        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
         waitfor(acq_gui_data.run,'String','Start')
-        guidata(acq_gui,acq_gui_data)
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
         
 end
 
