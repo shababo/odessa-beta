@@ -241,17 +241,31 @@ if success >= 0
             disp('into main function')
             experiment_setup = instruction.experiment_setup;
             filename = ['/media/shababo/data/' instruction.filename '.tif'];
+            if isfield(instruction,'max_dist')
+                max_dist = instruction.max_dist;
+            else
+                max_dist = 180; %um from zero order
+            end
+
+            max_px_val = max_dist/experiment_setup.image_um_per_px + experiment_setup.image_zero_order_coord;
+            min_px_val = max_px_val - 2*max_dist/experiment_setup.image_um_per_px;
+            image_zero_order_coord = (max_px_val - min_px_val)/2;
+            image_zero_order_coord = image_zero_order_coord;
+            image_px_bounds = round([min_px_val max_px_val]);
+
+
             disp('writing tif')
-            write_tiff_stack(filename,uint16(experiment_setup.stack))
+            write_tiff_stack(filename,uint16(experiment_setup.stack),image_px_bounds)
             if ~isfield(instruction,'dummy_targs')
                 instruction.dummy_target = 0;
             end
             if ~instruction.dummy_targs
                 disp('detecting nucs')
-                [nuclear_locs, fluor_vals] = ...
+                [nuclear_locs,fluor_vals,nuclear_locs_image_coord] = ...
                     detect_nuclei(['/media/shababo/data/' instruction.filename],...
-                    experiment_setup.image_um_per_px,experiment_setup.image_zero_order_coord,...
+                    experiment_setup.image_um_per_px,image_zero_order_coord,...
                     experiment_setup.stack_um_per_slice);
+                nuclear_locs_image_coord(:,1:2) = bsxfun(@plus,nuclear_locs_image_coord(:,1:2),min_px_val(2:-1:1)' - 1);
             end
             if instruction.dummy_targs || isempty(nuclear_locs) || any(isnan(nuclear_locs(:)))
                 disp('creating dummy nucs')
@@ -260,8 +274,11 @@ if success >= 0
                 else
                     num_targs = 100;
                 end
-                nuclear_locs = [randi([-150 150],[num_targs 1]) randi([-150 150],[num_targs 1]) randi([0 100],[num_targs 1])];
-                fluor_vals = zeros(num_targs,1);
+                nuclear_locs = [randi([-150 150],[num_targs 1]) randi([-150 150],[num_targs 1]) randi([0 140],[num_targs 1])];
+                fluor_vals = randi(200,1,num_targs);
+                nuclear_locs_image_coord = nuclear_locs*experiment_setup.image_um_per_px + [experiment_setup.image_zero_order_coord' 0];
+                nuclear_locs_image_coord = nuclear_locs_image_coord(:,[2 1 3]);
+                nuclear_locs_image_coord(:,3) = nuclear_locs_image_coord(:,3)/experiment_setup.stack_um_per_slice;
             end
             if isfield(instruction,'make_neurons_struct') && instruction.make_neurons_struct
                 neurons = build_neurons_struct(nuclear_locs,fluor_vals,experiment_setup);
@@ -269,6 +286,7 @@ if success >= 0
             end
             return_info.nuclear_locs = nuclear_locs;
             return_info.fluor_vals = fluor_vals;
+            return_info.nuclear_locs_image_coord = nuclear_locs_image_coord;
             
 %             return_info.detect_img = detect_img;
         case DETECT_NUC_SERVE
