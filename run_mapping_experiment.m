@@ -165,7 +165,7 @@ if experiment_setup.enable_user_breaks
 end
 % get cell locations or simulate
 disp('Get presynaptic neurons...')
-%%
+%
 if get_neurons
     if experiment_setup.is_exp
         eventdata = [];
@@ -244,6 +244,25 @@ if strcmp(experiment_setup.experiment_type,'simulation')
 %         plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
 %     end
 end
+
+% update the neurons in experiment_setup with the neighbourhood
+% assignements:
+for i_neighbourhood= 1:length(neighbourhoods)
+    for i_cell= 1:length(neighbourhoods(i_neighbourhood).neurons)
+        id=neighbourhoods(i_neighbourhood).neurons(i_cell).cell_ID;
+        if ~strcmp(neighbourhoods(i_neighbourhood).neurons(i_cell).group_ID{1},'secondary')
+            experiment_setup.neurons(id).primary_neighbourhood=i_neighbourhood;
+        else
+            if isfield(experiment_setup.neurons(id), 'secondary_neighbourhood')
+                experiment_setup.neurons(id).secondary_neighbourhood=...
+                    [experiment_setup.neurons(id).secondary_neighbourhood i_neighbourhood];
+            else
+                 experiment_setup.neurons(id).secondary_neighbourhood=i_neighbourhood;
+            end
+        end
+    end
+end
+
  save([experiment_setup.result_root  'neighbourhoods.mat'],  'neighbourhoods');
  
 %% Initialize the first batch: 
@@ -282,15 +301,19 @@ if ~experiment_setup.is_exp % simulation or reproduction
             [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
         end
     end
+    
       % Update neuron info in experiment_setup from neighbourhood
       for i_neighbourhood = 1:length(neighbourhoods)
           neighbourhood = neighbourhoods(i_neighbourhood);
           for i_cell = 1:length(neighbourhood.neurons)
+              if ~strcmp(neighbourhood.neurons(i_cell).group_ID,'secondary')
               experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).params=...
                   neighbourhood.neurons(i_cell).params;
               experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).posterior_stat=...
                   neighbourhood.neurons(i_cell).posterior_stat;
-              
+              experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).group_ID=...
+                  neighbourhood.neurons(i_cell).group_ID;
+              end
           end
       end
       
@@ -406,7 +429,17 @@ else % mapping experiment:
     neighbourhoods = return_info.neighbourhoods;
     
 end
+if experiment_setup.plotting.plot_flag
+figure_handle=figure(1);
+figure_handle=visualize_posteriors(figure_handle, neighbourhoods,experiment_setup);
 
+figure_handle = gcf;
+figure_handle.PaperUnits = 'inches';
+figure_handle.PaperPosition = experiment_setup.plotting.dim;
+
+saveas(figure_handle,[experiment_setup.result_root 'Figures/' 'Initial' '.png'])
+close(figure_handle)
+end
 %%
 not_terminated = 1;
 loop_count = -1;
@@ -451,7 +484,8 @@ while not_terminated
                 neighbourhood.neurons(i_cell).params;
             experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).posterior_stat=...
                 neighbourhood.neurons(i_cell).posterior_stat;
-            
+               experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).group_ID=...
+                  neighbourhood.neurons(i_cell).group_ID;
         end
     end
     
