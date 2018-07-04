@@ -191,6 +191,9 @@ if get_neurons
             % simulate the neurons
             disp('Simulate neurons...')
             experiment_setup.neurons=generate_neurons(experiment_setup);
+            neurons_sim=experiment_setup.neurons;
+            save([experiment_setup.result_root  'neurons.mat'],  'neurons_sim');
+            clear('neurons_sim');
         case 'reproduction'
             % DO NOTHING
             % since neurons are already loaded in experiment_setup
@@ -241,6 +244,8 @@ if strcmp(experiment_setup.experiment_type,'simulation')
 %         plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
 %     end
 end
+ save([experiment_setup.result_root  'neighbourhoods.mat'],  'neighbourhoods');
+ 
 %% Initialize the first batch: 
 if ~experiment_setup.is_exp % simulation or reproduction
     
