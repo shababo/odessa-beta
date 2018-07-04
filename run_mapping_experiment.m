@@ -165,7 +165,7 @@ if experiment_setup.enable_user_breaks
 end
 % get cell locations or simulate
 disp('Get presynaptic neurons...')
-
+%%
 if get_neurons
     if experiment_setup.is_exp
         eventdata = [];
@@ -198,7 +198,7 @@ if get_neurons
 
 end
 
-%%
+%% Creating neighbourhoods 
 if ~exist('neighbourhoods','var')
     
     load_neighbourhoods_flag= false;
@@ -241,8 +241,8 @@ if strcmp(experiment_setup.experiment_type,'simulation')
 %         plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
 %     end
 end
-%%
-if ~experiment_setup.is_exp
+%% Initialize the first batch: 
+if ~experiment_setup.is_exp % simulation or reproduction
     
     load_trials_flag=false;
     follow_instructions = true;
@@ -277,7 +277,18 @@ if ~experiment_setup.is_exp
             [experiment_query_full, neighbourhoods] = build_first_batch_stim_all_neighborhoods(experiment_setup,neighbourhoods,handles,hObject);
         end
     end
-    
+      % Update neuron info in experiment_setup from neighbourhood
+      for i_neighbourhood = 1:length(neighbourhoods)
+          neighbourhood = neighbourhoods(i_neighbourhood);
+          for i_cell = 1:length(neighbourhood.neurons)
+              experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).params=...
+                  neighbourhood.neurons(i_cell).params;
+              experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).posterior_stat=...
+                  neighbourhood.neurons(i_cell).posterior_stat;
+              
+          end
+      end
+      
     if strcmp(experiment_setup.experiment_type,'reproduction')
         if ~load_trials_flag
             experiment_setup.rep.rep_func.designs_comparison(experiment_query_full(:,1), experiment_setup.records.queries(:,1));
@@ -332,7 +343,7 @@ if ~experiment_setup.is_exp
     experiment_setup.patched_neuron.background_rate=1e-4;
     experiment_setup.patched_neuron.cell_type=[];
     
-else
+else % mapping experiment:
     
     do_ephys = 1;
     if experiment_setup.enable_user_breaks
@@ -417,7 +428,6 @@ while not_terminated
         drawnow
         disp('getting batch...')
         while ~batch_found
-            
             [batch_found, experiment_query_next, neighbourhood_next] = ...
                 prep_next_run(experiment_setup,neighbourhoods,handles);
         end
@@ -428,17 +438,15 @@ while not_terminated
         experiment_query = experiment_query_next;
     end
     disp(['*****ABOUT TO RUN LOOP ON N' num2str(neighbourhood.neighbourhood_ID) '_B' num2str(neighbourhood.batch_ID) '*****'])
+    
     % Update neuron info in experiment_setup from neighbourhood
     for i_cell = 1:length(neighbourhood.neurons)
         if ~strcmp(neighbourhood.neurons(i_cell).group_ID{end},'secondary')
-            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).PR_params=...
-                neighbourhood.neurons(i_cell).PR_params;
-            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).gain_params=...
-                neighbourhood.neurons(i_cell).gain_params;
-            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).delay_mu_params=...
-                neighbourhood.neurons(i_cell).delay_mu_params;
-            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).delay_sigma_params=...
-                neighbourhood.neurons(i_cell).delay_sigma_params;
+            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).params=...
+                neighbourhood.neurons(i_cell).params;
+            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).posterior_stat=...
+                neighbourhood.neurons(i_cell).posterior_stat;
+            
         end
     end
     
@@ -447,30 +455,9 @@ while not_terminated
     
     for i_cell = i_cell_group_to_nhood
         temp_ID=neighbourhood.neurons(i_cell).cell_ID;
-        if isfield(experiment_setup.neurons(temp_ID),'PR_params')
-            if ~isempty(experiment_setup.neurons(temp_ID).PR_params)
-                neighbourhood.neurons(i_cell).PR_params(end) = ...
-                    experiment_setup.neurons(temp_ID).PR_params(end);
-            end
-        end
-        if  isfield(experiment_setup.neurons(temp_ID),'gain_params')
-            if ~isempty(experiment_setup.neurons(temp_ID).gain_params)
-                neighbourhood.neurons(i_cell).gain_params(end)=...
-                    experiment_setup.neurons(temp_ID).gain_params(end);
-            end
-        end
-        if  isfield(experiment_setup.neurons(temp_ID),'delay_mu_params')
-            if ~isempty(experiment_setup.neurons(temp_ID).delay_mu_params)
-                neighbourhood.neurons(i_cell).gain_params(end)=...
-                    experiment_setup.neurons(temp_ID).delay_mu_params(end);
-            end
-        end
-        if  isfield(experiment_setup.neurons(temp_ID),'delay_sigma_params')
-            if ~isempty(experiment_setup.neurons(temp_ID).delay_sigma_params)
-                neighbourhood.neurons(i_cell).gain_params(end)=...
-                    experiment_setup.neurons(temp_ID).delay_sigma_params(end);
-            end
-        end
+         neighbourhood.neurons(i_cell).params(end)=experiment_setup.neurons(temp_ID).params(end);
+         neighbourhood.neurons(i_cell).posterior_stat(end)=...
+             experiment_setup.neurons(temp_ID).posterior_stat(end);
     end
     
     %Update plots

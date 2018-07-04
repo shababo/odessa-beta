@@ -3,22 +3,18 @@ function [experiment_query, neighbourhood] = run_online_pipeline(varargin)
 disp('running online pipe')
 
 if length(varargin) == 1
-    
     exp_query_filename = varargin{1};
     load(exp_query_filename) % neighbourhood, experiment_query, experiment_setup
-    
-    
 elseif length(varargin) == 3
-    
     neighbourhood = varargin{1};
     experiment_query = varargin{2};
     experiment_setup = varargin{3};
-    
 end
 
-    
+%     neighbourhood =neighbourhoods(i);
+%     experiment_query = empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group));
+%     experiment_setup = experiment_setup;
 
-% rebuild function links :(
 group_names = experiment_setup.group_names;
 for i = 1:length(group_names)
     experiment_setup.groups.(group_names{i}) = eval(['get_' group_names{i}]);
@@ -38,7 +34,7 @@ switch experiment_setup.experiment_type
 end
 
 if gen_psc_flag
-    experiment_query=generate_psc_data_dev(experiment_query,experiment_setup,neighbourhood);
+    [experiment_query]=generate_psc_data(experiment_query,experiment_setup,neighbourhood);
 end
 
 % FOR LOOP BELOW IS GENERAL ANALYSIS CASE (NOT DEBUGGED)
@@ -55,7 +51,6 @@ end
 % CONNECTIVITY INF
 num_trials = 0;
 neighbourhood = initialize_neurons_new_batch(neighbourhood);
-
 
 if experiment_setup.run_parfor
     poolobj = parpool(3);

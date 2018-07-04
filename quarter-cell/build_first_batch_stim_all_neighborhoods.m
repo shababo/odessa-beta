@@ -30,51 +30,50 @@ end
 %             build_first_batch_stim = 0;
 %     end
 % end
-% 
-% 
+%
+%
 % if build_first_batch_stim
-    follow_instructions = true;
-    switch experiment_setup.experiment_type
-        case 'experiment' % default
-        case 'simulation'
-            if ~experiment_setup.sim.do_instructions
-                follow_instructions=false;
-            end
-        case 'reproduction'
-          
+follow_instructions = true;
+switch experiment_setup.experiment_type
+    case 'experiment' % default
+    case 'simulation'
+        if ~experiment_setup.sim.do_instructions
             follow_instructions=false;
-    end
-    
-    if ~follow_instructions
+        end
+    case 'reproduction'
         
-        for i = 1:length(neighbourhoods)
-            [experiment_query(i,1), neighbourhoods(i)] = run_online_pipeline(neighbourhoods(i),...
-                empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group)),...
-                experiment_setup);
-        end
-        for i =1:length(neighbourhoods)
-           experiment_query(i,1).batch_trial_rate=[]; 
-        end
-    else
-        instruction.type = 300; 
-%         instruction.experiment_query = struct();
-        for i = 1:length(neighbourhoods)
-            instruction.experiment_query(i) = ...
-                empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group));
-        end
-        instruction.neighbourhoods = neighbourhoods;
-        instruction.get_return = 0;
-        instruction.experiment_setup = experiment_setup;
-        
-        if experiment_setup.is_exp
-            [return_info, success, handles] = do_instruction_analysis(instruction, handles);
-            guidata(hObject,handles)
-        else
-            [return_info, success] = do_instruction_local(instruction);
-        end
-        experiment_query = [];
+        follow_instructions=false;
+end
 
+if ~follow_instructions
+    for i = 1:length(neighbourhoods)
+        [experiment_query(i,1), neighbourhoods(i)] = run_online_pipeline(neighbourhoods(i),...
+            empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group)),...
+            experiment_setup);
     end
+    for i =1:length(neighbourhoods)
+        experiment_query(i,1).batch_trial_rate=[];
+    end
+else
+    instruction.type = 300;
+    %         instruction.experiment_query = struct();
+    for i = 1:length(neighbourhoods)
+        instruction.experiment_query(i) = ...
+            empty_design(neighbourhoods(i),experiment_setup.groups.(experiment_setup.default_group));
+    end
+    instruction.neighbourhoods = neighbourhoods;
+    instruction.get_return = 0;
+    instruction.experiment_setup = experiment_setup;
     
+    if experiment_setup.is_exp
+        [return_info, success, handles] = do_instruction_analysis(instruction, handles);
+        guidata(hObject,handles)
+    else
+        [return_info, success] = do_instruction_local(instruction);
+    end
+    experiment_query = [];
+    
+end
+
 % end
 
