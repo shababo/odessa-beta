@@ -433,7 +433,7 @@ if experiment_setup.plotting.plot_flag
 figure_handle=figure(1);
 fake_query=struct;
 fake_query.undefined=[];
-figure_handle=visualize_trials(figure_handle, fake_query,neighbourhoods,experiment_setup);
+figure_handle=visualize_trials(figure_handle, fake_query,[],experiment_setup);
 
 figure_handle = gcf;
 figure_handle.PaperUnits = 'inches';
