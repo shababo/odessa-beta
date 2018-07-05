@@ -447,7 +447,7 @@ batch_found = 0;
 
 while not_terminated     
     loop_count = loop_count + 1;
-    
+    %%
     % FIND BATCH AND LOAD PHASE MASKS IF NEEDED
     find_batch_flag=true;
     switch experiment_setup.experiment_type
@@ -643,9 +643,24 @@ while not_terminated
             % do nothing since the experiment query already contains data
             % might need to simulate responses
     end
+    %%
+    % Visualize the experiments:
     
+    if experiment_setup.plotting.plot_flag
+        figure_handle=figure(1);
+        figure_handle=visualize_trials(figure_handle,experiment_query, neighbourhoods,experiment_setup);
+        
+        figure_handle = gcf;
+        figure_handle.PaperUnits = 'inches';
+        figure_handle.PaperPosition = experiment_setup.plotting.dim;
+        
+        saveas(figure_handle,[experiment_setup.result_root 'Figures/'...
+            'Neighbourhood' num2str(neighbourhood.neighbourhood_ID)...
+            'Batch' num2str(neighbourhood.batch_ID) '.png'])
+        close(figure_handle)
+    end
     
-    
+%%
     % RUN ONLINE MAPPING PIPELINE
     follow_instructions = true;
     switch experiment_setup.experiment_type
@@ -672,7 +687,7 @@ while not_terminated
         visualization=false;
         switch experiment_setup.experiment_type
             case {'simulation'}
-                if experiment_setup.sim.visualize
+                if experiment_setup.plotting.plot_flag
                     visualization=true;
                 end
             case 'reproduction'
@@ -683,11 +698,26 @@ while not_terminated
         
         % Visualization
         if  visualization
-            digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
-            figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
             
-            save_path=experiment_setup.exp_root;
-            experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
+            %%
+            % Visualize the experiments:
+               figure_handle=figure(1);
+                figure_handle=visualize_trials(figure_handle,experiment_query, neighbourhoods,experiment_setup);
+                
+                figure_handle = gcf;
+                figure_handle.PaperUnits = 'inches';
+                figure_handle.PaperPosition = experiment_setup.plotting.dim;
+                
+                saveas(figure_handle,[experiment_setup.result_root 'Figures/'...
+                    'Neighbourhood' num2str(neighbourhood.neighbourhood_ID)...
+                    'Batch' num2str(neighbourhood.batch_ID) '.png'])
+                close(figure_handle)
+            
+%             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
+%             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+            
+%             save_path=experiment_setup.exp_root;
+%             experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
         end
     else
         instruction.type = 300;
