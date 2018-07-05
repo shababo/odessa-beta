@@ -651,7 +651,7 @@ while not_terminated
     
     if experiment_setup.plotting.plot_flag
         figure_handle=figure(1);
-        figure_handle=visualize_trials(figure_handle,experiment_query, neighbourhoods,experiment_setup);
+        figure_handle=visualize_trials(figure_handle,experiment_query, [],experiment_setup);
         
         figure_handle = gcf;
         figure_handle.PaperUnits = 'inches';
@@ -677,16 +677,17 @@ while not_terminated
     end
     
     if ~follow_instructions
-        
+        %%
         neighbourhood_tmp = struct();
         experiment_query_tmp = struct();
-        [experiment_query_tmp, neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
+        [experiment_query_tmp,experiment_query, neighbourhood_tmp] = run_online_pipeline(neighbourhood,...
             experiment_query,experiment_setup);
         
         neighbourhoods(neighbourhood.neighbourhood_ID) = neighbourhood_tmp;
         experiment_query_tmp.batch_trial_rate=[];
         experiment_query_full(neighbourhood.neighbourhood_ID,neighbourhood.batch_ID)=experiment_query_tmp;
         
+        %%
         visualization=false;
         switch experiment_setup.experiment_type
             case {'simulation'}
@@ -703,7 +704,9 @@ while not_terminated
         if  visualization
             % Visualize the experiments:
                figure_handle=figure(1);
-                figure_handle=visualize_trials(figure_handle,experiment_query, neighbourhoods,experiment_setup);
+               show_change=true;
+                figure_handle=visualize_trials(figure_handle,experiment_query,...
+                    neighbourhood_tmp,experiment_setup,show_change);
                 
                 figure_handle = gcf;
                 figure_handle.PaperUnits = 'inches';
@@ -711,9 +714,9 @@ while not_terminated
                 
                 saveas(figure_handle,[experiment_setup.result_root 'Figures/'...
                     'Neighbourhood' num2str(neighbourhood.neighbourhood_ID)...
-                    'Batch' num2str(neighbourhood.batch_ID) '.png'])
+                    'Batch' num2str(neighbourhood.batch_ID-1) 'Fitted.png'])
                 close(figure_handle)
-            
+%             
 %             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
 %             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
             
@@ -765,6 +768,9 @@ while not_terminated
         end
     else
         not_terminated = experiment_setup.terminator(neighbourhoods);
+        if not_terminated  % check if we have enough batches 
+           not_terminated = ~(neighbourhood_tmp.batch_ID  >experiment_setup.max_batch );
+        end
     end
 end
 % SAVE

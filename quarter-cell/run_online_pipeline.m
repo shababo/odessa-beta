@@ -1,4 +1,4 @@
-function [experiment_query, neighbourhood] = run_online_pipeline(varargin)
+function [new_experiment_query,experiment_query, neighbourhood] = run_online_pipeline(varargin)
 
 disp('running online pipe')
 
@@ -130,7 +130,7 @@ batch_ID = experiment_query.batch_ID + 1;
 
 % save('loading phases.mat','batch_ID')
 % DESIGN NEXT BATCH OF TRIALS
-clear experiment_query
+% clear experiment_query
 if ~isfield(experiment_setup,'disk_grid_phase') 
         get_disk_flag=true;
     if strcmp(experiment_setup.experiment_type,'simulation') 
@@ -158,19 +158,19 @@ end
 for i = 1:length(group_names)
     
     this_group = group_names{i};
-    experiment_query.(this_group)=struct([]);
+    new_experiment_query.(this_group)=struct([]);
     if any(get_group_inds(neighbourhood,this_group))
         
         group_profile=experiment_setup.groups.(this_group);
         if isfield(group_profile,'design_function')
-            experiment_query.(this_group) = ...
+            new_experiment_query.(this_group) = ...
                 group_profile.design_function(neighbourhood,group_profile,experiment_setup);
         end
     end
     
 end
-experiment_query.batch_ID = batch_ID;
-experiment_query.neighbourhood_ID = neighbourhood.neighbourhood_ID;
+ new_experiment_query.batch_ID = batch_ID;
+ new_experiment_query.neighbourhood_ID = neighbourhood.neighbourhood_ID;
 neighbourhood.batch_ID = batch_ID;
 % save('tmp.mat','experiment_query')
 
@@ -193,8 +193,8 @@ end
 if phase_masks_flag
     disp('computing phase masks')
 %     save('tmp.mat','experiment_query')
-    experiment_query = ...
-        compute_phase_masks_build_seq(experiment_query, experiment_setup, neighbourhood);
+     new_experiment_query = ...
+        compute_phase_masks_build_seq( new_experiment_query, experiment_setup, neighbourhood);
     experiment_setup = rmfield(experiment_setup,'disk_grid_phase');
     experiment_setup = rmfield(experiment_setup,'fine_spots_grid_phase');
 end
@@ -217,7 +217,7 @@ if experiment_setup.is_exp
     good_write = 0;
     while ~good_write
         try
-            save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v6')
+            save(fullpathname,'new_experiment_query','experiment_query','neighbourhood','experiment_setup','-v6')
             good_file_test = who('-file',fullpathname);
 %             load(fullpathname)
             good_write = 1;
@@ -261,7 +261,7 @@ else
         fullpathname = [experiment_setup.analysis_root experiment_setup.exp_id ...
             '_n' num2str(neighbourhood.neighbourhood_ID)...
             '_b' num2str(experiment_query.batch_ID) '_batch _ready.mat'];
-        save(fullpathname,'experiment_query','neighbourhood','experiment_setup','-v6')
+        save(fullpathname,'new_experiment_query','experiment_query','neighbourhood','experiment_setup','-v6')
     end
 end
 
