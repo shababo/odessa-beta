@@ -699,10 +699,8 @@ while not_terminated
                 end
         end
         
-        % Visualization
+        % Visualize the undated results:
         if  visualization
-            
-            %%
             % Visualize the experiments:
                figure_handle=figure(1);
                 figure_handle=visualize_trials(figure_handle,experiment_query, neighbourhoods,experiment_setup);
