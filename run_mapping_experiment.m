@@ -431,7 +431,9 @@ else % mapping experiment:
 end
 if experiment_setup.plotting.plot_flag
 figure_handle=figure(1);
-figure_handle=visualize_posteriors(figure_handle, neighbourhoods,experiment_setup);
+fake_query=struct;
+fake_query.undefined=[];
+figure_handle=visualize_trials(figure_handle, fake_query,neighbourhoods,experiment_setup);
 
 figure_handle = gcf;
 figure_handle.PaperUnits = 'inches';
@@ -444,10 +446,11 @@ end
 not_terminated = 1;
 loop_count = -1;
 batch_found = 0;
-
+%%
 while not_terminated     
+ %%
+   
     loop_count = loop_count + 1;
-    %%
     % FIND BATCH AND LOAD PHASE MASKS IF NEEDED
     find_batch_flag=true;
     switch experiment_setup.experiment_type
