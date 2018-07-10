@@ -115,7 +115,7 @@ switch experiment_setup.experiment_type
                 end
                 experiment_setup.enable_user_breaks = enable_user_breaks;
                 experiment_setup.is_exp = 1;
-                experiment_setup.terminator=@check_all_learned; 
+                experiment_setup.terminator=@check_all_learned;
             end
             guidata(hObject,handles)
             
@@ -175,19 +175,19 @@ if get_neurons
         
         disp('Take stack...')
         [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-        [acq_gui, acq_gui_data] = get_acq_gui_data; 
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
     end
-
+    
     switch experiment_setup.experiment_type
         case 'experiment'
-
+            
             disp('Send off stack to init first batches...')
-    %         [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-
+            %         [handles, experiment_setup.neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+            
             handles = init_first_batches_from_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
             [acq_gui, acq_gui_data] = get_acq_gui_data;
         case 'simulation'
-
+            
             % simulate the neurons
             disp('Simulate neurons...')
             experiment_setup.neurons=generate_neurons(experiment_setup);
@@ -198,10 +198,10 @@ if get_neurons
             % DO NOTHING
             % since neurons are already loaded in experiment_setup
     end
-
+    
 end
 
-%% Creating neighbourhoods 
+%% Creating neighbourhoods
 if ~exist('neighbourhoods','var')
     
     load_neighbourhoods_flag= false;
@@ -221,10 +221,10 @@ if ~exist('neighbourhoods','var')
     end
 end
 
-if strcmp(experiment_setup.experiment_type,'reproduction') 
-   experiment_setup.reproduced.neighbourhoods(:,1)=neighbourhoods;
-
-        
+if strcmp(experiment_setup.experiment_type,'reproduction')
+    experiment_setup.reproduced.neighbourhoods(:,1)=neighbourhoods;
+    
+    
     % COMPARE NEW NEIGHBOURHOODS WITH NEIGHBOURHOODS IN RECORDS
     if experiment_setup.rep.rep_params.neighbourhoods
         experiment_setup.rep.rep_func.neighbourhoods_comparison(neighbourhoods,experiment_setup.records.neighbourhoods(:,1));
@@ -239,10 +239,10 @@ if isfield(experiment_setup, 'stack')
 end
 
 if strcmp(experiment_setup.experiment_type,'simulation')
-%     handles.fighandle = figure;
-%     for i = 1:length(neighbourhoods)
-%         plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
-%     end
+    %     handles.fighandle = figure;
+    %     for i = 1:length(neighbourhoods)
+    %         plot_one_neighbourhood(neighbourhoods(i),handles.fighandle)
+    %     end
 end
 
 % update the neurons in experiment_setup with the neighbourhood
@@ -257,15 +257,15 @@ for i_neighbourhood= 1:length(neighbourhoods)
                 experiment_setup.neurons(id).secondary_neighbourhood=...
                     [experiment_setup.neurons(id).secondary_neighbourhood i_neighbourhood];
             else
-                 experiment_setup.neurons(id).secondary_neighbourhood=i_neighbourhood;
+                experiment_setup.neurons(id).secondary_neighbourhood=i_neighbourhood;
             end
         end
     end
 end
 
- save([experiment_setup.result_root  'neighbourhoods.mat'],  'neighbourhoods');
- 
-%% Initialize the first batch: 
+save([experiment_setup.result_root  'neighbourhoods.mat'],  'neighbourhoods');
+
+%% Initialize the first batch:
 if ~experiment_setup.is_exp % simulation or reproduction
     
     load_trials_flag=false;
@@ -302,22 +302,23 @@ if ~experiment_setup.is_exp % simulation or reproduction
         end
     end
     
-      % Update neuron info in experiment_setup from neighbourhood
-      for i_neighbourhood = 1:length(neighbourhoods)
-          neighbourhood = neighbourhoods(i_neighbourhood);
-          for i_cell = 1:length(neighbourhood.neurons)
-              if ~strcmp(neighbourhood.neurons(i_cell).group_ID,'secondary')
-              experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).params=...
-                  neighbourhood.neurons(i_cell).params;
-              experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).posterior_stat=...
-                  neighbourhood.neurons(i_cell).posterior_stat;
-              experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).group_ID=...
-                  neighbourhood.neurons(i_cell).group_ID;
-              end
-          end
-      end
-      
+    % Update neuron info in experiment_setup from neighbourhood
+    for i_neighbourhood = 1:length(neighbourhoods)
+        neighbourhood = neighbourhoods(i_neighbourhood);
+        for i_cell = 1:length(neighbourhood.neurons)
+            if ~strcmp(neighbourhood.neurons(i_cell).group_ID,'secondary')
+                experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).params=...
+                    neighbourhood.neurons(i_cell).params;
+                experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).posterior_stat=...
+                    neighbourhood.neurons(i_cell).posterior_stat;
+                experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).group_ID=...
+                    neighbourhood.neurons(i_cell).group_ID;
+            end
+        end
+    end
+    
     if strcmp(experiment_setup.experiment_type,'reproduction')
+        
         if ~load_trials_flag
             experiment_setup.rep.rep_func.designs_comparison(experiment_query_full(:,1), experiment_setup.records.queries(:,1));
             experiment_setup.reproduced.neighbourhoods(:,1)=neighbourhoods;
@@ -365,11 +366,16 @@ if ~experiment_setup.is_exp % simulation or reproduction
             end
         end
     end
-    
     % simulate bg rate/patched cell stuff
     experiment_setup.patched_neuron=struct;
-    experiment_setup.patched_neuron.background_rate=1e-4;
+    if   strcmp(experiment_setup.experiment_type,'simulation')
+        experiment_setup.patched_neuron.background_rate=experiment_setup.sim.background_rate;
+    else
+        experiment_setup.patched_neuron.background_rate=1e-5;
+        
+    end
     experiment_setup.patched_neuron.cell_type=[];
+    
     
 else % mapping experiment:
     
@@ -416,7 +422,7 @@ else % mapping experiment:
     
     experiment_setup.patched_neuron=struct;
     experiment_setup.patched_neuron.background_rate=1e-4;
-    experiment_setup.patched_neuron.cell_type=[];   
+    experiment_setup.patched_neuron.cell_type=[];
     
     % get neurons and neighbourhood info
     instruction = struct();
@@ -430,26 +436,26 @@ else % mapping experiment:
     
 end
 if experiment_setup.plotting.plot_flag
-figure_handle=figure(1);
-fake_query=struct;
-fake_query.undefined=[];
-figure_handle=visualize_trials(figure_handle, fake_query,[],experiment_setup);
-
-figure_handle = gcf;
-figure_handle.PaperUnits = 'inches';
-figure_handle.PaperPosition = experiment_setup.plotting.dim;
-
-saveas(figure_handle,[experiment_setup.result_root 'Figures/' 'Initial' '.png'])
-close(figure_handle)
+    figure_handle=figure(1);
+    fake_query=struct;
+    fake_query.undefined=[];
+    figure_handle=visualize_trials(figure_handle, fake_query,[],experiment_setup);
+    
+    figure_handle = gcf;
+    figure_handle.PaperUnits = 'inches';
+    figure_handle.PaperPosition = experiment_setup.plotting.dim;
+    
+    saveas(figure_handle,[experiment_setup.result_root 'Figures/' 'Initial' '.png'])
+    close(figure_handle)
 end
 %%
 not_terminated = 1;
 loop_count = -1;
 batch_found = 0;
 %%
-while not_terminated     
- %%
-   
+while not_terminated
+    %%
+    
     loop_count = loop_count + 1;
     % FIND BATCH AND LOAD PHASE MASKS IF NEEDED
     find_batch_flag=true;
@@ -487,8 +493,8 @@ while not_terminated
                 neighbourhood.neurons(i_cell).params;
             experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).posterior_stat=...
                 neighbourhood.neurons(i_cell).posterior_stat;
-               experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).group_ID=...
-                  neighbourhood.neurons(i_cell).group_ID;
+            experiment_setup.neurons(neighbourhood.neurons(i_cell).cell_ID).group_ID=...
+                neighbourhood.neurons(i_cell).group_ID;
         end
     end
     
@@ -497,9 +503,9 @@ while not_terminated
     
     for i_cell = i_cell_group_to_nhood
         temp_ID=neighbourhood.neurons(i_cell).cell_ID;
-         neighbourhood.neurons(i_cell).params(end)=experiment_setup.neurons(temp_ID).params(end);
-         neighbourhood.neurons(i_cell).posterior_stat(end)=...
-             experiment_setup.neurons(temp_ID).posterior_stat(end);
+        neighbourhood.neurons(i_cell).params(end)=experiment_setup.neurons(temp_ID).params(end);
+        neighbourhood.neurons(i_cell).posterior_stat(end)=...
+            experiment_setup.neurons(temp_ID).posterior_stat(end);
     end
     
     %Update plots
@@ -511,15 +517,15 @@ while not_terminated
             catch e
                 handles.fighandle = figure;
             end
- 
+            
         end
-%         plot_one_neighbourhood(neighbourhood,handles.fighandle)
-%         if experiment_setup.sim.visualize
-%             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
-%             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
-%             save_path=experiment_setup.exp_root;
-%             experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
-%         end
+        %         plot_one_neighbourhood(neighbourhood,handles.fighandle)
+        %         if experiment_setup.sim.visualize
+        %             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
+        %             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+        %             save_path=experiment_setup.exp_root;
+        %             experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
+        %         end
     end
     %     drawnow
     
@@ -556,7 +562,7 @@ while not_terminated
             max_seq_length = experiment_setup.exp.max_trials_per_sweep;
             [experiment_query, this_seq] = make_slidebook_sequence(experiment_query,experiment_setup);
             num_runs = ceil(length(this_seq)/max_seq_length);
-
+            
             handles.data.start_trial = acq_gui_data.data.sweep_counter + 1;
             
             
@@ -663,7 +669,7 @@ while not_terminated
         close(figure_handle)
     end
     
-%%
+    %%
     % RUN ONLINE MAPPING PIPELINE
     follow_instructions = true;
     switch experiment_setup.experiment_type
@@ -703,25 +709,25 @@ while not_terminated
         % Visualize the undated results:
         if  visualization
             % Visualize the experiments:
-               figure_handle=figure(1);
-               show_change=true;
-                figure_handle=visualize_trials(figure_handle,experiment_query,...
-                    neighbourhood_tmp,experiment_setup,show_change);
-                
-                figure_handle = gcf;
-                figure_handle.PaperUnits = 'inches';
-                figure_handle.PaperPosition = experiment_setup.plotting.dim;
-                
-                saveas(figure_handle,[experiment_setup.result_root 'Figures/'...
-                    'Neighbourhood' num2str(neighbourhood.neighbourhood_ID)...
-                    'Batch' num2str(neighbourhood.batch_ID-1) 'Fitted.png'])
-                close(figure_handle)
-%             
-%             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
-%             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+            figure_handle=figure(1);
+            show_change=true;
+            figure_handle=visualize_trials(figure_handle,experiment_query,...
+                neighbourhood_tmp,experiment_setup,show_change);
             
-%             save_path=experiment_setup.exp_root;
-%             experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
+            figure_handle = gcf;
+            figure_handle.PaperUnits = 'inches';
+            figure_handle.PaperPosition = experiment_setup.plotting.dim;
+            
+            saveas(figure_handle,[experiment_setup.result_root 'Figures/'...
+                'Neighbourhood' num2str(neighbourhood.neighbourhood_ID)...
+                'Batch' num2str(neighbourhood.batch_ID-1) 'Fitted.png'])
+            close(figure_handle)
+            %
+            %             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
+            %             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
+            
+            %             save_path=experiment_setup.exp_root;
+            %             experiment_setup.sim.plotting_funcs(neighbourhood, save_path,figure_index);
         end
     else
         instruction.type = 300;
@@ -768,8 +774,8 @@ while not_terminated
         end
     else
         not_terminated = experiment_setup.terminator(neighbourhoods);
-        if not_terminated  % check if we have enough batches 
-           not_terminated = ~(neighbourhood_tmp.batch_ID  >experiment_setup.max_batch );
+        if not_terminated  % check if we have enough batches
+            not_terminated = ~(neighbourhood_tmp.batch_ID  >experiment_setup.max_batch );
         end
     end
 end
