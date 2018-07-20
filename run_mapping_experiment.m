@@ -697,15 +697,26 @@ while not_terminated
             show_change=true;
             figure_handle=visualize_trials(figure_handle,experiment_query,...
                 neighbourhood_tmp,experiment_setup,show_change);
-            
             figure_handle = gcf;
             figure_handle.PaperUnits = 'inches';
             figure_handle.PaperPosition = experiment_setup.plotting.dim;
-            
             saveas(figure_handle,[experiment_setup.result_root 'Figures/'...
-                'Neighbourhood' num2str(neighbourhood.neighbourhood_ID)...
-                'Batch' num2str(neighbourhood.batch_ID-1) 'Fitted.png'])
+                'ProgressNeighbourhood' num2str(neighbourhood.neighbourhood_ID)...
+                'Batch' num2str(neighbourhood.batch_ID-1) '.png'])
             close(figure_handle)
+            
+            if strcmp(experiment_setup.experiment_type, 'simulation')
+            figure_handle=figure(2);
+            figure_handle=visualize_fits(figure_handle,neighbourhood,experiment_setup)
+            figure_handle = gcf;
+            figure_handle.PaperUnits = 'inches';
+            figure_handle.PaperPosition = experiment_setup.plotting.dim;
+             saveas(figure_handle,[experiment_setup.result_root 'Figures/'...
+                'FitsNeighbourhood' num2str(neighbourhood.neighbourhood_ID)...
+                'Batch' num2str(neighbourhood.batch_ID-1) '.png'])
+            close(figure_handle)
+            end
+
             %
             %             digits_batch=max(ceil(log10(neighbourhood.batch_ID)), floor(log10(neighbourhood.batch_ID))+1);
             %             figure_index=neighbourhood.neighbourhood_ID*10^(digits_batch+1)+neighbourhood.batch_ID;
