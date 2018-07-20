@@ -707,7 +707,7 @@ while not_terminated
             
             if strcmp(experiment_setup.experiment_type, 'simulation')
             figure_handle=figure(2);
-            figure_handle=visualize_fits(figure_handle,neighbourhood,experiment_setup)
+            figure_handle=visualize_fits(figure_handle,neighbourhood_tmp,experiment_setup)
             figure_handle = gcf;
             figure_handle.PaperUnits = 'inches';
             figure_handle.PaperPosition = experiment_setup.plotting.dim;
