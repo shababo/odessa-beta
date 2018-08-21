@@ -134,9 +134,12 @@ handles.data.scatter_colors = {'w','g'};
 guidata(hObject, handles);
 
 handles.data.init = 1;
+guidata(hObject, handles);
 draw_all(handles)
 handles.data.init = 0;
 guidata(hObject, handles);
+
+
 
 % Update handles structure
 

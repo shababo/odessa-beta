@@ -8,6 +8,8 @@ if ~isfield(handles,'sock_analysis')
     srvsock = mslisten(3001);
     handles.sock_analysis = msaccept(srvsock);
     disp('socket open..')
+    
+    
     msclose(srvsock);
     guidata(handles.close_socket_check,handles)
 end

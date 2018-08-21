@@ -48,6 +48,7 @@ if detect_nucs
     instruction.dummy_targs = 0;
     instruction.num_dummy_targs = 600;
     instruction.get_return = 1;
+    instruction.z_stack_offset = experiment_setup.z_stack_offset;
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
 
 %     acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
