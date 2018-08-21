@@ -258,6 +258,11 @@ if success >= 0
             if ~isfield(instruction,'dummy_targs')
                 instruction.dummy_target = 0;
             end
+%             if isfield(instruction,'z_stack_offset')
+%                 z_offset = instruction.z_stack_offset;
+%             else
+%                 z_offset = 0;
+%             end
             if ~instruction.dummy_targs
 
                 filename = ['/media/shababo/data/' instruction.filename '.tif'];
@@ -279,11 +284,14 @@ if success >= 0
                 else
                     num_targs = 100;
                 end
-                nuclear_locs = [randi([-150 150],[num_targs 1]) randi([-150 150],[num_targs 1]) randi([0 140],[num_targs 1])];
+                
+                nuclear_locs = [randi([-100 100],[num_targs 1]) randi([-100 100],[num_targs 1]) randi([0 100],[num_targs 1])];
                 fluor_vals = randi(200,1,num_targs);
-                nuclear_locs_image_coord = nuclear_locs*experiment_setup.image_um_per_px + [experiment_setup.image_zero_order_coord' 0];
+                nuclear_locs_image_coord = [nuclear_locs(:,1:2)/experiment_setup.image_um_per_px nuclear_locs(:,3)/experiment_setup.stack_um_per_slice] + ...
+                                            [experiment_setup.image_zero_order_coord' 0];
                 nuclear_locs_image_coord = nuclear_locs_image_coord(:,[2 1 3]);
-                nuclear_locs_image_coord(:,3) = nuclear_locs_image_coord(:,3)/experiment_setup.stack_um_per_slice;
+                
+%                 nuclear_locs_image_coord(:,3) = nuclear_locs_image_coord(:,3)/experiment_setup.stack_um_per_slice; 
             end
             if isfield(instruction,'make_neurons_struct') && instruction.make_neurons_struct
                 neurons = build_neurons_struct(nuclear_locs,fluor_vals,experiment_setup);
