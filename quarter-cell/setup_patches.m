@@ -87,9 +87,10 @@ if whole_cell1 %|| whole_cell2
         set(acq_gui_data.loop_count,'String',num2str(1))
         set(acq_gui_data.trigger_seq,'Value',0)
         % run trial
-        acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+        Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
         waitfor(acq_gui_data.run,'String','Start')
-        guidata(acq_gui,acq_gui_data)
+        [acq_gui, acq_gui_data] = get_acq_gui_data;
+%         guidata(acq_gui,acq_gui_data)
 
 
         do_intrinsics = 0;
@@ -132,7 +133,8 @@ if whole_cell1 %|| whole_cell2
 
             acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
             waitfor(acq_gui_data.run,'String','Start')
-            guidata(acq_gui,acq_gui_data)
+            [acq_gui, acq_gui_data] = get_acq_gui_data;
+%             guidata(acq_gui,acq_gui_data)
 
              switch choice
                 case 'Cell 1'

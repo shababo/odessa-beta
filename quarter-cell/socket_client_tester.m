@@ -158,6 +158,7 @@ disp('got info...')
 
 
 [return_info,handles] = do_instruction(instruction,handles);
+
 if instruction.type == 401
     disp('out of do_ins')
     return_info.batch_found

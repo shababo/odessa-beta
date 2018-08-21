@@ -1,4 +1,4 @@
-function [handles, neurons] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
+function [handles,experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup)
 
 % THIS FUNCTION DOES NOT SUBSCRIBE TO NEW DATA STRUCTURES YET
 
@@ -43,22 +43,25 @@ if detect_nucs
 %     instruction.image_zero_order_coord = experiment_setup.image_zero_order_coord;
 %     instruction.image_um_per_px = experiment_setup.image_um_per_px;
 %     instruction.stack_um_per_slice = experiment_setup.stack_um_per_slice;
-    instruction.make_neurons_struct = 1;
+    instruction.make_neurons_struct = 0;
     instruction.experiment_setup = experiment_setup;
     instruction.dummy_targs = 0;
-    instruction.num_dummy_targs = 200;
+    instruction.num_dummy_targs = 600;
     instruction.get_return = 1;
     [return_info,success,handles] = do_instruction_analysis(instruction,handles);
 
 %     acq_gui_data.data.nuclear_locs = return_info.nuclear_locs;
 %     acq_gui_data.data.fluor_vals = return_info.fluor_vals;
-    handles.data.nuclear_locs = return_info.nuclear_locs;
-    handles.data.fluor_vals = return_info.fluor_vals;
-    neurons = return_info.neurons;
+    experiment_setup.nuclear_locs_image_coord = return_info.nuclear_locs_image_coord;
+    experiment_setup.nuclear_locs = return_info.nuclear_locs;
+    experiment_setup.fluor_vals = return_info.fluor_vals;
+    if instruction.make_neurons_struct
+        experiment_setup.neurons = neurons;
+    end
 %     handles.data.experiment_setup = experiment_setup;
 
-    guidata(acq_gui,acq_gui_data)
-    guidata(hObject,handles)
+%     guidata(acq_gui,acq_gui_data)
+%     guidata(hObject,handles)
 %     handles.data.experiment_setup = experiment_setup;
 %     exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
 %     assignin('base','nuclear_locs_w_cells',handles.data.nuclear_locs)

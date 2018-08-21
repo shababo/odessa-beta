@@ -1,5 +1,6 @@
 function experiment_setup = get_response_model_calib_setup
 
+experiment_setup.experiment_type = 'experiment';
 experiment_setup.exp_root = 'C:\data\Shababo\';
 experiment_setup.trials.Fs = 20000;
 experiment_setup.trials.max_time_sec = .050;
@@ -13,7 +14,9 @@ experiment_setup.exp.fullsavefile = ...
 
 experiment_setup.enable_user_breaks = 0;
 
-experiment_setup.zero_order
-experiment_setup.um_per_px
-experiment_setup.um_per_slice
+experiment_setup.image_zero_order_coord = [124.5; 118.2]; 
+experiment_setup.image_um_per_px = 1.89;
+experiment_setup.image_um_per_slice = 2.0;
 
+experiment_setup.get_ch2 = 1;
+experiment_setup.stack_duration = 35; %sec

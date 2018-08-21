@@ -319,7 +319,7 @@ handles.data.group_powers = strread(get(handles.target_intensity,'String'));
 sequence_base.power = handles.data.group_powers(1);
 sequence_base.filter_configuration = 'Femto Phasor';
 sequence_base.precomputed_target_index = 1;
-sequence_base.piezo_z = 30;
+sequence_base.piezo_z = 0;
 % sequence(num_stim) = sequence_base;
 start_time = 1.0*1000; % hard set to 1 second for now
 iti = str2double(get(handles.iti,'String'))*1000;
@@ -331,7 +331,7 @@ ind_offset = str2double(get(handles.ind_offset,'String'));
 repeat_start_ind = str2double(get(handles.repeat_start_ind,'String'));
 num_repeats = str2double(get(handles.num_repeats,'String'));
 if ~isfield(handles.data,'piezo_z_center')
-    handles.data.piezo_z_center = 200;
+    handles.data.piezo_z_center = 0;
 end
 if ~isfield(handles.data,'piezo_z')
     handles.data.piezo_z = handles.data.piezo_z_center;
@@ -986,13 +986,40 @@ function precompute_grid_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-instruction.type = 50; 
 fields_to_get = {'x_start','x_stop','y_start','y_stop',...
     'x_spacing','y_spacing','roi_radius'};
 for i = 1:length(fields_to_get)
-    instruction.(fields_to_get{i}) = str2double(get(handles.(fields_to_get{i}),'String'));
+    params.(fields_to_get{i}) = str2double(get(handles.(fields_to_get{i}),'String'));
 end
-instruction.tf_flag = get(handles.tf_flag,'Value');
+measure_points_x = params.x_start:params.x_spacing:params.x_stop;
+measure_points_y = params.y_start:params.y_spacing:params.y_stop;
+
+num_xy_targets = length(measure_points_x) * length(measure_points_y);
+all_xy_targets = ...
+    zeros(num_xy_targets,3);
+
+count = 1;
+for i = 1:length(measure_points_x)
+    for j = 1:length(measure_points_y)
+
+        all_xy_targets(count,:) = [measure_points_x(i) measure_points_y(j) 0];
+        count = count + 1;
+
+    end
+end
+assignin('base','all_xy_targets',all_xy_targets)
+
+clear instruction
+instruction.type = 86;
+instruction.targets = all_xy_targets;
+instruction.build_pockels_ref = 1;
+instruction.make_phase_masks = 1;
+instruction.get_return = 1;
+instruction.use_spots = 1;
+disp('sending instruction...')
+[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+
+
 
 
 function y_start_Callback(hObject, eventdata, handles)
@@ -1548,267 +1575,10 @@ function neural_resp_prot_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-set(handles.close_socket_check,'Value',0)
-guidata(hObject,handles);
-
-handles.data.z_offsets = -70:10:70;
-handles.data.z_offsets = handles.data.z_offsets';
-grid_edge_size = [3 3 3 3 3 3 5 9 5 3 3 3 3 3 3]';
-
-obj_positions = [zeros(length(handles.data.z_offsets),1) zeros(length(handles.data.z_offsets),1) handles.data.z_offsets];
-
-% update_obj_pos_Callback(hObject, eventdata, handles)
-set_cell1_pos_Callback(handles.set_cell1_pos,eventdata,handles);
-handles = guidata(hObject);
-
-start_position = handles.data.obj_position;
-num_repeats = 5;
-set(handles.num_repeats,'String',num2str(num_repeats));
-
-% build obj_positions and rep for num_repeats
-obj_positions = bsxfun(@plus,obj_positions,handles.data.obj_position);
-obj_positions = repmat(obj_positions,num_repeats,1);
-all_grid_sizes = repmat(grid_edge_size,num_repeats,1).^2;
-if get(handles.rand_order,'Value')
-    order = randperm(size(obj_positions,1));
-    obj_positions = obj_positions(order,:);
-    all_grid_sizes = all_grid_sizes(order);
-end
-% assignin('base','obj_positions',obj_positions)
-guidata(hObject,handles);
+experiment_setup = get_response_model_calib_setup;
+neural_response_calibration(experiment_setup,handles,hObject)
 
 
-% get Acq handles
-acq_gui = findobj('Tag','acq_gui');
-acq_gui_data = get_acq_gui_data();
-% shift focus
-figure(acq_gui)
-
-% confirm everything ready
-user_confirm = msgbox('Cell-attached? Test pulse off? V_m set to 0? I_h set to 0?');
-waitfor(user_confirm)
-
-power_curve = '10 25 50 100 150';
-power_curve_num = strread(power_curve);
-% set(acq_gui.use_lut,'Value',1);
-% set(acq_gui.use_LED,'Value',0);
-% set(acq_gui.use_2P,'Value',1);
-
-% run power curve in cell-attached
-% set sequence paraqms
-set(handles.num_stim,'String',num2str(1));
-set(handles.duration,'String',num2str(.003));
-set(handles.iti,'String',num2str(1.0));
-% set(handles.num_repeats,'String',num2str(5));
-set(handles.target_intensity,'String',power_curve)
-% build sequence
-build_seq_Callback(hObject, eventdata, handles)
-pause(2.0)
-handles = guidata(hObject);
-acq_gui_data = guidata(acq_gui);
-% set acq params
-set(acq_gui_data.run,'String','Prepping...')
-set(acq_gui_data.Cell1_type_popup,'Value',3)
-set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-guidata(acq_gui,acq_gui_data)
-set(acq_gui_data.test_pulse,'Value',1)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-set(acq_gui_data.trigger_seq,'Value',1)
-set(acq_gui_data.loop_count,'String',num2str(1))
-set(acq_gui_data.Highpass_cell1_check, 'Value',0)
-% run trial
-acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-waitfor(acq_gui_data.run,'String','Start')
-guidata(acq_gui,acq_gui_data)
-% cleanup
-
-% show data
-cur_trial = acq_gui_data.data.sweep_counter;
-this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
-[trace_stack] = ...
-    get_stim_stack(acq_gui_data.data,cur_trial,...
-    length(this_seq));
-trace_grid = cell(length(power_curve_num),1);
-for i = 1:length(power_curve_num)
-    trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
-end
-cell_attached_spikes_fig = figure;
-plot_trace_stack_grid(trace_grid,Inf,1,0);
-
-% tell user to break in and be in VC
-user_confirm = msgbox('Break in! Test pulse off?');
-waitfor(user_confirm)
-
-% do single testpulse trial to get Rs
-% set acq params
-set(acq_gui_data.run,'String','Prepping...')
-set(acq_gui_data.Cell1_type_popup,'Value',1)
-set(acq_gui_data.trial_length,'String',1.0)
-acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-set(acq_gui_data.test_pulse,'Value',1)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.loop_count,'String',num2str(1))
-set(acq_gui_data.trigger_seq,'Value',0)
-% run trial
-acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-waitfor(acq_gui_data.run,'String','Start')
-guidata(acq_gui,acq_gui_data)
-
-% tell user to switch to I=0
-user_confirm = msgbox('Please switch Multiclamp to CC with I = 0');
-waitfor(user_confirm)
-
-% run intrinsic ephys
-% set acq params
-set(acq_gui_data.run,'String','Prepping...')
-set(acq_gui_data.Cell1_type_popup,'Value',2)
-acq_gui_data = Acq('cell1_intrinsics_Callback',acq_gui_data.cell1_intrinsics,eventdata,acq_gui_data);
-guidata(acq_gui,acq_gui_data);
-set(acq_gui_data.test_pulse,'Value',0)
-set(acq_gui_data.trigger_seq,'Value',0)
-% run trial
-acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-waitfor(acq_gui_data.run,'String','Start')
-guidata(acq_gui,acq_gui_data)
-
-% get baseline Vm
-prompt = {'Enter intrinsic Vm:'};
-dlg_title = 'Input';
-num_lines = 1;
-defaultans = {'-60'};
-Vm = str2double(inputdlg(prompt,dlg_title,num_lines,defaultans));
-
-% run power curve on cell in CC
-% set sequence paraqms
-set(handles.num_stim,'String',num2str(1));
-set(handles.duration,'String',num2str(.003));
-set(handles.iti,'String',num2str(1.0));
-set(handles.num_repeats,'String',num2str(5));
-set(handles.target_intensity,'String','10 25 50 100 150')
-% build seq
-build_seq_Callback(hObject, eventdata, handles)
-pause(2.0)
-handles = guidata(hObject);
-acq_gui_data = guidata(acq_gui);
-% set acq params
-set(acq_gui_data.run,'String','Prepping...')
-% set(acq_gui_data.Cell1_type_popup,'Value',2)
-set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-guidata(acq_gui,acq_gui_data)
-set(acq_gui_data.test_pulse,'Value',0)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-set(acq_gui_data.trigger_seq,'Value',1)
-set(acq_gui_data.loop_count,'String',num2str(1))
-% run trial
-acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-waitfor(acq_gui_data.run,'String','Start')
-guidata(acq_gui,acq_gui_data)
-
-% show data
-cur_trial = acq_gui_data.data.sweep_counter;
-this_seq = acq_gui_data.data.trial_metadata(cur_trial).sequence;
-[trace_stack] = ...
-    get_stim_stack(acq_gui_data.data,cur_trial,...
-    length(this_seq));
-trace_grid = cell(length(power_curve_num),1);
-for i = 1:length(power_curve_num)
-    trace_grid{i} = trace_stack([this_seq.target_power] == power_curve_num(i),:);
-end
-cc_power_curve_fig = figure;
-plot_trace_stack_grid(trace_grid,Inf,1,0);
-
-% get this_cell_power
-prompt = {'Enter Target Power For Cell:'};
-dlg_title = 'Input';
-num_lines = 1;
-defaultans = {'50'};
-this_cell_power = str2double(inputdlg(prompt,dlg_title,num_lines,defaultans));
-
-% run power curve on cell in VC
-% tell user to switch to VC with Vm offset to ealier Vm
-user_confirm = msgbox(['In VC with Vm set to ' num2str(Vm)]);
-waitfor(user_confirm)
-
-% set sequence paraqms
-% set(handles.num_stim,'String',num2str(1));
-% set(handles.duration,'String',num2str(.003));
-% set(handles.iti,'String',num2str(1.0));
-set(handles.num_repeats,'String',num2str(3));
-% build seq
-build_seq_Callback(hObject, eventdata, handles)
-pause(2.0)
-acq_gui_data = guidata(acq_gui);
-handles = guidata(hObject);
-% set acq params
-set(acq_gui_data.run,'String','Prepping...')
-set(acq_gui_data.test_pulse,'Value',0)
-% run trial
-acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-waitfor(acq_gui_data.run,'String','Start')
-guidata(acq_gui,acq_gui_data)
-
-
-% GO SPATIAL
-user_confirm = msgbox(['In CC with Ih sucht that Vm is set to ' num2str(Vm)]);
-waitfor(user_confirm)
-
-% CHECK VM
-
-num_trials = size(obj_positions,1);
-
-% set params one time
-set(handles.rand_order,'Value',1);
-set(handles.target_intensity,'String',this_cell_power)
-set(acq_gui_data.test_pulse,'Value',0)
-set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-set(acq_gui_data.trigger_seq,'Value',1)
-set(acq_gui_data.test_pulse,'Value',0)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.loop_count,'String',num2str(1))
-set(handles.num_repeats,'String',num2str(1));
-for i = 1:num_trials
-    % move obj
-    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
-    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
-    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
-    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-    handles = guidata(hObject);
-    
-    % set grid size
-    set(handles.num_stim,'String',num2str(all_grid_sizes(i)));
-    build_seq_Callback(hObject, eventdata, handles)
-    pause(2.0)
-    handles = guidata(hObject);
-    acq_gui_data = guidata(acq_gui);
-    set(acq_gui_data.trial_length,'String',num2str(ceil(handles.total_duration) + 1.0))
-    acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-    guidata(acq_gui,acq_gui_data)
-    
-    set(acq_gui_data.run,'String','Prepping...')
-%     pause(3.0)
-    acq_gui_data = Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-    waitfor(acq_gui_data.run,'String','Start')
-    guidata(acq_gui,acq_gui_data)
-    
-end
-
-guidata(hObject,handles);
-set(acq_gui_data.trigger_seq,'Value',0)
-% move obj
-set(handles.close_socket_check,'Value',1)
-set(handles.thenewx,'String',num2str(start_position(1)))
-set(handles.thenewy,'String',num2str(start_position(2)))
-set(handles.thenewz,'String',num2str(start_position(3)))
-obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
-pause(.1)
-
-% get_obj_pos_Callback(hObject, eventdata, handles)
-handles = guidata(hObject);
-guidata(hObject,handles);
 
 
 % --- Executes on button press in neural_resp_prot_2.
@@ -8354,304 +8124,7 @@ instruction.string = 'done';
 [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 guidata(hObject,handles)
 
-function new_calib_func(hObject,eventdata,handles)
 
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-figure(acq_gui)
-
-wrndlg = warndlg('Set 0 position by going to top of slice with piezo = 0');
-waitfor(wrndlg)
-
-answer = inputdlg('Go to cell z depth. What is piezo z depth for cell in um?');
-experiment_setup.cell_z = str2num(answer{1});
-
-wrndlg = warndlg('Set 0 position by going to top of slice with piezo = 0');
-waitfor(wrndlg)
-
-eventdata = [];
-disp('Get objective ref position...')
-[experiment_setup, handles] = set_new_ref_pos(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-disp('Take stack...')
-[handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-% show detection results and get cell selection
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%    set experiment_setup.nuc_loc     %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% choose spike protocols
-spike_prot_choices = choose_spike_timing_calibration_types
-
-% choose current protocols
-current_prot_choices = choose_current_calibration_types
-
-total_trials = 0;
-all_targets = [];
-total_targets = 0;
-total_seqs = 0;
-all_seqs = cell(0);
-if spike_prot_choices.do_spike_power
-    
-    experiment_setup.nuc_loc
-    all_targets = [all_targets; experiment_setup.nuc_loc];
-    total_targets = total_targets + 1;
-    
-    % compute pockels refs
-    clear instruction
-    instruction.type = 86;
-    instruction.targets = experiment_setup.nuc_loc;
-    instruction.build_pockels_ref = 1;
-    instruction.make_phase_masks = 0;
-    instruction.get_return = 1;
-    disp('sending instruction...')
-    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    
-    init_powers = '2.5 10 25 50 80'; %2.5 is the same as min power!
-    set(handles.target_intensity,'String',init_powers)
-    set(handles.num_repeats,'String',num2str(3));
-    set(handles.tf_flag,'Value',1)
-    set(handles.set_seq_trigger,'Value',0)
-    set(handles.num_stim,'String',num2str(1));
-    set(handles.rand_order,'Value',1);
-    set(handles.duration,'String',num2str(.003));
-    set(handles.iti,'String',num2str(2.0));
-    set(handles.ind_offset,'String',total_trials);
-    
-    handles.data.piezo_z = experiment_setup.nuc_loc(3);
-    handles.data.piezo_z_multiply = 1;
-
-    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
-    total_seqs = total_seqs + 1;
-    all_seqs{total_seqs} = acq_gui_data.data.sequence;
-    total_trials = total_trials + length(all_seqs{total_seqs});
-     
-end 
-
-if spike_prot_choices.do_radial_vert
-    
-    measure_points = [-50 -30 -15 -10 -7 -4 -2 0 2 4 7 10 15 25]; % um
-    num_targets = length(measure_points);
-    radial_vert_targs = ...
-        zeros(num_targets,3);
-
-    count = 1;
-    for i = 1:num_targets
-            radial_vert_targs(i,:) = experiment_setup.nuc_loc + ...
-                [measure_points(i) 0 0];
-    end
-    all_targets = [all_targets; radial_vert_targs];
-    total_targets = total_targets + num_targets;
-    experiment_setup.radial_vert_targs = radial_vert_targs;
-    
-    % compute pockels refs
-    clear instruction
-    instruction.type = 86;
-    instruction.targets = experiment_setup.radial_vert_targs;
-    instruction.build_pockels_ref = 1;
-    instruction.make_phase_masks = 0;
-    instruction.get_return = 1;
-    disp('sending instruction...')
-    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    
-    init_powers = '50';
-    set(handles.target_intensity,'String',init_powers)
-    set(handles.num_repeats,'String',num2str(3));
-    set(handles.tf_flag,'Value',1)
-    set(handles.set_seq_trigger,'Value',0)
-    set(handles.num_stim,'String',num2str(1));
-    set(handles.rand_order,'Value',1);
-    set(handles.duration,'String',num2str(.003));
-    set(handles.iti,'String',num2str(2.0));
-    set(handles.ind_offset,'String',total_trials);
-    
-    handles.data.piezo_z = experiment_setup.nuc_loc(3);
-    handles.data.piezo_z_multiply = 1;
-    
-    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
-    total_seqs = total_seqs + 1;
-    all_seqs{total_seqs} = acq_gui_data.data.sequence;
-    total_trials = total_trials + length(all_seqs{total_seqs});
-    
-end
-
-if spike_prot_choices.do_radial_horiz
-    
-    measure_points = [-25 -15 -10 -7 -4 -2 0 2 4 7 10 15 25]; % um
-    num_targets = length(measure_points);
-    radial_horiz_targs = ...
-        zeros(num_targets,3);
-
-    count = 1;
-    for i = 1:num_targets
-            radial_horiz_targs(i,:) = experiment_setup.nuc_loc + ...
-                [0 measure_points(i) 0];
-    end
-    all_targets = [all_targets; radial_horiz_targs];
-    total_targets = total_targets + num_targets;
-    experiment_setup.radial_horiz_targs = radial_horiz_targs;
-    
-    % compute pockels refs
-    clear instruction
-    instruction.type = 86;
-    instruction.targets = experiment_setup.radial_horiz_targs;
-    instruction.build_pockels_ref = 1;
-    instruction.make_phase_masks = 0;
-    instruction.get_return = 1;
-    disp('sending instruction...')
-    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    
-    init_powers = '50';
-    set(handles.target_intensity,'String',init_powers)
-    set(handles.num_repeats,'String',num2str(3));
-    set(handles.tf_flag,'Value',1)
-    set(handles.set_seq_trigger,'Value',0)
-    set(handles.num_stim,'String',num2str(1));
-    set(handles.rand_order,'Value',1);
-    set(handles.duration,'String',num2str(.003));
-    set(handles.iti,'String',num2str(2.0));
-    set(handles.ind_offset,'String',total_trials);
-    
-    handles.data.piezo_z = experiment_setup.nuc_loc(3);
-    handles.data.piezo_z_multiply = 1;
-
-    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
-    total_seqs = total_seqs + 1;
-    all_seqs{total_seqs} = acq_gui_data.data.sequence;
-    total_trials = total_trials + length(all_seqs{total_seqs});
-    
-end
-
-if spike_prot_choices.do_axial
-    
-    all_targets = [all_targets; experiment_setup.nuc_loc];
-    total_targets = total_targets + 1;
-    experiment_setup.axial_targs = experiment_setup.nuc_loc;
-    
-    % compute pockels refs
-    clear instruction
-    instruction.type = 86;
-    instruction.targets = experiment_setup.axial_targs;
-    instruction.build_pockels_ref = 1;
-    instruction.make_phase_masks = 0;
-    instruction.get_return = 1;
-    disp('sending instruction...')
-    [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-    
-    init_z = [-60 -45 -30 -20 -10 0 10 20 30 45 60] + experiment_setup.nuc_loc(3);
-    handles.data.piezo_z = init_z;
-    handles.data.piezo_z_multiply = 1;
-    
-    init_powers = '50';
-    set(handles.target_intensity,'String',init_powers)
-    set(handles.num_repeats,'String',num2str(3));
-    set(handles.tf_flag,'Value',1)
-    set(handles.set_seq_trigger,'Value',0)
-    set(handles.num_stim,'String',num2str(1));
-    set(handles.rand_order,'Value',1);
-    set(handles.duration,'String',num2str(.003));
-    set(handles.iti,'String',num2str(2.0));
-    set(handles.ind_offset,'String',total_trials);
-
-    [handles, acq_gui, acq_gui_data] = build_seq_Callback(hObject, eventdata, handles);
-    total_seqs = total_seqs + 1;
-    all_seqs{total_seqs} = acq_gui_data.data.sequence;
-    total_trials = total_trials + length(all_seqs{total_seqs});
-    
-end
-
-experiment_setup.spike_prot_choices = spike_prot_choices;
-experiment_setup.current_prot_choices = current_prot_choices;
-
-experiment_setup.spike_first_round_all_seqs = all_seqs;
-experiment_setup.spike_first_round_all_targets = all_targets;
-full_seq = combine_sequences(sequences,rand_order);
-experiment_setup.spike_first_round_seq = full_seq;
-total_duration = (full_seq(end).start + full_seq(end).duration)/1000 + 5;
-
-% load holograms
-clear instruction
-instruction.type = 86;
-instruction.targets = experiment_setup.spike_first_round_all_targets;
-instruction.build_pockels_ref = 0;
-instruction.make_phase_masks = 1;
-instruction.get_return = 1;
-disp('sending instruction...')
-[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-
-% prep for acq
-set(acq_gui_data.test_pulse,'Value',1)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-set(acq_gui_data.trigger_seq,'Value',1)
-set(acq_gui_data.loop_count,'String',num2str(1))
-
-% set seq to trigger
-instruction = struct();
-instruction.type = 32; %SEND SEQ
-handles.sequence = full_seq;
-instruction.sequence = full_seq;
-handles.total_duration = total_duration;
-disp('sending instruction...')
-[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-acq_gui_data.data.stim_key =  experiment_setup.spike_first_round_all_targets;
-acq_gui_data.data.sequence =  full_seq;
-guidata(acq_gui,acq_gui_data)
-
-set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-
-
-% do next round of spiking based on threshold
-
-
-% setup patches/take intrinsics
-handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
-[acq_gui, acq_gui_data] = get_acq_gui_data;
-
-% get currents
-full_seq = combine_sequences(sequences,rand_order);
-experiment_setup.current_seq = full_seq;
-
-experiment_setup.current_all_targets = experiment_setup.spike_first_round_all_targets;
-
-% load holograms
-clear instruction
-instruction.type = 86;
-instruction.targets = experiment_setup.current_all_targets;
-instruction.build_pockels_ref = 0;
-instruction.make_phase_masks = 1;
-instruction.get_return = 1;
-disp('sending instruction...')
-[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-
-% prep for acq
-set(acq_gui_data.test_pulse,'Value',1)
-set(acq_gui_data.loop,'Value',1)
-set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-set(acq_gui_data.trigger_seq,'Value',1)
-set(acq_gui_data.loop_count,'String',num2str(1))
-
-% set seq to trigger
-instruction = struct();
-instruction.type = 32; %SEND SEQ
-handles.sequence = full_seq;
-instruction.sequence = full_seq;
-handles.total_duration = total_duration;
-disp('sending instruction...')
-[return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-acq_gui_data.data.stim_key =  experiment_setup.current_all_targets;
-acq_gui_data.data.sequence =  full_seq;
-guidata(acq_gui,acq_gui_data)
-
-set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
 
 
 

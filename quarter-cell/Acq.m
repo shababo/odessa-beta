@@ -156,6 +156,7 @@ switch handles.run_type
                 
                 if do_bg
                     handles.data.do_process = 1;
+                    guidata(hObject,handles)
                 end
                 io_data = step_loop(handles,do_bg);
                 
