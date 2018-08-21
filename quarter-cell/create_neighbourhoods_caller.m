@@ -1,4 +1,4 @@
-function neighbourhoods = create_neighbourhoods_caller(experiment_setup)
+function [neighbourhoods] = create_neighbourhoods_caller(experiment_setup)
 
 do_build_neighbourhooods = 1;
 if experiment_setup.enable_user_breaks
@@ -29,6 +29,6 @@ if do_build_neighbourhooods
 
     disp('computing neighbourhoods...')
 
-    neighbourhoods = create_neighbourhoods(experiment_setup);
+    [neighbourhoods] = create_neighbourhoods(experiment_setup);
 
 end
