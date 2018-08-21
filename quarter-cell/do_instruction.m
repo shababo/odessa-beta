@@ -240,13 +240,15 @@ if success >= 0
 %             write_tiff_stack(filename,imagemat)
             disp('into main function')
             experiment_setup = instruction.experiment_setup;
-            filename = ['/media/shababo/data/' instruction.filename '.tif'];
-            disp('writing tif')
-            write_tiff_stack(filename,uint16(experiment_setup.stack))
             if ~isfield(instruction,'dummy_targs')
                 instruction.dummy_target = 0;
             end
             if ~instruction.dummy_targs
+
+                filename = ['/media/shababo/data/' instruction.filename '.tif'];
+                disp('writing tif')
+                write_tiff_stack(filename,uint16(experiment_setup.stack))
+            
                 disp('detecting nucs')
                 [nuclear_locs, fluor_vals, nuclear_locs_image_coord] = ...
                     detect_nuclei(['/media/shababo/data/' instruction.filename],...
@@ -261,14 +263,16 @@ if success >= 0
                     num_targs = 100;
                 end
                 nuclear_locs = [randi([-150 150],[num_targs 1]) randi([-150 150],[num_targs 1]) randi([0 100],[num_targs 1])];
-                fluor_vals = zeros(num_targs,1);
+                nuclear_locs_image_coord = nuclear_locs;
+                fluor_vals = randi(99,num_targs,1)' + 1;
             end
             if isfield(instruction,'make_neurons_struct') && instruction.make_neurons_struct
                 neurons = build_neurons_struct(nuclear_locs,fluor_vals,experiment_setup);
                 return_info.neurons = neurons;
             end
             return_info.nuclear_locs = nuclear_locs;
-            return_info.nuclear_locs_image_coord = nuclear_locs_image_coord;
+            return_info.nuclear_locs_image_coord = ...
+                bsxfun(@plus,nuclear_locs_image_coord/experiment_setup.image_um_per_px,[experiment_setup.image_zero_order_coord' 0]);
             return_info.fluor_vals = fluor_vals;
             
 %             return_info.detect_img = detect_img;
@@ -477,7 +481,7 @@ if success >= 0
                 if isfield(instruction,'use_spots') && instruction.use_spots
                     tf_disk_key = evalin('base','tf_spot_key');
                 else
-                    tf_disk_key = evalin('base','tf_disk_key');;
+                    tf_disk_key = evalin('base','tf_disk_key');
                 end
                 tf_fine_grid_spots_phase = evalin('base','tf_fine_grid_spots_phase');
                 tf_fine_grid_spots_key = evalin('base','tf_fine_grid_spots_key');
@@ -520,8 +524,12 @@ if success >= 0
                     end
                 
                 if build_pockels_ref
+                    
+                    %pockels_ratio_refs_tf(i) = ratio_map(round(this_loc(1))+ceil(size(ratio_map,1)/2),...
+                    %    round(this_loc(2))+ceil(size(ratio_map,2)/2));
+                    
                     pockels_ratio_refs_tf(i) = ratio_map(round(this_loc(1))+ceil(size(ratio_map,1)/2),...
-                        round(this_loc(2))+ceil(size(ratio_map,2)/2));
+                                                             round(this_loc(2))+ceil(size(ratio_map,2)/2));
                 end
 
             end
@@ -534,11 +542,13 @@ if success >= 0
             if build_pockels_ref
                 vars{4} = pockels_ratio_refs_tf;
                 names{4} = 'pockels_ratio_refs_tf';
+                return_info.pockels_ratios = pockels_ratio_refs_tf;
             end
             assignin_base(names,vars);
             if instruction.make_phase_masks
                 evalin('base','set_precomp_target_ready')
             end
+            
 
         case TAKE_SNAP
             evalin('base','take_snap')
