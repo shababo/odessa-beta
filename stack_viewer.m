@@ -106,10 +106,12 @@ if length(varargin) > 5 && ~isempty(varargin{6})
     handles.data.parent_hObject = varargin{7};
 end
 
+handles.data.proj_offset = 7;
 
-handles.data.proj_top = 1;
+handles.data.proj_top = max(handles.data.slice_ind-handles.data.proj_offset,1);
 handles.data.slice_max = size(handles.data.image,3);
-handles.data.proj_bottom = handles.data.slice_max;
+handles.data.proj_bottom = min(handles.data.slice_max,handles.data.slice_ind+handles.data.proj_offset);
+set(handles.proj_top,'String',num2str(handles.data.proj_top));
 set(handles.proj_bottom,'String',num2str(handles.data.proj_bottom));
 
 maxval = 12500;
@@ -189,7 +191,7 @@ end
     
     for i = 1:length(handles.data.nuc_locs_image_coord)
         slice_dist = abs(handles.data.nuc_locs_image_coord{i}(:,3) - handles.data.slice_ind);
-        these_cell_i = slice_dist < 7 & handles.data.fluor_vals{i} > handles.data.fluor_thresh;
+        these_cell_i = slice_dist < 6 & handles.data.fluor_vals{i} > handles.data.fluor_thresh;
         handles.data.slice_cell_i = these_cell_i;
         these_cell_coord = handles.data.nuc_locs_image_coord{i}(these_cell_i,:);
         scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
@@ -215,19 +217,28 @@ if ~handles.data.init
 end
 
 guidata(handles.slice_axes,handles)
+draw_proj(handles)
 
 
 function draw_proj(handles)
 
-handles.data.proj_top = str2double(get(handles.proj_top,'String'));
-if handles.data.proj_top < 1
-    handles.data.proj_top = 1;
-end
+handles.data.proj_offset = 7;
 
-handles.data.proj_bottom = str2double(get(handles.proj_bottom,'String'));
-if handles.data.proj_bottom > handles.data.slice_max
-    handles.data.proj_bottom = handles.data.slice_max;
-end
+handles.data.proj_top = max(handles.data.slice_ind-handles.data.proj_offset,1);
+handles.data.slice_max = size(handles.data.image,3);
+handles.data.proj_bottom = min(handles.data.slice_max,handles.data.slice_ind+handles.data.proj_offset);
+set(handles.proj_top,'String',num2str(handles.data.proj_top));
+set(handles.proj_bottom,'String',num2str(handles.data.proj_bottom));
+
+% handles.data.proj_top = str2double(get(handles.proj_top,'String'));
+% if handles.data.proj_top < 1
+%     handles.data.proj_top = 1;
+% end
+% 
+% handles.data.proj_bottom = str2double(get(handles.proj_bottom,'String'));
+% if handles.data.proj_bottom > handles.data.slice_max
+%     handles.data.proj_bottom = handles.data.slice_max;
+% end
 
 axes(handles.maxproj_axes)
 if ~handles.data.init
