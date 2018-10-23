@@ -46,6 +46,20 @@ if detect_nucs
     instruction.make_neurons_struct = 0;
     instruction.experiment_setup = experiment_setup;
     instruction.dummy_targs = 0;
+    if instruction.dummy_targs
+        dummy_targs = 1;
+        choice = questdlg('Are you sure you want to use simulated cell locations?', ...
+            'Are you sure you want to use simulated cell locations?', ...
+            'yes','no','no');
+        % Handle response
+        switch choice
+            case 'yes'
+                dummy_targs = 1;
+            case 'no'
+                dummy_targs = 0;
+        end
+        instruction.dummy_targs = dummy_targs;
+    end
     instruction.num_dummy_targs = 600;
     instruction.get_return = 1;
     instruction.z_stack_offset = experiment_setup.z_stack_offset;

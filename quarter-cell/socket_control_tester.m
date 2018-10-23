@@ -23,7 +23,7 @@
 % Edit the above text to modify the response to help socket_control_tester
 
 
-% Last Modified by GUIDE v2.5 06-Mar-2018 10:36:14
+% Last Modified by GUIDE v2.5 11-Oct-2018 13:59:21
 
 
 % Begin initialization code - DO NOT EDIT
@@ -1576,7 +1576,8 @@ function neural_resp_prot_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 experiment_setup = get_response_model_calib_setup;
-neural_response_calibration(experiment_setup,handles,hObject)
+% neural_response_calibration_spikes_current(experiment_setup,handles,hObject)
+simple_mapping(experiment_setup,handles,hObject)
 
 
 
@@ -8125,39 +8126,14 @@ instruction.string = 'done';
 guidata(hObject,handles)
 
 
+% --- Executes on button press in ground_truth_exp.
+function ground_truth_exp_Callback(hObject, eventdata, handles)
+% hObject    handle to ground_truth_exp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+experiment_setup = get_ground_truth_setup;
+% neural_response_calibration_spikes_current(experiment_setup,handles,hObject)
+ground_truth_mapping(experiment_setup,handles,hObject)
 

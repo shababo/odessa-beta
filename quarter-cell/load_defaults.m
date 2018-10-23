@@ -39,7 +39,7 @@ CCexternalcommandsensitivity = 400;%400;  % for multiclamp
 
 % set default type of output for each analog output channel
 AO0 = 'ch1_out'; 
-AO1 = 'LED';
+AO1 = 'ch2_out';
 AO2 = 'SEQ_TRIGGER';
 AO3 = 'NA';
 
@@ -81,6 +81,7 @@ lut_tf_file = 'C:\data\Shababo\lut_10182017.mat';
 comnum = 9;
 
 background_acq = 1;
+
 defaults = struct('Fs', Fs,'trial_length', trial_length,'intertrial_interval', intertrial_interval, 'daqModel', device.Model, ...
     'total_sweeps', total_sweeps, 'amplifier', amplifier, ...
     'VCexternalcommandsensitivity', VCexternalcommandsensitivity, 'CCexternalcommandsensitivity', ...

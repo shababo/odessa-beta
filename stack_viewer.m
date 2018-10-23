@@ -22,11 +22,11 @@ function varargout = stack_viewer(varargin)
 
 % Edit the above text to modify the response to help stack_viewer
 
-% Last Modified by GUIDE v2.5 17-Apr-2018 10:06:48
+% Last Modified by GUIDE v2.5 04-Oct-2018 19:49:16
 
 
 % Begin initialization code - DO NOT EDIT
-gui_Singleton = 0;
+gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
                    'gui_OpeningFcn', @stack_viewer_OpeningFcn, ...
@@ -120,6 +120,7 @@ handles.data.red_colormap = ...
     horzcat(linvals, zeros(size(linvals)) , zeros(size(linvals)));
 
 handles.data.selected_cell_pos = [];
+handles.data.selected_cell_pos_2 = [];
 handles.data.clim_min = 0; 
 handles.data.clim_max = 1000;
 set(handles.clim_max_slider,'Value',handles.data.clim_max)
@@ -164,6 +165,7 @@ varargout{1} = handles.output;
 
 function draw_all(handles)
 set(handles.selected_cell_text,'String',mat2str(round(handles.data.selected_cell_pos)))
+set(handles.selected_cell_text_2,'String',mat2str(round(handles.data.selected_cell_pos_2)))
 draw_slice(handles)
 draw_proj(handles)
 
@@ -203,6 +205,9 @@ end
 
         if ~isempty(handles.data.selected_cell_pos)
             scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
+        end
+        if ~isempty(handles.data.selected_cell_pos_2)
+            scatter(handles.data.selected_cell_pos_2(1),handles.data.selected_cell_pos_2(2),'bx')
         end
     end
     
@@ -273,6 +278,9 @@ for i = 1:length(handles.data.nuc_locs_image_coord)
 
     if ~isempty(handles.data.selected_cell_pos)
         scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
+    end
+    if ~isempty(handles.data.selected_cell_pos_2)
+        scatter(handles.data.selected_cell_pos_2(1),handles.data.selected_cell_pos_2(2),'bx')
     end
 end
 
@@ -385,7 +393,6 @@ handles.data.selected_cell_pos = handles.data.nuc_locs_image_coord{1}(index,:);
 
 handles.data.parent_handles.data.stack_viewer_output.selected_cell_index_full = handles.data.selected_cell_index_full;
 handles.data.parent_handles.data.stack_viewer_output.selected_cell_pos = handles.data.selected_cell_pos;
-handles.data.parent_handles.data.stack_viewer_output.fluor_thresh = str2double(get(handles.fluor_thresh,'String'));
 
 guidata(handles.data.parent_hObject,handles.data.parent_handles)
 
@@ -595,9 +602,12 @@ function fluor_thresh_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of fluor_thresh as a double
 
 handles.data.fluor_thresh = str2double(get(hObject,'String'));
+handles.data.parent_handles.data.stack_viewer_output.fluor_thresh = handles.data.fluor_thresh;
+
+guidata(handles.data.parent_hObject,handles.data.parent_handles)
+
 guidata(hObject,handles)
 draw_all(handles)
-
 
 % --- Executes during object creation, after setting all properties.
 function fluor_thresh_CreateFcn(hObject, eventdata, handles)
@@ -623,3 +633,77 @@ function figure1_CloseRequestFcn(hObject, eventdata, handles)
 delete(hObject)
 
 
+
+
+% --- Executes on button press in select_cell2.
+function select_cell2_Callback(hObject, eventdata, handles)
+% hObject    handle to select_cell2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+axes(handles.maxproj_axes)
+[col row] = ginput(1);
+
+these_cells = handles.data.nuc_locs_image_coord{1}(handles.data.proj_cell_i,1:2);
+offsets = bsxfun(@minus,these_cells,[col row]);
+
+[targ_error, index] = min(sqrt(sum(offsets.^2,2)));
+
+cell_inds = find(handles.data.proj_cell_i);
+index = cell_inds(index);
+% handles.data.fluor_val = fluor_vals(index);
+handles.data.selected_cell_index_full_2 = index;
+handles.data.selected_cell_pos_2 = handles.data.nuc_locs_image_coord{1}(index,:);
+
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_index_full_2 = handles.data.selected_cell_index_full_2;
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_pos_2 = handles.data.selected_cell_pos_2;
+
+guidata(handles.data.parent_hObject,handles.data.parent_handles)
+
+guidata(hObject,handles)
+draw_all(handles)
+
+
+% --- Executes on button press in free_select_cell.
+function free_select_cell_Callback(hObject, eventdata, handles)
+% hObject    handle to free_select_cell (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+axes(handles.maxproj_axes)
+[col row] = ginput(1);
+
+% handles.data.fluor_val = fluor_vals(index);
+handles.data.selected_cell_index_full = [];
+handles.data.selected_cell_pos = [col row handles.data.slice_ind];
+
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_index_full = handles.data.selected_cell_index_full;
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_pos = handles.data.selected_cell_pos;
+
+guidata(handles.data.parent_hObject,handles.data.parent_handles)
+
+guidata(hObject,handles)
+draw_all(handles)
+
+
+% --- Executes on button press in free_select_cell2.
+function free_select_cell2_Callback(hObject, eventdata, handles)
+% hObject    handle to free_select_cell2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+axes(handles.maxproj_axes)
+[col row] = ginput(1);
+
+% handles.data.fluor_val = fluor_vals(index);
+handles.data.selected_cell_index_full_2 = [];
+handles.data.selected_cell_pos_2 = [col row handles.data.slice_ind];
+
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_index_full_2 = handles.data.selected_cell_index_full_2;
+handles.data.parent_handles.data.stack_viewer_output.selected_cell_pos_2 = handles.data.selected_cell_pos_2;
+
+
+guidata(handles.data.parent_hObject,handles.data.parent_handles)
+
+guidata(hObject,handles)
+draw_all(handles)
