@@ -56,7 +56,15 @@ function stack_viewer_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for stack_viewer
 handles.output = hObject;
 
-handles.data.image = varargin{1};
+if isstruct(varargin{1})
+    handles.data.experiment_setup = varargin{1};
+    handles.data.image = experiment_setup.stack;
+    if isfield(handles.data.experiment_setup,'patched_cell_pos')
+        
+    end
+else
+    handles.data.image = varargin{1};
+end
 
 if ischar(handles.data.image)
     filename = handles.data.image;
@@ -76,12 +84,18 @@ if length(varargin) > 1 && ~isempty(varargin{2})
             handles.data.fluor_vals{i} = Inf*ones(size(handles.data.nuc_locs_image_coord{i},1),1);
         end
     end
+    handles.data.fluor_thresh = 0;
+elseif isfield(handles.data,'experiment_setup')
+    handles.data.nuc_locs_image_coord = handles.data.experiment_setup.nuclear_locs_image_coord;
+    handles.data.fluor_vals = handles.data.experiment_setup.fluor_vals';
+    handles.data.fluor_thresh = handles.data.experiment_setup.fluor_thresh;
 else
     handles.data.nuc_locs_image_coord = [];
     handles.data.fluor_vals = [];
+    handles.data.fluor_thresh = 0;
 end
 
-handles.data.fluor_thresh = 0;
+
 
 if length(varargin) > 3 && ~isempty(varargin{4})
     handles.data.slice_ind = varargin{4};
@@ -100,11 +114,15 @@ if length(varargin) > 4 && ~isempty(varargin{5})
             handles.data.image_g(:,:,i) = imread(filename,i);
         end
     end
+elseif isfield(handles.data,'experiment_setup')
+    handles.data.image_g = handles.data.experiment_setup.stack_ch2;
 end
 if length(varargin) > 5 && ~isempty(varargin{6})
     handles.data.parent_handles = varargin{6};
     handles.data.parent_hObject = varargin{7};
 end
+
+
 
 handles.data.proj_offset = 7;
 
@@ -161,6 +179,7 @@ function varargout = stack_viewer_OutputFcn(hObject, eventdata, handles)
 
 varargout{1} = handles.output;
 % delete(handles.figure1)
+
 
 function draw_all(handles)
 set(handles.selected_cell_text,'String',mat2str(round(handles.data.selected_cell_pos)))
