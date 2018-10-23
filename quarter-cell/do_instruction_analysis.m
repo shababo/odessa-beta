@@ -20,7 +20,7 @@ end
 % else
 %     instruction.close_socket = 1;
 % end
-% pause(1)
+pause(1)
 disp('sending instruction...')
 instruction.type
 mssend(handles.sock_analysis,instruction);

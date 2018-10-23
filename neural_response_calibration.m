@@ -40,8 +40,9 @@ switch experiment_setup.experiment_type
         
         
         disp('Start bg recording')
-        wrndlg = warndlg('Cell attached recording ready?');
+        wrndlg = warndlg('Cell attached recording ready? Both cells?');
         waitfor(wrndlg)
+        
         
         set(acq_gui_data.test_pulse,'Value',1)
         set(acq_gui_data.loop,'Value',1)
@@ -70,9 +71,13 @@ switch experiment_setup.experiment_type
         
         experiment_setup.patched_cell_pos = handles.data.stack_viewer_output.selected_cell_pos;
         experiment_setup.select_cell_index_full = handles.data.stack_viewer_output.selected_cell_index_full;
+        experiment_setup.patched_cell_pos_2 = handles.data.stack_viewer_output.selected_cell_pos_2;
+        experiment_setup.select_cell_index_full_2 = handles.data.stack_viewer_output.selected_cell_index_full_2;
         experiment_setup.fluor_thresh = handles.data.stack_viewer_output.fluor_thresh;
         experiment_setup.patched_cell_loc = experiment_setup.nuclear_locs(handles.data.stack_viewer_output.selected_cell_index_full,:);
         experiment_setup.patched_cell_fluor = experiment_setup.fluor_vals(handles.data.stack_viewer_output.selected_cell_index_full);
+        experiment_setup.patched_cell_loc_2 = experiment_setup.nuclear_locs(handles.data.stack_viewer_output.selected_cell_index_full_2,:);
+        experiment_setup.patched_cell_fluor_2 = experiment_setup.fluor_vals(handles.data.stack_viewer_output.selected_cell_index_full_2);
         experiment_setup.nuclear_locs_thresh = ...
             experiment_setup.nuclear_locs(experiment_setup.fluor_vals > experiment_setup.fluor_thresh,:);
         
@@ -92,33 +97,59 @@ switch experiment_setup.experiment_type
 %         all_seqs = cell(0);
 %         
 %         if spike_prot_choices.do_spike_power
+
+            targs_offset = [0 0 0
+                            0 0 20
+                            0 0 -20
+                            0 0 -40
+                            0 0 40];
+%             random_set_x1 = randsample([-30 -20 -12 -5 0 5 10 15],10,1)';
+%             random_set_y1 = randsample([-10 -7 -5 -3 0 3 5 7 10],10,1)';
+%             random_set_z1 = randsample([-40 -30 -25 -20 -15 -10 0 10 15 20 25 30 40],10,1)';
+            rand_set = mvnrnd([0 0 0], diag([5 5 15].^2), 10);
+            cell1_targs = bsxfun(@plus,experiment_setup.patched_cell_loc,[targs_offset; rand_set]);
+            
+%             random_set_x2 = randsample([-30 -20 -12 -5 0 5 10 15],10,1)';
+%             random_set_y2 = randsample([-10 -7 -5 -3 0 3 5 7 10],10,1)';
+%             random_set_z2 = randsample([-40 -30 -25 -20 -15 -10 0 10 15 20 25 30 40],10,1)';
+            rand_set = mvnrnd([0 0 0], diag([5 5 15].^2), 10);
+            cell2_targs = bsxfun(@plus,experiment_setup.patched_cell_loc_2,[targs_offset; rand_set]);
+                            
 % 
-            all_targets = [all_targets; experiment_setup.patched_cell_loc];
+            all_targets = [all_targets; cell1_targs; cell2_targs];
+            
+            all_targets(all_targets(:,1) < -148,1) = -148;
+            all_targets(all_targets(:,1) > 148,1) = 148;
+            all_targets(all_targets(:,2) < -148,2) = -148;
+            all_targets(all_targets(:,2) > 148,2) = 148;
+            all_targets(all_targets(:,3) < 1,3) = 1;
+            all_targets(all_targets(:,3) > 398,3) = 398;
+            experiment_setup.all_targets = all_targets;
 %             total_targets = total_targets + 1;
 
             % compute pockels refs
             clear instruction
             instruction.type = 86;
-            instruction.targets = experiment_setup.patched_cell_loc;
+            instruction.targets = experiment_setup.all_targets;
             instruction.build_pockels_ref = 1;
             instruction.make_phase_masks = 0;
             instruction.get_return = 1;
             disp('sending instruction...')
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
-            init_powers = '10 25 50 75'; %2.5 is the same as min power!
+            init_powers = '15 25 50 75 100'; %2.5 is the same as min power!
             set(handles.target_intensity,'String',init_powers)
-            set(handles.num_repeats,'String',num2str(5));
+            set(handles.num_repeats,'String',num2str(1));
             set(handles.tf_flag,'Value',1)
             set(handles.set_seq_trigger,'Value',0)
             set(handles.num_stim,'String',num2str(size(instruction.targets,1)));
             set(handles.rand_order,'Value',1);
             set(handles.duration,'String',num2str(.003));
-            set(handles.iti,'String',num2str(2.0));
+            set(handles.iti,'String',num2str(0.5));
             set(handles.ind_offset,'String',total_trials);
 
-            handles.data.piezo_z = experiment_setup.patched_cell_loc(3);
-            handles.data.piezo_z_multiply = 1;
+            handles.data.piezo_z = all_targets(:,3);
+            handles.data.piezo_z_multiply = 0;
             
 
             [handles, acq_gui, acq_gui_data] = socket_control_tester('build_seq_Callback',handles.build_seq,eventdata,handles);
@@ -363,8 +394,7 @@ switch experiment_setup.experiment_type
 %         [acq_gui, acq_gui_data] = get_acq_gui_data;
 
         % get currents
-        full_seq = combine_sequences(all_seqs,get(handles.rand_order,'Value'));
-        experiment_setup.spike_seq = full_seq;
+        
 
         experiment_setup.spike_all_targets = all_targets;
 
@@ -384,109 +414,11 @@ switch experiment_setup.experiment_type
         set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
         set(acq_gui_data.trigger_seq,'Value',1)
         set(acq_gui_data.loop_count,'String',num2str(1))
-
-        % set seq to trigger
-        instruction = struct();
-        instruction.type = 32; %SEND SEQ
-        handles.sequence = full_seq;
-        instruction.sequence = full_seq;
-        handles.total_duration = full_seq(end).start/1000 + 5;
-        disp('sending instruction...')
-        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-        acq_gui_data.data.stim_key =  experiment_setup.spike_all_targets;
-        acq_gui_data.data.sequence =  full_seq;
-        guidata(acq_gui,acq_gui_data)
-
-        set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
-        acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-        guidata(hObject,handles)
-
-        Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-        waitfor(acq_gui_data.run,'String','Start')
-        [acq_gui, acq_gui_data] = get_acq_gui_data;
         
-        handles.data.experiment_setup = experiment_setup;
-        exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
-        
-        % setup patches/take intrinsics
-        handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
-        [acq_gui, acq_gui_data] = get_acq_gui_data;
-        
-%         if get(acq_gui_data.Cell1_type_popup,'Value') ~= 3
+        for ii = 1:3
             
-            try
-
-            all_seqs = {}
-            total_trials = 0;
-            all_targets = [];
-    %         total_targets = 0;
-            total_seqs = 0;
-
-            x_offset = [-5 -2 2 5];
-            y_offset = [-5 -2 2 5];
-            for i = x_offset
-                for j = y_offset
-                    all_targets = [all_targets; experiment_setup.patched_cell_loc + [x_offset y_offset 0]];
-                end
-            end
-    %         experiment_setup.other_locs = bsxfun(@plus,[x_offset 0 0; 0 y_offset 0],experiment_setup.patched_cell_loc);
-            experiment_setup.shift_targs = all_targets;
-    %         all_targets = [all_targets; experiment_setup.axial_targs];
-    %             total_targets = total_targets + 1;
-
-
-            % compute pockels refs
-            clear instruction
-            instruction.type = 86;
-            instruction.targets = experiment_setup.shift_targs;
-            instruction.build_pockels_ref = 1;
-            instruction.make_phase_masks = 0;
-            instruction.get_return = 1;
-            disp('sending instruction...')
-            [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-
-            init_z = experiment_setup.patched_cell_loc(3) + experiment_setup.z_stack_offset;
-            handles.data.piezo_z = init_z;
-            handles.data.piezo_z_multiply = 1;
-
-            init_powers = '50';
-            set(handles.target_intensity,'String',init_powers)
-            set(handles.num_repeats,'String',num2str(3));
-            set(handles.tf_flag,'Value',1)
-            set(handles.set_seq_trigger,'Value',0)
-            set(handles.num_stim,'String',num2str(1));
-            set(handles.rand_order,'Value',1);
-            set(handles.duration,'String',num2str(.003));
-            set(handles.iti,'String',num2str(2.0));
-            set(handles.ind_offset,'String',total_trials);
-
-            [handles, acq_gui, acq_gui_data] = socket_control_tester('build_seq_Callback',handles.build_seq,eventdata,handles);
-            total_seqs = total_seqs + 1;
-            all_seqs{total_seqs} = acq_gui_data.data.sequence;
-            total_trials = total_trials + length(all_seqs{total_seqs});
-
             full_seq = combine_sequences(all_seqs,get(handles.rand_order,'Value'));
-            experiment_setup.current_seq = full_seq;
-
-            experiment_setup.current_all_targets = all_targets;
-
-            % load holograms
-            clear instruction
-            instruction.type = 86;
-            instruction.targets = all_targets;
-            instruction.build_pockels_ref = 0;
-            instruction.make_phase_masks = 1;
-            instruction.get_return = 1;
-            disp('sending instruction...')
-            [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-
-            % prep for acq
-            set(acq_gui_data.test_pulse,'Value',1)
-            set(acq_gui_data.loop,'Value',1)
-            set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
-            set(acq_gui_data.trigger_seq,'Value',1)
-            set(acq_gui_data.loop_count,'String',num2str(1))
-
+            experiment_setup.spike_seq = full_seq;
             % set seq to trigger
             instruction = struct();
             instruction.type = 32; %SEND SEQ
@@ -495,7 +427,7 @@ switch experiment_setup.experiment_type
             handles.total_duration = full_seq(end).start/1000 + 5;
             disp('sending instruction...')
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
-            acq_gui_data.data.stim_key =  experiment_setup.current_all_targets;
+            acq_gui_data.data.stim_key =  experiment_setup.spike_all_targets;
             acq_gui_data.data.sequence =  full_seq;
             guidata(acq_gui,acq_gui_data)
 
@@ -506,10 +438,113 @@ switch experiment_setup.experiment_type
             Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
             waitfor(acq_gui_data.run,'String','Start')
             [acq_gui, acq_gui_data] = get_acq_gui_data;
-            
-            catch e
-                disp ('boo')
-            end
+        
+            handles.data.experiment_setup = experiment_setup;
+            exp_data = handles.data; save(experiment_setup.exp.fullsavefile,'exp_data')
+        end
+        
+        % setup patches/take intrinsics
+%         handles = setup_patches(hObject,eventdata,handles,acq_gui,acq_gui_data,experiment_setup);
+%         [acq_gui, acq_gui_data] = get_acq_gui_data;
+%         
+% %         if get(acq_gui_data.Cell1_type_popup,'Value') ~= 3
+%             
+%             try
+% 
+%             all_seqs = {}
+%             total_trials = 0;
+%             all_targets = [];
+%     %         total_targets = 0;
+%             total_seqs = 0;
+% 
+%             x_offset = [-5 -2 2 5];
+%             y_offset = [-5 -2 2 5];
+%             for i = x_offset
+%                 for j = y_offset
+%                     all_targets = [all_targets; experiment_setup.patched_cell_loc + [x_offset y_offset 0]];
+%                 end
+%             end
+%     %         experiment_setup.other_locs = bsxfun(@plus,[x_offset 0 0; 0 y_offset 0],experiment_setup.patched_cell_loc);
+%             experiment_setup.shift_targs = all_targets;
+%     %         all_targets = [all_targets; experiment_setup.axial_targs];
+%     %             total_targets = total_targets + 1;
+% 
+% 
+%             % compute pockels refs
+%             clear instruction
+%             instruction.type = 86;
+%             instruction.targets = experiment_setup.shift_targs;
+%             instruction.build_pockels_ref = 1;
+%             instruction.make_phase_masks = 0;
+%             instruction.get_return = 1;
+%             disp('sending instruction...')
+%             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+% 
+%             init_z = experiment_setup.patched_cell_loc(3) + experiment_setup.z_stack_offset;
+%             handles.data.piezo_z = init_z;
+%             handles.data.piezo_z_multiply = 1;
+% 
+%             init_powers = '50';
+%             set(handles.target_intensity,'String',init_powers)
+%             set(handles.num_repeats,'String',num2str(3));
+%             set(handles.tf_flag,'Value',1)
+%             set(handles.set_seq_trigger,'Value',0)
+%             set(handles.num_stim,'String',num2str(1));
+%             set(handles.rand_order,'Value',1);
+%             set(handles.duration,'String',num2str(.003));
+%             set(handles.iti,'String',num2str(2.0));
+%             set(handles.ind_offset,'String',total_trials);
+% 
+%             [handles, acq_gui, acq_gui_data] = socket_control_tester('build_seq_Callback',handles.build_seq,eventdata,handles);
+%             total_seqs = total_seqs + 1;
+%             all_seqs{total_seqs} = acq_gui_data.data.sequence;
+%             total_trials = total_trials + length(all_seqs{total_seqs});
+% 
+%             full_seq = combine_sequences(all_seqs,get(handles.rand_order,'Value'));
+%             experiment_setup.current_seq = full_seq;
+% 
+%             experiment_setup.current_all_targets = all_targets;
+% 
+%             % load holograms
+%             clear instruction
+%             instruction.type = 86;
+%             instruction.targets = all_targets;
+%             instruction.build_pockels_ref = 0;
+%             instruction.make_phase_masks = 1;
+%             instruction.get_return = 1;
+%             disp('sending instruction...')
+%             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+% 
+%             % prep for acq
+%             set(acq_gui_data.test_pulse,'Value',1)
+%             set(acq_gui_data.loop,'Value',1)
+%             set(acq_gui_data.tf_on,'Value',get(handles.tf_flag,'Value'));
+%             set(acq_gui_data.trigger_seq,'Value',1)
+%             set(acq_gui_data.loop_count,'String',num2str(1))
+% 
+%             % set seq to trigger
+%             instruction = struct();
+%             instruction.type = 32; %SEND SEQ
+%             handles.sequence = full_seq;
+%             instruction.sequence = full_seq;
+%             handles.total_duration = full_seq(end).start/1000 + 5;
+%             disp('sending instruction...')
+%             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+%             acq_gui_data.data.stim_key =  experiment_setup.current_all_targets;
+%             acq_gui_data.data.sequence =  full_seq;
+%             guidata(acq_gui,acq_gui_data)
+% 
+%             set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
+%             acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+%             guidata(hObject,handles)
+% 
+%             Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+%             waitfor(acq_gui_data.run,'String','Start')
+%             [acq_gui, acq_gui_data] = get_acq_gui_data;
+%             
+%             catch e
+%                 disp ('boo')
+%             end
 %         end
 end
 

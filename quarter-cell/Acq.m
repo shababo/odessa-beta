@@ -150,8 +150,8 @@ switch handles.run_type
                 end
             end
         else
-            num_loops = str2num(get(handles.loop_count,'String'));
-            do_bg = handles.defaults.background_acq && num_loops == 1;
+            num_loops = str2num(get(handles.loop_count,'String'))
+            do_bg = handles.defaults.background_acq && num_loops == 1
             for loop_ind = 1:num_loops
                 
                 if do_bg
@@ -169,6 +169,7 @@ switch handles.run_type
                     end
                     drawnow
                     if ~get(hObject,'Value')
+                        disp('broken')
                         break
                     end
                 end
@@ -373,8 +374,6 @@ switch handles.run_type
 if ~do_bg        
     set(hObject,'String','Start');
     set(hObject,'BackgroundColor',default_color);
-
-
     % update fields
     handles = trial_length_Callback(handles.trial_length, [], handles);
 else
@@ -3453,7 +3452,26 @@ function trigger_seq_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in cell1_intrinsics.
-function handles = cell1_intrinsics_Callback(hObject, eventdata, handles)
+
+
+
+[intrinsic_curr_out, ~, trial_length] = make_fi_curve_output(handles.defaults.Fs);
+handles.data.ch1_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity; % scale by external command sensititvity under Current Clamp
+% handles.data.ch2_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity;
+
+set(handles.trial_length,'String',num2str(trial_length))
+handles.defaults.trial_length = trial_length;
+% handles = make_stim_out(handles);
+
+[handles.data.testpulse, handles.data.timebase] = ...
+    makepulseoutputs(handles.defaults.testpulse_start, 1, ...
+    handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1,...
+    handles.defaults.Fs, trial_length);
+guidata(hObject,handles)
+
+handles = updateAOaxes(handles);
+guidata(hObject,handles)
+
 % hObject    handle to cell1_intrinsics (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -3498,3 +3516,103 @@ guidata(hObject,handles)
 
 handles = updateAOaxes(handles);
 guidata(hObject,handles)
+
+
+% --- Executes on button press in connection_1to2.
+function handles = connection_1to2_Callback(hObject, eventdata, handles)
+% hObject    handle to connection_1to2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+amp = str2double(get(handles.connection_amp,'String'));
+pulse_duration = str2double(get(handles.connection_duration,'String'));
+
+%[intrinsic_curr_out, ~, trial_length] = make_connectiontest_output(handles.defaults.Fs,amp,pulse_duration,interpulse,num_pulses)
+[intrinsic_curr_out, ~, trial_length] = make_connectiontest_output(handles.defaults.Fs,amp,.002,.050,3);
+% handles.data.ch1_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity; % scale by external command sensititvity under Current Clamp
+handles.data.ch1_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity;
+
+set(handles.trial_length,'String',num2str(trial_length))
+handles.defaults.trial_length = trial_length;
+% handles = make_stim_out(handles);
+
+[handles.data.testpulse, handles.data.timebase] = ...
+    makepulseoutputs(handles.defaults.testpulse_start, 1, ...
+    handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1,...
+    handles.defaults.Fs, trial_length);
+guidata(hObject,handles)
+
+handles = updateAOaxes(handles);
+guidata(hObject,handles)
+
+
+% --- Executes on button press in connection_2to1.
+function handles = connection_2to1_Callback(hObject, eventdata, handles)
+% hObject    handle to connection_2to1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+amp = str2double(get(handles.connection_amp,'String'));
+pulse_duration = str2double(get(handles.connection_duration,'String'));
+
+%[intrinsic_curr_out, ~, trial_length] = make_connectiontest_output(handles.defaults.Fs,amp,pulse_duration,interpulse,num_pulses)
+[intrinsic_curr_out, ~, trial_length] = make_connectiontest_output(handles.defaults.Fs,amp,.002,.050,3);
+% handles.data.ch1_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity; % scale by external command sensititvity under Current Clamp
+handles.data.ch2_output=intrinsic_curr_out/handles.defaults.CCexternalcommandsensitivity;
+
+set(handles.trial_length,'String',num2str(trial_length))
+handles.defaults.trial_length = trial_length;
+% handles = make_stim_out(handles);
+
+[handles.data.testpulse, handles.data.timebase] = ...
+    makepulseoutputs(handles.defaults.testpulse_start, 1, ...
+    handles.defaults.testpulse_duration, handles.defaults.testpulse_amp, 1,...
+    handles.defaults.Fs, trial_length);
+guidata(hObject,handles)
+
+handles = updateAOaxes(handles);
+guidata(hObject,handles)
+
+function connection_amp_Callback(hObject, eventdata, handles)
+% hObject    handle to connection_amp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of connection_amp as text
+%        str2double(get(hObject,'String')) returns contents of connection_amp as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function connection_amp_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to connection_amp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function connection_duration_Callback(hObject, eventdata, handles)
+% hObject    handle to connection_duration (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of connection_duration as text
+%        str2double(get(hObject,'String')) returns contents of connection_duration as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function connection_duration_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to connection_duration (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

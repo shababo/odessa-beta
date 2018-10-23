@@ -12,13 +12,14 @@ if handles.data.do_process
     while etime(clock, start_time) < str2double(get(handles.ITI,'String'))
     end
     drawnow
-    default_color = [0.8627    0.8627    0.8627];      
+    default_color = [0.8627    0.8627    0.8627];  
+    handles.data.do_process = 0;
+    guidata(handles.run,handles)
     set(handles.run,'String','Start');
     set(handles.run,'BackgroundColor',default_color);
-
+    drawnow
 
     % update fields
     % handles = trial_length_Callback(handles.trial_length, [], handles);
-    handles.data.do_process = 0;
-    guidata(handles.run,handles)
+    
 end
