@@ -428,7 +428,7 @@ end
 %% MAKE ALIGNMENT HOLOGRAM
 
 fullF = single(zeros(600,792)); 
-x = 10;
+x = 55;
 locs = [-x -x 0
 %         -x 0 0
 %         x 0 0
@@ -445,7 +445,8 @@ for k =  1:size(locs,1)
     unitval = round(this_loc - decval);
 
     convP = tf_disk_grid(:,:,tf_disk_key(:,1) == decval(1) & ...
-                                                 tf_disk_key(:,2) == decval(2));
+                                                 tf_disk_key(:,2) == decval(2)) + ...
+        tf_fine_grid_spots_phase(:,:,tf_fine_grid_spots_key(:,1) == unitval(1) & tf_fine_grid_spots_key(:,2) == unitval(2));
     convP(convP < -pi) = convP(convP < -pi) + 2*pi;
     convP(convP > pi) = convP(convP > pi) - 2*pi;
     fullF = fullF + exp(1i*convP);
