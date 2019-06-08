@@ -110,10 +110,10 @@ switch experiment_setup.experiment_type
         
         % create all targets
         targs_offset = [0 0 0
-                        10 0 0
-                        0 -10 0
-                        0 6 0
-                        0 -6 0
+                        8 0 0
+                        -5 0 0
+                        0 5 0
+                        0 -5 0
                         0 0 -15
                         0 0 15];
                     
@@ -143,7 +143,7 @@ switch experiment_setup.experiment_type
         disp('sending instruction...')
         [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
-        init_powers = '15 35 55'; %2.5 is the same as min power!
+        init_powers = '10 20 35 55'; %2.5 is the same as min power!
         set(handles.target_intensity,'String',init_powers)
         set(handles.num_repeats,'String',num2str(1));
         set(handles.tf_flag,'Value',1)

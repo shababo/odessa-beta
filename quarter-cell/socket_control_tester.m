@@ -1576,8 +1576,9 @@ function neural_resp_prot_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 experiment_setup = get_response_model_calib_setup;
+neural_response_calibration(experiment_setup,handles,hObject)
 % neural_response_calibration_spikes_current(experiment_setup,handles,hObject)
-simple_mapping(experiment_setup,handles,hObject)
+% simple_mapping(experiment_setup,handles,hObject)
 
 
 
@@ -4092,14 +4093,14 @@ set(acq_gui_data.trigger_seq,'Value',1)
 set(acq_gui_data.loop_count,'String',num2str(1))
 num_map_locations = size(obj_positions,1);
 
-for i = 1:num_map_locations
+for i = 1
     
 
     % move obj
-    set(handles.thenewx,'String',num2str(obj_positions(i,1)))
-    set(handles.thenewy,'String',num2str(obj_positions(i,2)))
-    set(handles.thenewz,'String',num2str(obj_positions(i,3)))
-    obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
+%     set(handles.thenewx,'String',num2str(obj_positions(i,1)))
+%     set(handles.thenewy,'String',num2str(obj_positions(i,2)))
+%     set(handles.thenewz,'String',num2str(obj_positions(i,3)))
+%     obj_go_to_Callback(handles.obj_go_to,eventdata,handles);
 
     handles = guidata(hObject);
     
@@ -8135,5 +8136,6 @@ function ground_truth_exp_Callback(hObject, eventdata, handles)
 
 experiment_setup = get_ground_truth_setup;
 % neural_response_calibration_spikes_current(experiment_setup,handles,hObject)
-ground_truth_mapping(experiment_setup,handles,hObject)
+% ground_truth_mapping(experiment_setup,handles,hObject)
+click_mapping_new(experiment_setup,handles,hObject)
 
