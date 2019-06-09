@@ -251,7 +251,7 @@ if success >= 0
             max_px_val = max_dist/experiment_setup.image_um_per_px + experiment_setup.image_zero_order_coord;
             min_px_val = max_px_val - 2*max_dist/experiment_setup.image_um_per_px;
             image_zero_order_coord = (max_px_val - min_px_val)/2;
-            image_zero_order_coord = image_zero_order_coord;
+%             image_zero_order_coord = image_zero_order_coord;
             image_px_bounds = round([min_px_val max_px_val]);
 
             
@@ -300,6 +300,7 @@ if success >= 0
             return_info.nuclear_locs = nuclear_locs;
             return_info.fluor_vals = fluor_vals;
             return_info.nuclear_locs_image_coord = nuclear_locs_image_coord;
+            
             
         case DETECT_NUC_SERVE
             instruction_out.type = DETECT_NUC_LOCAL;

@@ -1,5 +1,5 @@
 function [nuclear_locs,fluor_vals,nuclear_locs_image_coord,plane_fit] = ...
-    detect_nuclei(filename,varargin)
+    detect_nuclei(stack_data,varargin)
 
 if ~isempty(varargin) && ~isempty(varargin{1})
     image_um_per_px = varargin{1};
@@ -43,6 +43,29 @@ else
     params = [];
 end
 
+if length(varargin) > 7 && ~isempty(varargin{8})
+    stackname = varargin{8};
+else
+    filename = stack_data;
+end
+
+from_mat = 0;
+if isnumeric(stack_data)
+    
+    from_mat = 1;
+    max_dist = 180; %um from zero order
+    max_px_val = max_dist/image_um_per_px + image_zero_order_coord;
+    min_px_val = max_px_val - 2*max_dist/image_um_per_px;
+    image_zero_order_coord = (max_px_val - min_px_val)/2;
+%     image_zero_order_coord = image_zero_order_coord;
+    image_px_bounds = round([min_px_val max_px_val]);
+
+    filename = ['/media/shababo/data/' stackname];
+    disp('writing tif')
+    write_tiff_stack([filename '.tif'],uint16(stack_data),image_px_bounds)
+    
+end
+
 
 if do_detect
     peak_detection_12(filename,params);
@@ -51,10 +74,13 @@ end
 load([filename '.mat'])
 
 params_em_reduce = filter_nuclear_detection(params_em,fluor_min);
+
 % params_em_reduce = params_em;
+
 nuclear_locs = params_em_reduce([3 2 4],:); % flip from image coord order
 fluor_vals = params_em_reduce(1,:);
 nuclear_locs_image_coord = nuclear_locs([2 1 3],:);
+
 nuclear_locs([1 2],:) = ...
     bsxfun(@minus,nuclear_locs([1 2],:),image_zero_order_coord)*image_um_per_px;
 nuclear_locs([3],:) = nuclear_locs([3],:)*stack_um_per_slice;
@@ -65,8 +91,10 @@ nuclear_locs(:,out_of_range) = [];
 nuclear_locs = nuclear_locs';
 % nuclear_locs(:,[1 2]) = nuclear_locs(:,[2 1]);
 
+
 nuclear_locs_image_coord(:,out_of_range) = [];
 nuclear_locs_image_coord = nuclear_locs_image_coord';
+
 fluor_vals(out_of_range) = [];
 
 
@@ -115,4 +143,7 @@ if plot_results
 
     detect_img = plot_nuclear_detect_3D([filename '.tif'],nuclear_locs_image_coord);%,[],ceil(fluor_vals/10) + 1,fluor_vals);
 end
-
+if from_mat
+    disp('adjust nuc locs for crop')
+    nuclear_locs_image_coord(:,1:2) = bsxfun(@plus,nuclear_locs_image_coord(:,1:2),min_px_val(2:-1:1)' - 1);
+end
