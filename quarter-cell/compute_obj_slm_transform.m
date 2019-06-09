@@ -7,7 +7,7 @@ obj_image = imread([pathname '\' filename]);
 % slm_image = imread([pathname '\' filename]);
 slm_image = obj_image;
 %%
-obj_image = FemtoPhasorR;
+obj_image = FemtoPhasorG;
 %%
 obj_image = temp;
 %%
@@ -143,7 +143,6 @@ points - full_trans_bu*test_mat'
 
 
 % full_trans = inv(slm_cam_trans)
-
 %%
 test_spots = test_spots';
 num_points = size(test_spots,2);

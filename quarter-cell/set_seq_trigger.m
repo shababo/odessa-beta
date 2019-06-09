@@ -9,6 +9,7 @@ isTriggeredSequenceReady = 1;
 while isTriggeredSequenceReady
     pause(.5)
 end
+pause(5)
 toc
 % pause(wait_time)
 

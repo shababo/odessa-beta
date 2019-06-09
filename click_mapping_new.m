@@ -1,4 +1,4 @@
-function neural_response_calibration(experiment_setup,varargin)
+function click_mapping_new(experiment_setup,varargin)
 
 disp('Experiment start...')
 
@@ -39,49 +39,60 @@ switch experiment_setup.experiment_type
         [acq_gui, acq_gui_data] = get_acq_gui_data;
         
         
-        disp('Start bg recording')
-        wrndlg = warndlg('Cell attached recording ready? Both cells?');
-        waitfor(wrndlg)
+%         disp('Start bg recording')
+%         wrndlg = warndlg('Cell attached recording ready? Both cells?');
+%         waitfor(wrndlg)
+%         
         
+%         set(acq_gui_data.test_pulse,'Value',1)
+%         set(acq_gui_data.loop,'Value',1)
+%         set(acq_gui_data.trigger_seq,'Value',0)
+%         set(acq_gui_data.loop_count,'String',num2str(1))
+%         set(acq_gui_data.trial_length,'String',num2str(experiment_setup.stack_duration))
+%         acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
+%         Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
+%         pause(1.0)
         
-        set(acq_gui_data.test_pulse,'Value',1)
-        set(acq_gui_data.loop,'Value',1)
-        set(acq_gui_data.trigger_seq,'Value',0)
-        set(acq_gui_data.loop_count,'String',num2str(1))
-        set(acq_gui_data.trial_length,'String',num2str(experiment_setup.stack_duration))
-        acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
-        Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
-        pause(1.0)
-        
-        
-        disp('Take stack...')
-        [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+%         disp('Take stack...')
+%         [handles, experiment_setup] = take_slidebook_stack(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
 %         [acq_gui, acq_gui_data] = get_acq_gui_data;
 
+         disp('click targets...')
+        instruction.type = 73;
+        instruction.num_targs = 1;
+        [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
+        [acq_gui, acq_gui_data] = get_acq_gui_data();
+        handles.data.click_targ = return_info.nuclear_locs(1:2);
+        acq_gui_data.data.snap_image = return_info.snap_image;
+        guidata(acq_gui,acq_gui_data)
 
-        disp('Detect nuclei...')
-        experiment_setup.z_stack_offset = 0;
-        [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
-        guidata(hObject,handles)
+        handles.data.cell1_pos = [handles.data.click_targ 0];
+        acq_gui_data.data.cell_pos = handles.data.cell1_pos;
+ 
+%         disp('Detect nuclei...')
+%         experiment_setup.z_stack_offset = 0;
+%         [handles, experiment_setup] = detect_nucs_analysis_comp(hObject,handles,acq_gui,acq_gui_data,experiment_setup);
+%         guidata(hObject,handles)
+%         experiment_setup.nuclear_locs_image_coord = [128 128 0];
+%         experiment_setup.fluor_vals = [100];
+%         disp('Interactive patched cell selection...')
+%         stack_viewer_fig = stack_viewer(experiment_setup.stack,{experiment_setup.nuclear_locs_image_coord},...
+%             {experiment_setup.fluor_vals'},ceil((experiment_setup.cell_z - 0)/experiment_setup.stack_um_per_slice),experiment_setup.stack_ch2,handles,hObject);
+%         waitfor(stack_viewer_fig)
         
-        disp('Interactive patched cell selection...')
-        stack_viewer_fig = stack_viewer(experiment_setup.stack,{experiment_setup.nuclear_locs_image_coord},...
-            {experiment_setup.fluor_vals'},ceil((experiment_setup.cell_z - experiment_setup.z_stack_offset)/experiment_setup.stack_um_per_slice),experiment_setup.stack_ch2,handles,hObject);
-        waitfor(stack_viewer_fig)
+%         handles = guidata(hObject);
         
-        handles = guidata(hObject);
-        
-        experiment_setup.patched_cell_pos = handles.data.stack_viewer_output.selected_cell_pos;
-        experiment_setup.select_cell_index_full = handles.data.stack_viewer_output.selected_cell_index_full;
+%         experiment_setup.patched_cell_pos = handles.data.stack_viewer_output.selected_cell_pos;
+%         experiment_setup.select_cell_index_full = handles.data.stack_viewer_output.selected_cell_index_full;
 %         experiment_setup.patched_cell_pos_2 = handles.data.stack_viewer_output.selected_cell_pos_2;
 %         experiment_setup.select_cell_index_full_2 = handles.data.stack_viewer_output.selected_cell_index_full_2;
-        experiment_setup.fluor_thresh = handles.data.stack_viewer_output.fluor_thresh;
-        experiment_setup.patched_cell_loc = experiment_setup.nuclear_locs(handles.data.stack_viewer_output.selected_cell_index_full,:);
-        experiment_setup.patched_cell_fluor = experiment_setup.fluor_vals(handles.data.stack_viewer_output.selected_cell_index_full);
+%         experiment_setup.fluor_thresh = handles.data.stack_viewer_output.fluor_thresh;
+%         experiment_setup.patched_cell_loc = experiment_setup.nuclear_locs(handles.data.stack_viewer_output.selected_cell_index_full,:);
+%         experiment_setup.patched_cell_fluor = experiment_setup.fluor_vals(handles.data.stack_viewer_output.selected_cell_index_full);
 %         experiment_setup.patched_cell_loc_2 = experiment_setup.nuclear_locs(handles.data.stack_viewer_output.selected_cell_index_full_2,:);
 %         experiment_setup.patched_cell_fluor_2 = experiment_setup.fluor_vals(handles.data.stack_viewer_output.selected_cell_index_full_2);
-        experiment_setup.nuclear_locs_thresh = ...
-            experiment_setup.nuclear_locs(experiment_setup.fluor_vals > experiment_setup.fluor_thresh,:);
+%         experiment_setup.nuclear_locs_thresh = ...
+%             experiment_setup.nuclear_locs(experiment_setup.fluor_vals > experiment_setup.fluor_thresh,:);
         
 %         % choose spike protocols
 %         spike_prot_choices = choose_spike_timing_calibration_types;
@@ -100,53 +111,19 @@ switch experiment_setup.experiment_type
 %         
 %         if spike_prot_choices.do_spike_power
 
-%             targs_offset = [0 0 0
+            targs_offset = [0 0 0];
+%                             0 0 10
+%                             0 0 -10
 %                             0 0 20
 %                             0 0 -20
-%                             0 0 40
 %                             0 0 -40
-%                             0 0 -60
-%                             0 0 60];
+%                             0 0 40];
 %             random_set_x1 = randsample([-30 -20 -12 -5 0 5 10 15],10,1)';
 %             random_set_y1 = randsample([-10 -7 -5 -3 0 3 5 7 10],10,1)';
 %             random_set_z1 = randsample([-40 -30 -25 -20 -15 -10 0 10 15 20 25 30 40],10,1)';
-%             rand_set = mvnrnd([0 0 0], diag([5 5 0].^2), 25);
-%             rand_set2 = mvnrnd([0 0 0], diag([7.5 7.5 15].^2), 12);
-            on_cell = [0 0 0];
-            sqrt2_div2 = sqrt(2)/2;
-            unit_circle_8 = [0 1 0
-                             sqrt2_div2 sqrt2_div2 0
-                             1 0 0
-                             sqrt2_div2 -sqrt2_div2 0
-                             0 -1 0
-                             -sqrt2_div2 -sqrt2_div2 0
-                             -1 0 0
-                             -sqrt2_div2 sqrt2_div2 0
-                             ];
-            sqrt3_div2 = sqrt(3)/2;
-            unit_circle_12 = [0 1 0
-                              .5 sqrt3_div2 0
-                              sqrt3_div2 .5 0
-                              1 0 0
-                              sqrt3_div2 -.5 0
-                              .5 -sqrt3_div2 0
-                              0 -1 0
-                              -.5 -sqrt3_div2 0
-                              -sqrt3_div2 -.5 0
-                              -1 0 0
-                              -sqrt3_div2 .5 0
-                              -.5 sqrt3_div2 0
-                              ];
-            close_circ_dist = 4;
-            far_circ_dist = 8;
-            close_circle = close_circ_dist*unit_circle_8;
-            close_circle = [close_circle; bsxfun(@plus,close_circle,[0 0 -10])];
-            close_circle = [close_circle; bsxfun(@plus,close_circle,[0 0 10])];
-            far_circle = far_circ_dist*unit_circle_12;
-            far_circle = [far_circle; bsxfun(@plus,far_circle,[0 0 -10])];
-            far_circle = [far_circle; bsxfun(@plus,far_circle,[0 0 10])];
-            cell1_targs = bsxfun(@plus,experiment_setup.patched_cell_loc,[on_cell; close_circle; far_circle]);
-%             cell1_targs = bsxfun(@plus,experiment_setup.patched_cell_loc,[targs_offset; rand_set; rand_set2]);
+            rand_set = [];%mvnrnd([0 0 0], diag([5 5 10].^2), 5);
+            rand_set2 = [];%mvnrnd([0 0 0], diag([7.5 7.5 15].^2), 15);
+            cell1_targs = bsxfun(@plus,handles.data.cell1_pos,[targs_offset; rand_set; rand_set2]);
             experiment_setup.cell1_targs = cell1_targs;
 %             random_set_x2 = randsample([-30 -20 -12 -5 0 5 10 15],10,1)';
 %             random_set_y2 = randsample([-10 -7 -5 -3 0 3 5 7 10],10,1)';
@@ -158,12 +135,12 @@ switch experiment_setup.experiment_type
                             
 % 
             all_targets = [all_targets; cell1_targs; cell2_targs];
-%             all_targets(:,3) = all_targets(:,3) + 20;
+            
             all_targets(all_targets(:,1) < -148,1) = -148;
             all_targets(all_targets(:,1) > 148,1) = 148;
             all_targets(all_targets(:,2) < -148,2) = -148;
             all_targets(all_targets(:,2) > 148,2) = 148;
-            all_targets(all_targets(:,3) < 21,3) = 21;
+            all_targets(all_targets(:,3) < 1,3) = 1;
             all_targets(all_targets(:,3) > 398,3) = 398;
             experiment_setup.all_targets = all_targets;
 %             total_targets = total_targets + 1;
@@ -178,16 +155,15 @@ switch experiment_setup.experiment_type
             disp('sending instruction...')
             [return_info,success,handles] = do_instruction_slidebook(instruction,handles);
 
-%             init_powers = '10 15 25 50 75'; %2.5 is the same as min power!
-            init_powers = '35'; %2.5 is the same as min power!
+            init_powers = '1000'; %2.5 is the same as min power!
             set(handles.target_intensity,'String',init_powers)
-            set(handles.num_repeats,'String',num2str(1));
+            set(handles.num_repeats,'String',num2str(5));
             set(handles.tf_flag,'Value',1)
             set(handles.set_seq_trigger,'Value',0)
             set(handles.num_stim,'String',num2str(size(instruction.targets,1)));
             set(handles.rand_order,'Value',1);
-            set(handles.duration,'String',num2str(.003));
-            set(handles.iti,'String',num2str(1.0));
+            set(handles.duration,'String',num2str(.100));
+            set(handles.iti,'String',num2str(10));
             set(handles.ind_offset,'String',total_trials);
 
             handles.data.piezo_z = all_targets(:,3);
@@ -457,7 +433,7 @@ switch experiment_setup.experiment_type
         set(acq_gui_data.trigger_seq,'Value',1)
         set(acq_gui_data.loop_count,'String',num2str(1))
         
-        for ii = 1:3
+        for ii = 1:5
             
             full_seq = combine_sequences(all_seqs,get(handles.rand_order,'Value'));
             experiment_setup.spike_seq = full_seq;
@@ -476,6 +452,9 @@ switch experiment_setup.experiment_type
             set(acq_gui_data.trial_length,'String',num2str(handles.total_duration + 1.0))
             acq_gui_data = Acq('trial_length_Callback',acq_gui_data.trial_length,eventdata,acq_gui_data);
             guidata(hObject,handles)
+            
+            wrndlg = warndlg('Imaging going?');
+            waitfor(wrndlg)
 
             Acq('run_Callback',acq_gui_data.run,eventdata,acq_gui_data);
             waitfor(acq_gui_data.run,'String','Start')

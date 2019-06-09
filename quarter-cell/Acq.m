@@ -3472,6 +3472,7 @@ guidata(hObject,handles)
 handles = updateAOaxes(handles);
 guidata(hObject,handles)
 
+function handles = cell1_intrinsics_Callback(hObject, eventdata, handles)
 % hObject    handle to cell1_intrinsics (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

@@ -68,7 +68,7 @@ switch experiment_setup.experiment_type
         waitfor(stack_viewer_fig)
         
         handles = guidata(hObject);
-        
+        assignin('base','stack_viewer_out',handles.data.stack_viewer_output)
         experiment_setup.patched_cell_pos = handles.data.stack_viewer_output.selected_cell_pos;
         experiment_setup.select_cell_index_full = handles.data.stack_viewer_output.selected_cell_index_full;
 %         experiment_setup.patched_cell_pos_2 = handles.data.stack_viewer_output.selected_cell_pos_2;
@@ -78,6 +78,8 @@ switch experiment_setup.experiment_type
         experiment_setup.patched_cell_fluor = experiment_setup.fluor_vals(handles.data.stack_viewer_output.selected_cell_index_full);
 %         experiment_setup.patched_cell_loc_2 = experiment_setup.nuclear_locs(handles.data.stack_viewer_output.selected_cell_index_full_2,:);
 %         experiment_setup.patched_cell_fluor_2 = experiment_setup.fluor_vals(handles.data.stack_viewer_output.selected_cell_index_full_2);
+
+        
         experiment_setup.nuclear_locs_thresh = ...
             experiment_setup.nuclear_locs(experiment_setup.fluor_vals > experiment_setup.fluor_thresh,:);
         

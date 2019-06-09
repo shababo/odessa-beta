@@ -110,6 +110,8 @@ else
     handles.data.local_nuc_locs = [];
 end
 
+handles.data.fluor_thresh = 0;
+handles.data.parent_handles.data.stack_viewer_output.fluor_thresh = 0;
 
 
 if length(varargin) > 3 && ~isempty(varargin{4})
