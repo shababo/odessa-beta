@@ -94,10 +94,20 @@ elseif isfield(handles.data,'experiment_setup')
     handles.data.nuc_locs_image_coord = {handles.data.experiment_setup.nuclear_locs_image_coord};
     handles.data.fluor_vals = {handles.data.experiment_setup.fluor_vals'};
     handles.data.fluor_thresh = handles.data.experiment_setup.fluor_thresh;
+    if isfield(handles.data.experiment_setup,'local_nuc_locs')
+        disp('ch1')
+        handles.data.experiment_setup.local_nuc_locs
+        handles.data.local_nuc_locs = handles.data.experiment_setup.local_nuc_locs_image_coord;
+    else
+        disp('ch2')
+        handles.data.local_nuc_locs = [];
+    end
 else
     handles.data.nuc_locs_image_coord = [];
     handles.data.fluor_vals = [];
     handles.data.fluor_thresh = 0;
+    disp('ch3')
+    handles.data.local_nuc_locs = [];
 end
 
 
@@ -226,7 +236,20 @@ end
         scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
             40,...
             handles.data.scatter_colors{i},handles.data.scatter_shapes{i});
-
+        hold on
+        if ~isempty(handles.data.local_nuc_locs)
+            disp('plotting local nucs')
+            slice_dist = abs(handles.data.local_nuc_locs(:,3) - handles.data.slice_ind);
+            these_cell_i = slice_dist < 6;
+%             handles.data.slice_cell_i = these_cell_i;
+            these_cell_coord = handles.data.local_nuc_locs(these_cell_i,:);
+            scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
+                60,...
+                'b','d');
+            text(these_cell_coord(:,1)+3, these_cell_coord(:,2),cellstr(num2str(find(these_cell_i))),...
+                'FontSize',8,'Color',[1 1 1])
+            hold on
+        end
         if ~isempty(handles.data.selected_cell_pos)
             scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
         end
@@ -256,21 +279,21 @@ function draw_proj(handles)
 
 handles.data.proj_offset = 7;
 
-handles.data.proj_top = max(handles.data.slice_ind-handles.data.proj_offset,1);
+% handles.data.proj_top = max(handles.data.slice_ind-handles.data.proj_offset,1);
 handles.data.slice_max = size(handles.data.image,3);
-handles.data.proj_bottom = min(handles.data.slice_max,handles.data.slice_ind+handles.data.proj_offset);
-set(handles.proj_top,'String',num2str(handles.data.proj_top));
-set(handles.proj_bottom,'String',num2str(handles.data.proj_bottom));
+% handles.data.proj_bottom = min(handles.data.slice_max,handles.data.slice_ind+handles.data.proj_offset);
+% set(handles.proj_top,'String',num2str(handles.data.proj_top));
+% set(handles.proj_bottom,'String',num2str(handles.data.proj_bottom));
 
-% handles.data.proj_top = str2double(get(handles.proj_top,'String'));
-% if handles.data.proj_top < 1
-%     handles.data.proj_top = 1;
-% end
-% 
-% handles.data.proj_bottom = str2double(get(handles.proj_bottom,'String'));
-% if handles.data.proj_bottom > handles.data.slice_max
-%     handles.data.proj_bottom = handles.data.slice_max;
-% end
+handles.data.proj_top = str2double(get(handles.proj_top,'String'));
+if handles.data.proj_top < 1
+    handles.data.proj_top = 1;
+end
+
+handles.data.proj_bottom = str2double(get(handles.proj_bottom,'String'));
+if handles.data.proj_bottom > handles.data.slice_max
+    handles.data.proj_bottom = handles.data.slice_max;
+end
 
 axes(handles.maxproj_axes)
 if ~handles.data.init
@@ -299,6 +322,19 @@ for i = 1:length(handles.data.nuc_locs_image_coord)
     scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
         40,...
         handles.data.scatter_colors{i},handles.data.scatter_shapes{i});
+    
+    if ~isempty(handles.data.local_nuc_locs)
+        disp('plotting proj local nucs')
+        these_cell_i = handles.data.local_nuc_locs(:,3) < (handles.data.proj_bottom + 5) & ...
+            handles.data.local_nuc_locs(:,3) > (handles.data.proj_top - 5);
+        these_cell_i
+        these_cell_coord = handles.data.local_nuc_locs(these_cell_i,:);
+        scatter(these_cell_coord(:,1), these_cell_coord(:,2),...
+            60,...
+            'b','d');
+        text(these_cell_coord(:,1)+1.5, these_cell_coord(:,2),cellstr(num2str(find(these_cell_i))),...
+                'FontSize',8,'Color',[1 1 1])
+    end
 
     if ~isempty(handles.data.selected_cell_pos)
         scatter(handles.data.selected_cell_pos(1),handles.data.selected_cell_pos(2),'gx')
