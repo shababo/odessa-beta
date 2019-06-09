@@ -351,6 +351,7 @@ if success >= 0
              zero_order_pos = evalin('base','image_zero_order_coord')';
              image_px_per_um = evalin('base','image_um_per_px');
              click_locs = [(bsxfun(@minus,[x y],zero_order_pos))*image_px_per_um zeros(size(x))];
+             return_info.nuclear_locs_image_coord = [y x];
              return_info.nuclear_locs = click_locs;
         case PRECOMPUTE_PHASE
             tf_flag = instruction.tf_flag;
@@ -584,6 +585,7 @@ if success >= 0
         case TAKE_STACK
 %             evalin('base','take_stack_prep')
 %             pause(.1)
+            evalin('base','clear(''acquiredImage'')')
             evalin('base','take_stack')
             image_all_ch = evalin('base','acquiredImage');
             return_info.image = image_all_ch(:,:,:,1)/9999*2^16; % scale to 16-bit
