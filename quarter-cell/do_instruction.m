@@ -600,6 +600,29 @@ if success >= 0
             end
 %             write_tiff_stack([instruction.filename '.tif'],uint16(image_all_ch(:,:,:,1)));
 %             copyfile([instruction.filename '.tif'], ['Y:\shababo\' instruction.filename '.tif']);
+
+
+            numVol =5; %number of SI volumes to average
+            baseName = '''calib''';
+
+            mssend(SISocket,['hSI.hFastZ.userZs = [' num2str(zsToBlast) '];']);
+            mssend(SISocket,['hSI.hFastZ.numVolumes = [' num2str(numVol) '];']);
+            mssend(SISocket,'hSI.hFastZ.enable = 1 ;');
+
+            mssend(SISocket,'hSI.hBeams.pzAdjust = 0;');
+            mssend(SISocket,'hSI.hBeams.powers = 14;'); %power on SI laser. important no to use too much don't want to bleach
+
+            mssend(SISocket,'hSI.extTrigEnable = 0;'); %savign
+            mssend(SISocket,'hSI.hChannels.loggingEnable = 1;'); %savign
+            mssend(SISocket,'hSI.hScan2D.logFilePath = ''E:\Calib\Temp'';');
+            % mssend(SISocket,'hSI.hScan2D.logFileCounter = 1;');
+            mssend(SISocket,['hSI.hScan2D.logFileStem = ' baseName ';']);
+            mssend(SISocket,'hSI.hScan2D.logFileCounter = 1;');
+
+
+            % mssend(SISocket,'1+2');
+
+            mssend(SISocket,['hSICtl.updateView;']);
         case DETECT_EVENTS_OASIS
             
             cmd = 'python /home/shababo/projects/mapping/code/OASIS/run_oasis_online.py ';
